@@ -221,7 +221,7 @@ public class AttemptService {
         if (before != AttemptStatus.GRADED && attempt.getStatus() == AttemptStatus.GRADED) {
             ContentItem item = attempt.getAssessment().getItem();
             UUID courseId = item.getModule().getCourse().getId();
-            String link = Links.learnItem(courseId, item.getId());
+            String link = Links.learnAttempt(courseId, item.getId(), attempt.getId());
             User student = attempt.getStudent();
             notifications.notifyWithEmail(student, NotificationType.ATTEMPT_GRADED, "notification.attemptGraded", link,
                     null, templates.attemptGraded(student, item.getTitle(), templates.link(link)), item.getTitle());

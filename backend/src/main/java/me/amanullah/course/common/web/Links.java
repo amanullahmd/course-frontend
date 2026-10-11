@@ -16,6 +16,11 @@ public final class Links {
         return "/learn/" + courseId + "/" + itemId;
     }
 
+    /** Opens the result view of one attempt inside the learning player. */
+    public static String learnAttempt(UUID courseId, UUID itemId, UUID attemptId) {
+        return learnItem(courseId, itemId) + "?attempt=" + attemptId;
+    }
+
     public static String publicCourse(String slug) {
         return "/courses/" + slug;
     }
