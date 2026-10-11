@@ -3,9 +3,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { Clock, LayoutGrid, Layers, Library, List, Plus, Users } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { InstructorCourseDto, Visibility } from "@/lib/api/types";
 import { VISIBILITY_META } from "@/lib/constants";
-import { formatRelative } from "@/lib/dates";
+import { useFormat } from "@/hooks/use-format";
 import { cn } from "@/lib/utils";
 import { useInstructorCourses } from "@/hooks/queries/instructor";
 import { usePersistentState } from "@/hooks/use-local-storage";
@@ -22,6 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 function CourseTile({ course }: { course: InstructorCourseDto }) {
+  const t = useTranslations();
+  const fmt = useFormat();
   return (
     <Link
       href={`/instructor/courses/${course.id}`}
@@ -39,19 +42,19 @@ function CourseTile({ course }: { course: InstructorCourseDto }) {
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div>
           <h3 className="line-clamp-1 font-semibold">{course.title}</h3>
-          <p className="line-clamp-1 text-sm text-muted-foreground">{course.subtitle || "No subtitle"}</p>
+          <p className="line-clamp-1 text-sm text-muted-foreground">{course.subtitle || t("instructor.noSubtitle")}</p>
         </div>
         <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
-            <Layers className="size-3.5" /> {course.moduleCount} modules · {course.itemCount} items
+            <Layers className="size-3.5" /> {t("course.modulesCount", { count: course.moduleCount })} · {t("course.itemsCount", { count: course.itemCount })}
           </span>
           <span className="flex items-center gap-1">
             <Users className="size-3.5" /> {course.studentCount}
           </span>
-          {course.pendingCount > 0 && <Badge variant="info">{course.pendingCount} pending</Badge>}
+          {course.pendingCount > 0 && <Badge variant="info">{t("instructor.pendingCount", { count: course.pendingCount })}</Badge>}
         </div>
         <p className="flex items-center gap-1 border-t pt-3 text-xs text-muted-foreground">
-          <Clock className="size-3" /> Updated {formatRelative(course.updatedAt)}
+          <Clock className="size-3" /> {t("instructor.updated", { when: fmt.relative(course.updatedAt) })}
         </p>
       </div>
     </Link>
@@ -61,6 +64,8 @@ function CourseTile({ course }: { course: InstructorCourseDto }) {
 const FILTERS: ("ALL" | Visibility)[] = ["ALL", "DRAFT", "SCHEDULED", "LIVE", "EXPIRED"];
 
 export function InstructorCourseList() {
+  const t = useTranslations();
+  const fmt = useFormat();
   const courses = useInstructorCourses();
   const [query, setQuery] = React.useState("");
   const [filter, setFilter] = React.useState<"ALL" | Visibility>("ALL");
@@ -75,19 +80,19 @@ export function InstructorCourseList() {
   return (
     <PageContainer wide>
       <PageHeader
-        title="My courses"
-        description="Build, schedule and manage your courses."
+        title={t("instructor.myCourses")}
+        description={t("instructor.myCoursesText")}
         actions={
           <Button asChild>
             <Link href="/instructor/courses/new">
-              <Plus /> New course
+              <Plus /> {t("instructor.newCourse")}
             </Link>
           </Button>
         }
       />
 
       <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by status">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("instructor.filterStatus")}>
           {FILTERS.map((f) => {
             const count = f === "ALL" ? courses.data?.length : courses.data?.filter((c) => c.visibility === f).length;
             return (
@@ -102,21 +107,21 @@ export function InstructorCourseList() {
                 )}
               >
                 {f !== "ALL" && <span className={cn("size-1.5 rounded-full", VISIBILITY_META[f].dot)} />}
-                {f === "ALL" ? "All" : VISIBILITY_META[f].label}
+                {f === "ALL" ? t("instructor.all") : t(`visibility.${f}.label`)}
                 {count != null && <span className="tabular-nums opacity-70">{count}</span>}
               </button>
             );
           })}
         </div>
         <div className="flex items-center gap-2">
-          <SearchInput value={query} onChange={setQuery} placeholder="Search courses…" className="flex-1 md:w-64" />
+          <SearchInput value={query} onChange={setQuery} placeholder={t("instructor.searchCourses")} className="flex-1 md:w-64" />
           <Segmented
-            aria-label="View"
+            aria-label={t("instructor.view")}
             value={view}
             onChange={setView}
             options={[
-              { value: "grid", label: <span className="sr-only">Grid</span>, icon: <LayoutGrid /> },
-              { value: "table", label: <span className="sr-only">Table</span>, icon: <List /> },
+              { value: "grid", label: <span className="sr-only">{t("instructor.grid")}</span>, icon: <LayoutGrid /> },
+              { value: "table", label: <span className="sr-only">{t("instructor.table")}</span>, icon: <List /> },
             ]}
           />
         </div>
@@ -134,18 +139,18 @@ export function InstructorCourseList() {
         ) : (courses.data ?? []).length === 0 ? (
           <EmptyState
             icon={Library}
-            title="Create your first course"
-            description="Bring your PDFs, slides, recordings and quizzes. You decide when each lesson goes live."
+            title={t("instructor.firstCourse")}
+            description={t("instructor.firstCourseText")}
             action={
               <Button asChild>
                 <Link href="/instructor/courses/new">
-                  <Plus /> New course
+                  <Plus /> {t("instructor.newCourse")}
                 </Link>
               </Button>
             }
           />
         ) : list.length === 0 ? (
-          <EmptyState icon={Library} title="No courses match" description="Try another filter or search term." compact />
+          <EmptyState icon={Library} title={t("instructor.noMatch")} description={t("instructor.noMatchText")} compact />
         ) : view === "grid" ? (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {list.map((c) => (
@@ -157,11 +162,11 @@ export function InstructorCourseList() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Course</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Content</TableHead>
-                  <TableHead className="text-right">Learners</TableHead>
-                  <TableHead className="hidden text-right lg:table-cell">Updated</TableHead>
+                  <TableHead>{t("instructor.course")}</TableHead>
+                  <TableHead>{t("instructor.status")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("instructor.content")}</TableHead>
+                  <TableHead className="text-right">{t("instructor.learners")}</TableHead>
+                  <TableHead className="hidden text-right lg:table-cell">{t("instructor.updatedCol")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -182,13 +187,13 @@ export function InstructorCourseList() {
                       <VisibilityBadge visibility={c.visibility} publishAt={c.publishAt} compact />
                     </TableCell>
                     <TableCell className="hidden text-muted-foreground md:table-cell">
-                      {c.moduleCount} modules · {c.itemCount} items
+                      {t("course.modulesCount", { count: c.moduleCount })} · {t("course.itemsCount", { count: c.itemCount })}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {c.studentCount}
-                      {c.pendingCount > 0 && <Badge variant="info" className="ml-2">{c.pendingCount} pending</Badge>}
+                      {c.pendingCount > 0 && <Badge variant="info" className="ml-2">{t("instructor.pendingCount", { count: c.pendingCount })}</Badge>}
                     </TableCell>
-                    <TableCell className="hidden text-right text-muted-foreground lg:table-cell">{formatRelative(c.updatedAt)}</TableCell>
+                    <TableCell className="hidden text-right text-muted-foreground lg:table-cell">{fmt.relative(c.updatedAt)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

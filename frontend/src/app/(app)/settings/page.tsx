@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { SettingsView } from "@/components/account/settings-view";
 
-export const metadata: Metadata = { title: "Settings" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("meta"))("settings") };
+}
 
 export default function SettingsPage() {
   return <SettingsView />;

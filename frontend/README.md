@@ -1,6 +1,6 @@
 # Sprachweg – Frontend
 
-Next.js 16 (App Router, Turbopack, Cache Components) · React 19 · TypeScript (strict) · Tailwind CSS 4 ·
+Next.js 16 (App Router, Turbopack) · React 19 · next-intl (EN/DE) · TypeScript (strict) · Tailwind CSS 4 ·
 TanStack Query · React Hook Form + Zod · Radix UI primitives · dnd-kit · Tiptap 3 · date-fns.
 
 The UI consumes the Spring Boot API described in [`../docs/PLAN.md`](../docs/PLAN.md) §6.
@@ -51,6 +51,16 @@ src/
 └── providers/            QueryClient, theme, AuthProvider, toasts
 ```
 
+* **i18n** – `next-intl` without i18n routing. The locale comes from the `NEXT_LOCALE` cookie (`en` | `de`), default
+  `en` (`src/i18n/request.ts`). Messages live in `messages/en.json` and `messages/de.json` (identical keys, typed via
+  `src/i18n/global.d.ts`). The EN/DE switcher (marketing header, auth pages, user menu, settings) sets the cookie,
+  calls `router.refresh()` and, when logged in, `PUT /api/users/me/locale`. Every API request sends
+  `Accept-Language`; register sends `locale`. After login the account's `locale` is adopted if no cookie exists yet.
+  Course content itself is not translated.
+* **Errors** – `useErrorMessage()` maps `ApiError` → localised text by backend `code`, then HTTP status, then the
+  backend's localised `detail`; 5xx/network failures show a calm message (+ `traceId` reference). Field errors map onto
+  form fields. Route groups have `error.tsx`, plus `global-error.tsx` and localised `not-found.tsx`; marketing pages
+  fall back gracefully when the API is unreachable.
 * **Auth** – the access token lives only in memory. On load the `AuthProvider` performs a silent
   `POST /api/auth/refresh` (single-flight, using the http-only refresh cookie). Any 401 triggers one refresh and
   a retry. Errors are parsed from RFC 7807 `ProblemDetail` into `ApiError` (status, code, field errors mapped

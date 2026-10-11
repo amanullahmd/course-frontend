@@ -133,14 +133,23 @@
       "FORBIDDEN": "Dafür hast du keine Berechtigung.",
       "NOT_FOUND": "Das Gesuchte wurde nicht gefunden.",
       "INTERNAL_ERROR": "Bei uns ist etwas schiefgelaufen. Bitte versuch es erneut.",
+      "INVALID_PARAMETER": "Ein Wert in der Anfrage ist ungültig. Bitte prüfe deine Eingaben.",
+      "FILE_REQUIRED": "Bitte wähle eine Datei zum Hochladen.",
+      "FILE_EMPTY": "Diese Datei ist leer.",
+      "AVATAR_NOT_IMAGE": "Dein Profilbild muss ein Bild sein.",
+      "ATTEMPT_NOT_SUBMITTED": "Dieser Versuch wurde noch nicht abgegeben.",
+      "CONCURRENT_MODIFICATION": "Jemand anderes hat das gleichzeitig geändert. Bitte lade neu und versuch es erneut.",
+      "NOT_ACCEPTABLE": "Der Server kann dieses Format nicht liefern.",
+      "SERVICE_UNAVAILABLE": "Der Dienst ist vorübergehend nicht verfügbar. Bitte versuch es gleich noch einmal.",
       "NETWORK_ERROR": "Server nicht erreichbar. Bitte prüfe deine Verbindung und versuch es erneut."
     },
+    "reference": "Referenz: {id}",
     "notFoundEntity": "Dieses Element ({entity}) existiert nicht (mehr)."
   },
   "validation": {
     "email": "Gib eine gültige E-Mail-Adresse ein",
     "passwordMin": "Mindestens 8 Zeichen",
-    "passwordMax": "Höchstens 128 Zeichen",
+    "passwordMax": "Höchstens 64 Zeichen",
     "passwordLetter": "Mindestens ein Buchstabe",
     "passwordDigit": "Mindestens eine Ziffer",
     "passwordRequired": "Gib dein Passwort ein",
@@ -1290,6 +1299,7 @@
     "eventsOn": "{count, plural, one {# Termin} other {# Termine}} am {date}",
     "nothingInPeriod": "In diesem Zeitraum ist nichts geplant",
     "nothingInPeriodText": "Nutze das Kalendersymbol bei einem Kurs, Modul oder einer Lektion, um eine Veröffentlichung zu planen.",
+    "updatedCol": "Aktualisiert",
     "attemptNotFound": "Versuch nicht gefunden",
     "attemptNotFoundText": "Er wurde eventuell gelöscht oder gehört zum Kurs einer anderen Lehrkraft.",
     "backToOverview": "Zurück zur Übersicht"

@@ -9,7 +9,7 @@ export const makePasswordSchema = (t: ValidationT) =>
   z
     .string()
     .min(8, t("passwordMin"))
-    .max(128, t("passwordMax"))
+    .max(64, t("passwordMax"))
     .regex(/[A-Za-z]/, t("passwordLetter"))
     .regex(/\d/, t("passwordDigit"));
 

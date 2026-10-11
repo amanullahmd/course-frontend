@@ -133,14 +133,23 @@
       "FORBIDDEN": "You don't have permission to do this.",
       "NOT_FOUND": "We couldn't find what you were looking for.",
       "INTERNAL_ERROR": "Something went wrong on our side. Please try again.",
+      "INVALID_PARAMETER": "A value in the request is invalid. Please check your input.",
+      "FILE_REQUIRED": "Please choose a file to upload.",
+      "FILE_EMPTY": "This file is empty.",
+      "AVATAR_NOT_IMAGE": "Your profile picture must be an image.",
+      "ATTEMPT_NOT_SUBMITTED": "This attempt hasn't been submitted yet.",
+      "CONCURRENT_MODIFICATION": "Someone else changed this at the same time. Please reload and try again.",
+      "NOT_ACCEPTABLE": "The server can't provide this format.",
+      "SERVICE_UNAVAILABLE": "The service is temporarily unavailable. Please try again in a moment.",
       "NETWORK_ERROR": "Server unreachable. Please check your connection and try again."
     },
+    "reference": "Reference: {id}",
     "notFoundEntity": "This {entity} doesn't exist (anymore)."
   },
   "validation": {
     "email": "Enter a valid e-mail address",
     "passwordMin": "At least 8 characters",
-    "passwordMax": "At most 128 characters",
+    "passwordMax": "At most 64 characters",
     "passwordLetter": "Include at least one letter",
     "passwordDigit": "Include at least one digit",
     "passwordRequired": "Enter your password",
@@ -1290,6 +1299,7 @@
     "eventsOn": "{count, plural, one {# event} other {# events}} on {date}",
     "nothingInPeriod": "Nothing scheduled in this period",
     "nothingInPeriodText": "Use the calendar icon on any course, module or lesson to schedule a release.",
+    "updatedCol": "Updated",
     "attemptNotFound": "Attempt not found",
     "attemptNotFoundText": "It may have been deleted, or it belongs to another instructor's course.",
     "backToOverview": "Back to overview"

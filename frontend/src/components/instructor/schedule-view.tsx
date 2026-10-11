@@ -15,11 +15,13 @@ import {
   startOfWeek,
 } from "date-fns";
 import { CalendarDays, ChevronLeft, ChevronRight, List } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { ScheduleEventDto } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useInstructorCourses, useSchedule } from "@/hooks/queries/instructor";
 import { usePersistentState } from "@/hooks/use-local-storage";
 import { useToday } from "@/hooks/use-now";
+import { useFormat } from "@/hooks/use-format";
 import { PageContainer, PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -30,7 +32,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { EventChip, EventRow } from "./schedule-event";
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function groupByDay(events: ScheduleEventDto[]): Map<string, ScheduleEventDto[]> {
   const map = new Map<string, ScheduleEventDto[]>();
@@ -42,6 +43,9 @@ function groupByDay(events: ScheduleEventDto[]): Map<string, ScheduleEventDto[]>
 }
 
 function MonthGrid({ month, events, today }: { month: Date; events: ScheduleEventDto[]; today: Date | null }) {
+  const t = useTranslations("instructor");
+  const fmt = useFormat();
+  const weekdays = eachDayOfInterval({ start: startOfWeek(month, { weekStartsOn: 1 }), end: addDays(startOfWeek(month, { weekStartsOn: 1 }), 6) });
   const days = eachDayOfInterval({
     start: startOfWeek(startOfMonth(month), { weekStartsOn: 1 }),
     end: endOfWeek(endOfMonth(month), { weekStartsOn: 1 }),
@@ -50,9 +54,9 @@ function MonthGrid({ month, events, today }: { month: Date; events: ScheduleEven
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
       <div className="grid grid-cols-7 border-b bg-muted/40">
-        {WEEKDAYS.map((d) => (
-          <div key={d} className="px-2 py-2 text-center text-xs font-medium text-muted-foreground">
-            {d}
+        {weekdays.map((d) => (
+          <div key={d.toISOString()} className="px-2 py-2 text-center text-xs font-medium text-muted-foreground">
+            {fmt.date(d, "EEE")}
           </div>
         ))}
       </div>
@@ -97,10 +101,10 @@ function MonthGrid({ month, events, today }: { month: Date; events: ScheduleEven
                 {list.length > 3 && (
                   <Popover>
                     <PopoverTrigger className="rounded px-1.5 text-left text-[11px] font-medium text-muted-foreground hover:bg-accent">
-                      +{list.length - 3} more
+                      {t("more", { count: list.length - 3 })}
                     </PopoverTrigger>
                     <PopoverContent className="w-72 p-2">
-                      <p className="px-2 pb-2 text-xs font-medium text-muted-foreground">{format(day, "EEEE, d MMMM")}</p>
+                      <p className="px-2 pb-2 text-xs font-medium text-muted-foreground">{fmt.date(day, "EEEE, d MMMM")}</p>
                       <div className="grid gap-1">
                         {list.map((e) => (
                           <EventChip key={e.id} event={e} />
@@ -112,11 +116,11 @@ function MonthGrid({ month, events, today }: { month: Date; events: ScheduleEven
               </div>
               {list.length > 0 && (
                 <Popover>
-                  <PopoverTrigger className="mt-1 w-full rounded text-left text-[10px] text-muted-foreground sm:hidden" aria-label={`${list.length} events on ${format(day, "d MMMM")}`}>
+                  <PopoverTrigger className="mt-1 w-full rounded text-left text-[10px] text-muted-foreground sm:hidden" aria-label={t("eventsOn", { count: list.length, date: fmt.date(day, "d MMMM") })}>
                     {list.length}
                   </PopoverTrigger>
                   <PopoverContent className="w-72 p-2">
-                    <p className="px-2 pb-2 text-xs font-medium text-muted-foreground">{format(day, "EEEE, d MMMM")}</p>
+                    <p className="px-2 pb-2 text-xs font-medium text-muted-foreground">{fmt.date(day, "EEEE, d MMMM")}</p>
                     <div className="grid gap-1">
                       {list.map((e) => (
                         <EventChip key={e.id} event={e} />
@@ -134,16 +138,18 @@ function MonthGrid({ month, events, today }: { month: Date; events: ScheduleEven
 }
 
 function Agenda({ events }: { events: ScheduleEventDto[] }) {
+  const t = useTranslations("instructor");
+  const fmt = useFormat();
   const byDay = groupByDay(events);
   if (events.length === 0) {
-    return <EmptyState icon={CalendarDays} title="Nothing scheduled in this period" description="Use the calendar icon on any course, module or lesson to schedule a release." />;
+    return <EmptyState icon={CalendarDays} title={t("nothingInPeriod")} description={t("nothingInPeriodText")} />;
   }
   return (
     <div className="grid gap-6">
       {[...byDay.entries()].map(([day, list]) => (
-        <section key={day} aria-label={format(parseISO(day), "EEEE d MMMM")}>
+        <section key={day} aria-label={fmt.date(parseISO(day), "EEEE d MMMM")}>
           <h3 className="sticky top-14 z-10 bg-background/90 py-1.5 text-sm font-semibold backdrop-blur">
-            {format(parseISO(day), "EEEE, d MMMM yyyy")}
+            {fmt.date(parseISO(day), "EEEE, d MMMM yyyy")}
           </h3>
           <ul className="mt-1 grid gap-0.5 rounded-xl border bg-card p-1.5">
             {list.map((e) => (
@@ -159,6 +165,8 @@ function Agenda({ events }: { events: ScheduleEventDto[] }) {
 }
 
 export function ScheduleView() {
+  const t = useTranslations("instructor");
+  const fmt = useFormat();
   const todayMs = useToday();
   const today = React.useMemo(() => (todayMs ? new Date(todayMs) : null), [todayMs]);
   const [offset, setOffset] = React.useState(0);
@@ -181,30 +189,30 @@ export function ScheduleView() {
 
   return (
     <PageContainer wide>
-      <PageHeader title="Schedule" description="Every upcoming publish and unpublish event across your courses." />
+      <PageHeader title={t("scheduleTitle")} description={t("scheduleText")} />
       <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon-sm" onClick={() => setOffset(offset - 1)} aria-label="Previous month">
+          <Button variant="outline" size="icon-sm" onClick={() => setOffset(offset - 1)} aria-label={t("prevMonth")}>
             <ChevronLeft />
           </Button>
-          <Button variant="outline" size="icon-sm" onClick={() => setOffset(offset + 1)} aria-label="Next month">
+          <Button variant="outline" size="icon-sm" onClick={() => setOffset(offset + 1)} aria-label={t("nextMonth")}>
             <ChevronRight />
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setOffset(0)} disabled={offset === 0}>
-            Today
+            {t("today")}
           </Button>
           <h2 className="ml-2 text-lg font-semibold tabular-nums" aria-live="polite">
-            {month ? format(month, view === "calendar" ? "MMMM yyyy" : "MMMM") : ""}
-            {month && view === "agenda" && ` – ${format(addMonths(month, 1), "MMMM yyyy")}`}
+            {month ? fmt.date(month, view === "calendar" ? "MMMM yyyy" : "MMMM") : ""}
+            {month && view === "agenda" && ` – ${fmt.date(addMonths(month, 1), "MMMM yyyy")}`}
           </h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Select value={courseId} onValueChange={setCourseId}>
-            <SelectTrigger className="w-56" size="sm" aria-label="Filter by course">
+            <SelectTrigger className="w-56" size="sm" aria-label={t("filterCourse")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">All courses</SelectItem>
+              <SelectItem value="ALL">{t("allCourses")}</SelectItem>
               {(courses.data ?? []).map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.title}
@@ -213,22 +221,22 @@ export function ScheduleView() {
             </SelectContent>
           </Select>
           <Segmented
-            aria-label="View"
+            aria-label={t("view")}
             value={view}
             onChange={setView}
             options={[
-              { value: "calendar", label: "Month", icon: <CalendarDays /> },
-              { value: "agenda", label: "Agenda", icon: <List /> },
+              { value: "calendar", label: t("month"), icon: <CalendarDays /> },
+              { value: "agenda", label: t("agenda"), icon: <List /> },
             ]}
           />
         </div>
       </div>
       <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5">
-          <span className="size-2 rounded-full bg-success" /> Publish
+          <span className="size-2 rounded-full bg-success" /> {t("publish")}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="size-2 rounded-full bg-warning" /> Unpublish
+          <span className="size-2 rounded-full bg-warning" /> {t("unpublish")}
         </span>
       </div>
       <div className={cn("mt-4 transition-opacity", schedule.isFetching && !schedule.isPending && "opacity-70")}>

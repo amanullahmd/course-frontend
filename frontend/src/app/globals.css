@@ -191,6 +191,10 @@
     font-feature-settings: "cv11", "ss01", "ss03";
     text-rendering: optimizeLegibility;
   }
+  /* Implicit single-column grids never grow beyond their container (min-content overflow). */
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
   ::selection {
     background: color-mix(in oklch, var(--color-brand) 35%, transparent);
   }

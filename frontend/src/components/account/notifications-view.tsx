@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { BellOff, CheckCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useMarkAllNotificationsRead, useNotifications, useUnreadCount } from "@/hooks/queries/notifications";
 import { PageContainer, PageHeader } from "@/components/layout/page-header";
 import { NotificationItem, useOpenNotification } from "@/components/layout/notifications-bell";
@@ -14,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 const SIZE = 20;
 
 export function NotificationsView() {
+  const t = useTranslations("notifications");
   const [page, setPage] = React.useState(0);
   const list = useNotifications(page, SIZE);
   const { data: unread = 0 } = useUnreadCount();
@@ -23,11 +25,11 @@ export function NotificationsView() {
   return (
     <PageContainer className="max-w-3xl">
       <PageHeader
-        title="Notifications"
-        description={unread > 0 ? `${unread} unread` : "You're all caught up."}
+        title={t("title")}
+        description={unread > 0 ? t("unreadCount", { count: unread }) : t("allCaughtUp")}
         actions={
           <Button variant="outline" size="sm" disabled={unread === 0} loading={markAll.isPending} onClick={() => markAll.mutate()}>
-            <CheckCheck /> Mark all as read
+            <CheckCheck /> {t("markAllAsRead")}
           </Button>
         }
       />
@@ -41,7 +43,7 @@ export function NotificationsView() {
         ) : list.isError ? (
           <ErrorState error={list.error} onRetry={() => list.refetch()} />
         ) : list.data.content.length === 0 ? (
-          <EmptyState icon={BellOff} title="No notifications yet" description="Updates about applications, grading and your courses will appear here." />
+          <EmptyState icon={BellOff} title={t("emptyTitle")} description={t("emptyText")} />
         ) : (
           <div className="grid gap-6">
             <div className="divide-y rounded-xl border bg-card p-1.5">

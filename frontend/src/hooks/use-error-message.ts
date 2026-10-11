@@ -22,9 +22,10 @@ export function useErrorMessage() {
       if (!isApiError(error)) return t("unknown");
       if (error.status === 0) return t("network");
       const code = error.code;
-      if (code && isCode(code)) return t(`codes.${code}`);
+      const withRef = (message: string) => (error.traceId ? `${message} ${t("reference", { id: error.traceId })}` : message);
+      if (code && isCode(code)) return error.status >= 500 ? withRef(t(`codes.${code}`)) : t(`codes.${code}`);
       if (code && code.endsWith("_NOT_FOUND")) return t("codes.NOT_FOUND");
-      if (error.status >= 500) return t("server");
+      if (error.status >= 500) return withRef(t("server"));
       const status = String(error.status);
       if (error.status === 400 && error.detail) return error.detail;
       if (isStatus(status)) return t(`status.${status}`);

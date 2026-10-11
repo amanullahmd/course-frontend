@@ -3,9 +3,9 @@
 import * as React from "react";
 import { BookCheck, GraduationCap, Library, Presentation, UserCheck, Users, UserX } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { AdminUserDto, Role } from "@/lib/api/types";
-import { ROLE_META } from "@/lib/constants";
-import { formatDate } from "@/lib/dates";
+import { useFormat } from "@/hooks/use-format";
 import { useAdminStats, useAdminUsers, useUpdateUser } from "@/hooks/queries/admin";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 import { useAuth } from "@/providers/auth-provider";
@@ -27,6 +27,8 @@ const SIZE = 20;
 
 export function AdminView() {
   const { user: me } = useAuth();
+  const t = useTranslations();
+  const fmt = useFormat();
   const stats = useAdminStats();
   const [q, setQ] = React.useState("");
   const debouncedQ = useDebouncedValue(q.trim(), 300);
@@ -42,27 +44,31 @@ export function AdminView() {
       {
         onSuccess: () =>
           toast.success(
-            patch.role ? `${u.fullName} is now ${ROLE_META[patch.role].label.toLowerCase()}` : `${u.fullName} ${patch.enabled ? "enabled" : "disabled"}`,
+            patch.role
+              ? t("admin.roleChanged", { name: u.fullName, role: t(`roles.${patch.role}`) })
+              : patch.enabled
+                ? t("admin.enabled", { name: u.fullName })
+                : t("admin.disabled", { name: u.fullName }),
           ),
       },
     );
 
   return (
     <PageContainer wide>
-      <PageHeader eyebrow="Admin console" title="Platform overview" description="Manage users and keep an eye on platform health." />
+      <PageHeader eyebrow={t("admin.eyebrow")} title={t("admin.title")} description={t("admin.intro")} />
       <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Users" value={s?.users ?? 0} icon={Users} loading={stats.isPending} />
-        <StatCard label="Students" value={s?.students ?? 0} icon={GraduationCap} loading={stats.isPending} accent="info" />
-        <StatCard label="Instructors" value={s?.instructors ?? 0} icon={Presentation} loading={stats.isPending} accent="brand" />
-        <StatCard label="Courses" value={s?.courses ?? 0} icon={Library} loading={stats.isPending} />
-        <StatCard label="Live courses" value={s?.liveCourses ?? 0} icon={BookCheck} loading={stats.isPending} accent="success" />
-        <StatCard label="Enrollments" value={s?.enrollments ?? 0} icon={UserCheck} loading={stats.isPending} />
+        <StatCard label={t("admin.users")} value={s?.users ?? 0} icon={Users} loading={stats.isPending} />
+        <StatCard label={t("admin.students")} value={s?.students ?? 0} icon={GraduationCap} loading={stats.isPending} accent="info" />
+        <StatCard label={t("admin.instructors")} value={s?.instructors ?? 0} icon={Presentation} loading={stats.isPending} accent="brand" />
+        <StatCard label={t("admin.courses")} value={s?.courses ?? 0} icon={Library} loading={stats.isPending} />
+        <StatCard label={t("admin.liveCourses")} value={s?.liveCourses ?? 0} icon={BookCheck} loading={stats.isPending} accent="success" />
+        <StatCard label={t("admin.enrollments")} value={s?.enrollments ?? 0} icon={UserCheck} loading={stats.isPending} />
       </div>
 
       <section className="mt-10" aria-labelledby="users-heading">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 id="users-heading" className="text-lg font-semibold tracking-tight">
-            Users
+            {t("admin.users")}
           </h2>
           <div className="flex gap-2">
             <SearchInput
@@ -71,7 +77,7 @@ export function AdminView() {
                 setQ(v);
                 setPage(0);
               }}
-              placeholder="Search name or e-mail…"
+              placeholder={t("admin.search")}
               className="flex-1 sm:w-72"
             />
             <Select
@@ -81,14 +87,14 @@ export function AdminView() {
                 setPage(0);
               }}
             >
-              <SelectTrigger className="w-40" aria-label="Filter by role">
+              <SelectTrigger className="w-40" aria-label={t("admin.filterRole")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All roles</SelectItem>
+                <SelectItem value="ALL">{t("admin.allRoles")}</SelectItem>
                 {ROLES.map((r) => (
                   <SelectItem key={r} value={r}>
-                    {ROLE_META[r].label}
+                    {t(`roles.${r}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -105,16 +111,16 @@ export function AdminView() {
           ) : users.isError ? (
             <ErrorState className="m-4" error={users.error} onRetry={() => users.refetch()} />
           ) : users.data.content.length === 0 ? (
-            <EmptyState className="m-4 border-none" icon={UserX} title="No users found" description="Try another search or role filter." />
+            <EmptyState className="m-4 border-none" icon={UserX} title={t("admin.noUsers")} description={t("admin.noUsersText")} />
           ) : (
             <Table className={users.isPlaceholderData ? "opacity-60 transition-opacity" : undefined}>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead className="hidden md:table-cell">Joined</TableHead>
-                  <TableHead className="hidden sm:table-cell">Verified</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead className="text-right">Active</TableHead>
+                  <TableHead>{t("admin.user")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("admin.joined")}</TableHead>
+                  <TableHead className="hidden sm:table-cell">{t("admin.verified")}</TableHead>
+                  <TableHead>{t("admin.role")}</TableHead>
+                  <TableHead className="text-right">{t("admin.active")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -127,25 +133,25 @@ export function AdminView() {
                           <UserAvatar name={u.fullName} src={u.avatarUrl} />
                           <div className="min-w-0">
                             <p className="truncate font-medium">
-                              {u.fullName} {self && <span className="text-xs font-normal text-muted-foreground">(you)</span>}
+                              {u.fullName} {self && <span className="text-xs font-normal text-muted-foreground">({t("common.you")})</span>}
                             </p>
                             <p className="truncate text-xs text-muted-foreground">{u.email}</p>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden text-muted-foreground md:table-cell">{formatDate(u.createdAt)}</TableCell>
+                      <TableCell className="hidden text-muted-foreground md:table-cell">{fmt.date(u.createdAt)}</TableCell>
                       <TableCell className="hidden sm:table-cell">
-                        {u.emailVerified ? <Badge variant="success">Verified</Badge> : <Badge variant="warning">Pending</Badge>}
+                        {u.emailVerified ? <Badge variant="success">{t("admin.verified")}</Badge> : <Badge variant="warning">{t("admin.pending")}</Badge>}
                       </TableCell>
                       <TableCell>
                         <Select value={u.role} onValueChange={(r) => change(u, { role: r as Role })} disabled={self}>
-                          <SelectTrigger size="sm" className="w-32" aria-label={`Role of ${u.fullName}`}>
+                          <SelectTrigger size="sm" className="w-32" aria-label={t("admin.roleOf", { name: u.fullName })}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             {ROLES.map((r) => (
                               <SelectItem key={r} value={r}>
-                                {ROLE_META[r].label}
+                                {t(`roles.${r}`)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -156,7 +162,7 @@ export function AdminView() {
                           checked={u.enabled}
                           disabled={self}
                           onCheckedChange={(c) => change(u, { enabled: c })}
-                          aria-label={`${u.enabled ? "Disable" : "Enable"} ${u.fullName}`}
+                          aria-label={u.enabled ? t("admin.disable", { name: u.fullName }) : t("admin.enable", { name: u.fullName })}
                         />
                       </TableCell>
                     </TableRow>
@@ -168,7 +174,7 @@ export function AdminView() {
         </div>
         {users.data && (
           <div className="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row">
-            <p className="text-sm text-muted-foreground tabular-nums">{users.data.totalElements} users</p>
+            <p className="text-sm text-muted-foreground tabular-nums">{t("admin.total", { count: users.data.totalElements })}</p>
             <Pagination page={page} totalPages={users.data.totalPages} onPageChange={setPage} />
           </div>
         )}

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 import { ChevronRight, Clock, Layers, ListChecks, ServerCrash, Users } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { fetchPublicCourse } from "@/lib/api/server";
@@ -13,7 +12,6 @@ import { RichContent } from "@/components/course/rich-content";
 import { UserAvatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useMinutes } from "@/hooks/use-minutes";
 
 export async function generateMetadata({ params }: PageProps<"/courses/[slug]">): Promise<Metadata> {
@@ -97,17 +95,17 @@ async function CourseDetail({ params }: { params: PageProps<"/courses/[slug]">["
         </div>
       </section>
 
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
-        <div className="order-2 grid min-w-0 gap-12 lg:order-1">
-          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
+        <div className="order-2 flex min-w-0 flex-col gap-12 lg:order-1">
+          <dl className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3 sm:grid-cols-4">
             {[
               { icon: Layers, label: t("course.stats.modules"), value: course.moduleCount },
               { icon: ListChecks, label: t("course.stats.lessons"), value: lessons || course.itemCount },
               { icon: Clock, label: t("course.stats.duration"), value: minutes ? <Minutes minutes={minutes} /> : t("course.stats.selfPaced") },
               { icon: ListChecks, label: t("course.stats.assessments"), value: assessments },
             ].map((s) => (
-              <div key={s.label} className="rounded-xl border bg-card p-4">
-                <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div key={s.label} className="min-w-0 rounded-xl border bg-card p-4">
+                <dt className="flex min-w-0 items-center gap-1.5 text-xs break-words text-muted-foreground">
                   <s.icon className="size-3.5" /> {s.label}
                 </dt>
                 <dd className="mt-1 text-lg font-semibold tabular-nums">{s.value}</dd>
@@ -167,32 +165,8 @@ function Minutes({ minutes }: { minutes: number }) {
   return <>{useMinutes()(minutes)}</>;
 }
 
-function DetailSkeleton() {
-  return (
-    <>
-      <div className="border-b bg-primary/95">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <Skeleton className="h-4 w-32 opacity-30" />
-          <Skeleton className="mt-6 h-12 w-2/3 opacity-30" />
-          <Skeleton className="mt-4 h-5 w-1/2 opacity-30" />
-        </div>
-      </div>
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
-        <div className="grid gap-4">
-          <Skeleton className="h-20" />
-          <Skeleton className="h-40" />
-          <Skeleton className="h-64" />
-        </div>
-        <Skeleton className="h-64 rounded-2xl" />
-      </div>
-    </>
-  );
-}
 
 export default function CourseDetailPage({ params }: PageProps<"/courses/[slug]">) {
-  return (
-    <Suspense fallback={<DetailSkeleton />}>
-      <CourseDetail params={params} />
-    </Suspense>
-  );
+  // Awaited without a Suspense boundary so unknown slugs return a real HTTP 404.
+  return <CourseDetail params={params} />;
 }

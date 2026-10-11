@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { CourseBuilder } from "@/components/builder/course-builder";
 
-export const metadata: Metadata = { title: "Course builder" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getTranslations("meta"))("builder") };
+}
 
 export default function CourseBuilderPage() {
   return <CourseBuilder />;

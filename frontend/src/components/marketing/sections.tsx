@@ -44,7 +44,7 @@ export function Hero() {
     <section className="relative overflow-hidden">
       <div className="bg-grid absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_at_top,black_20%,transparent_70%)]" />
       <div className="mx-auto grid max-w-7xl items-center gap-16 px-4 pt-16 pb-24 sm:px-6 sm:pt-24 lg:grid-cols-[1.05fr_1fr] lg:px-8 lg:pb-32">
-        <div className="animate-slide-up">
+        <div className="min-w-0 animate-slide-up">
           <Link
             href="/courses"
             className="inline-flex max-w-full items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-xs transition-colors hover:text-foreground"
@@ -53,7 +53,7 @@ export function Hero() {
             <span className="truncate">{t("badgeText")}</span>
             <ArrowRight className="size-3 shrink-0" />
           </Link>
-          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+          <h1 className="mt-6 text-[2rem] leading-tight font-semibold tracking-tight text-balance break-words hyphens-auto sm:text-5xl lg:text-6xl">
             {t("heroTitle1")}
             <span className="block bg-gradient-to-r from-brand-strong via-brand to-brand-strong bg-clip-text text-transparent">
               {t("heroTitle2")}

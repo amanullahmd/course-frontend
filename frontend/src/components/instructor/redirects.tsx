@@ -5,15 +5,17 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { FileQuestionMark } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { instructorApi } from "@/lib/api/instructor";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
 
 function Redirecting() {
+  const t = useTranslations("pages");
   return (
     <div className="grid place-items-center py-24">
-      <Spinner className="size-6" label="Redirecting" />
+      <Spinner className="size-6" label={t("redirecting")} />
     </div>
   );
 }
@@ -31,6 +33,7 @@ export function EnrollmentsRedirect() {
 /** /instructor/attempts/[attemptId] → the item's Submissions tab with the grading drawer open. */
 export function AttemptRedirect() {
   const { attemptId } = useParams<{ attemptId: string }>();
+  const t = useTranslations("instructor");
   const router = useRouter();
   const target = useQuery({
     queryKey: ["attempt-redirect", attemptId],
@@ -49,11 +52,11 @@ export function AttemptRedirect() {
       <div className="mx-auto max-w-lg px-4 py-20">
         <EmptyState
           icon={FileQuestionMark}
-          title="Attempt not found"
-          description="It may have been deleted, or it belongs to another instructor's course."
+          title={t("attemptNotFound")}
+          description={t("attemptNotFoundText")}
           action={
             <Button asChild>
-              <Link href="/instructor">Back to overview</Link>
+              <Link href="/instructor">{t("backToOverview")}</Link>
             </Button>
           }
         />

@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
-
-const MESSAGE = "You have unsaved changes. Leave this page and discard them?";
+import { useTranslations } from "next-intl";
 
 /** Warns before closing the tab or following an in-app link while `dirty`. */
 export function useUnsavedChanges(dirty: boolean) {
+  const t = useTranslations("common");
+  const message = t("unsavedConfirm");
   React.useEffect(() => {
     if (!dirty) return;
     const beforeUnload = (event: BeforeUnloadEvent) => {
@@ -18,7 +19,7 @@ export function useUnsavedChanges(dirty: boolean) {
       const url = new URL(anchor.href, window.location.href);
       if (url.origin !== window.location.origin) return;
       if (url.pathname === window.location.pathname && url.search === window.location.search) return;
-      if (!window.confirm(MESSAGE)) {
+      if (!window.confirm(message)) {
         event.preventDefault();
         event.stopPropagation();
       }
@@ -29,9 +30,6 @@ export function useUnsavedChanges(dirty: boolean) {
       window.removeEventListener("beforeunload", beforeUnload);
       document.removeEventListener("click", onClick, true);
     };
-  }, [dirty]);
+  }, [dirty, message]);
 }
 
-export function confirmDiscard(dirty: boolean): boolean {
-  return !dirty || window.confirm(MESSAGE);
-}

@@ -6,10 +6,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { MailWarning, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { isApiError } from "@/lib/api/client";
+import { isApiError, setApiLocale } from "@/lib/api/client";
+import { hasLocaleCookie, isLocale, persistLocaleCookie } from "@/i18n/config";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/lib/constants";
 import { makeEmailSchema } from "@/lib/validation";
 import { safeNextPath } from "@/lib/utils";
@@ -25,6 +26,7 @@ import { Input } from "@/components/ui/input";
 
 export function LoginForm() {
   const t = useTranslations();
+  const locale = useLocale();
   const errorMessage = useErrorMessage();
   const { login, status, user } = useAuth();
   const router = useRouter();
@@ -49,7 +51,14 @@ export function LoginForm() {
     try {
       const u = await login(values.email, values.password);
       toast.success(t("auth.login.welcome", { name: u.fullName.split(" ")[0] }));
+      // Adopt the account's preferred language when the visitor hasn't chosen one yet.
+      const adoptLocale = !hasLocaleCookie() && isLocale(u.locale) && u.locale !== locale;
+      if (adoptLocale && isLocale(u.locale)) {
+        persistLocaleCookie(u.locale);
+        setApiLocale(u.locale);
+      }
       router.replace(safeNextPath(next, homeForRole(u.role)));
+      if (adoptLocale) router.refresh();
     } catch (err) {
       const unverified = isApiError(err) && err.code === "EMAIL_NOT_VERIFIED";
       const invalid = isApiError(err) && err.status === 401 && !err.code;

@@ -16,7 +16,12 @@ declare module "@tanstack/react-query" {
   }
 }
 
-function makeQueryClient(onMutationError: (error: unknown) => void) {
+let mutationErrorHandler: (error: unknown) => void = () => undefined;
+function setMutationErrorHandler(handler: (error: unknown) => void) {
+  mutationErrorHandler = handler;
+}
+
+function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
@@ -33,7 +38,7 @@ function makeQueryClient(onMutationError: (error: unknown) => void) {
     mutationCache: new MutationCache({
       onError: (error, _variables, _context, mutation) => {
         if (mutation.meta?.suppressErrorToast) return;
-        onMutationError(error);
+        mutationErrorHandler(error);
       },
     }),
   });
@@ -54,13 +59,12 @@ function ThemedToaster() {
 
 export function Providers({ children, locale }: { children: React.ReactNode; locale: string }) {
   const errorMessage = useErrorMessage();
-  const errorRef = React.useRef(errorMessage);
   React.useEffect(() => {
-    errorRef.current = errorMessage;
-  });
+    setMutationErrorHandler((error) => toast.error(errorMessage(error)));
+  }, [errorMessage]);
   const [queryClient] = React.useState(() => {
     setApiLocale(locale);
-    return makeQueryClient((error) => toast.error(errorRef.current(error)));
+    return makeQueryClient();
   });
   React.useEffect(() => {
     setApiLocale(locale);

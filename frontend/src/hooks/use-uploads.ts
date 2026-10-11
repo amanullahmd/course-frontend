@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { getErrorMessage } from "@/lib/api/client";
 import { mediaApi } from "@/lib/api/media";
 import type { MediaDto } from "@/lib/api/types";
 
@@ -10,7 +9,7 @@ export interface UploadEntry {
   file: File;
   progress: number;
   status: "uploading" | "done" | "error";
-  error?: string;
+  error?: unknown;
   media?: MediaDto;
 }
 
@@ -58,7 +57,7 @@ export function useUploads(options: { onUploaded?: (media: MediaDto, file: File)
             setUploads((list) => list.filter((u) => u.id !== id));
             return;
           }
-          patch(id, { status: "error", error: getErrorMessage(error, "Upload failed") });
+          patch(id, { status: "error", error });
         })
         .finally(() => controllers.current.delete(id));
     },

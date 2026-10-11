@@ -7,6 +7,7 @@ import type { UploadEntry } from "@/hooks/use-uploads";
 import { Progress } from "./progress";
 import { FileTypeIcon } from "@/components/course/file-type-icon";
 import { useTranslations } from "next-intl";
+import { useErrorMessage } from "@/hooks/use-error-message";
 
 interface FileDropzoneProps {
   onFiles: (files: File[]) => void;
@@ -127,6 +128,7 @@ export function UploadProgressList({
 }) {
   const t = useTranslations("ui");
   const tc = useTranslations("common");
+  const errorMessage = useErrorMessage();
   if (uploads.length === 0) return null;
   return (
     <ul className="grid gap-2" aria-label={t("uploads")}>
@@ -143,7 +145,7 @@ export function UploadProgressList({
             {u.status === "uploading" && <Progress value={u.progress} className="mt-1.5 h-1.5" />}
             {u.status === "error" && (
               <p className="mt-0.5 flex items-center gap-1 text-xs text-destructive">
-                <TriangleAlert className="size-3" /> {u.error}
+                <TriangleAlert className="size-3" /> {errorMessage(u.error)}
               </p>
             )}
             {u.status === "done" && (

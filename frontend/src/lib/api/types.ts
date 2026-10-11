@@ -52,6 +52,8 @@ export interface ProblemDetail {
   detail?: string;
   code?: string;
   errors?: Record<string, string>;
+  /** Correlation id for 5xx errors (backend extension). */
+  traceId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -66,6 +68,7 @@ export interface UserDto {
   bio: string | null;
   avatarUrl: string | null;
   avatarMediaId?: Uuid | null;
+  locale?: "en" | "de";
   createdAt: Instant;
 }
 

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Languages } from "lucide-react";
 import { api, setApiLocale } from "@/lib/api/client";
-import { LOCALE_COOKIE, LOCALES, type AppLocale } from "@/i18n/config";
+import { LOCALES, persistLocaleCookie, type AppLocale } from "@/i18n/config";
 import { useAuth } from "@/providers/auth-provider";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +15,7 @@ export function useSwitchLocale() {
   const [pending, startTransition] = React.useTransition();
   const switchTo = React.useCallback(
     (locale: AppLocale) => {
-      document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=31536000; samesite=lax`;
+      persistLocaleCookie(locale);
       setApiLocale(locale);
       if (status === "authenticated") {
         void api.put("/api/users/me/locale", { locale }).catch(() => undefined);
