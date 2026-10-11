@@ -1,0 +1,94 @@
+# Sprachweg full stack: PostgreSQL 17, Mailpit (local mail catcher), Spring Boot backend, Next.js frontend.
+#
+#   docker compose up --build
+#
+# Frontend http://localhost:3000 · API http://localhost:8080 (Swagger: /swagger-ui.html) · Mailpit http://localhost:8025
+#
+# E-mail: by default the backend delivers to Mailpit (no auth, no TLS). To send real mail through Resend instead:
+#   MAIL_HOST=smtp.resend.com MAIL_PORT=587 MAIL_USERNAME=resend RESEND_API_KEY=re_xxx \
+#   MAIL_SMTP_AUTH=true MAIL_SMTP_STARTTLS=true MAIL_FROM="Sprachweg <no-reply@your-verified-domain>" \
+#   docker compose up --build
+# (or put these variables into a .env file next to this compose file).
+
+name: sprachweg
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sprachweg
+      POSTGRES_USER: ${DB_USERNAME:-sprachweg}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-sprachweg}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025" # web UI
+      - "1025:1025" # SMTP
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/sprachweg
+      DB_USERNAME: ${DB_USERNAME:-sprachweg}
+      DB_PASSWORD: ${DB_PASSWORD:-sprachweg}
+      # Local defaults only: always set your own long random secrets outside of local testing.
+      JWT_SECRET: ${JWT_SECRET:-local-compose-jwt-secret-please-change-0123456789}
+      MEDIA_SECRET: ${MEDIA_SECRET:-local-compose-media-secret-please-change-0123456789}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      # Plain http on localhost: the refresh cookie must not be "Secure" or browsers drop it.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      # Mail: Mailpit by default, override for Resend (see header).
+      MAIL_ENABLED: ${MAIL_ENABLED:-true}
+      MAIL_HOST: ${MAIL_HOST:-mailpit}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-false}
+      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS:-false}
+      MAIL_SMTP_SSL: ${MAIL_SMTP_SSL:-false}
+      MAIL_FROM: ${MAIL_FROM:-Sprachweg <no-reply@sprachweg.local>}
+      # Demo data on first start (empty database only).
+      SEED_ENABLED: ${SEED_ENABLED:-true}
+      STORAGE_LOCATION: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres-data:
+  uploads:

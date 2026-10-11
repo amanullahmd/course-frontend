@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:sprachweg-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+
+app:
+  storage:
+    location: ./target/test-uploads
+  mail:
+    enabled: false
+  seed:
+    enabled: false
+
+logging:
+  level:
+    root: WARN
+    de.sprachweg: INFO
