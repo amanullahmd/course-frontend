@@ -1,0 +1,43 @@
+"use client";
+
+import * as React from "react";
+import { Tabs as TabsPrimitive } from "radix-ui";
+import { cn } from "@/lib/utils";
+
+export const Tabs = TabsPrimitive.Root;
+
+export function TabsList({
+  className,
+  variant = "pill",
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.List> & { variant?: "pill" | "underline" }) {
+  return (
+    <TabsPrimitive.List
+      data-variant={variant}
+      className={cn(
+        "group/tabs inline-flex max-w-full items-center overflow-x-auto [scrollbar-width:none]",
+        variant === "pill" ? "h-9 gap-1 rounded-lg bg-muted p-1" : "h-11 w-full gap-1 border-b",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+  return (
+    <TabsPrimitive.Trigger
+      className={cn(
+        "inline-flex h-full items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4",
+        "group-data-[variant=pill]/tabs:data-[state=active]:bg-card group-data-[variant=pill]/tabs:data-[state=active]:text-foreground group-data-[variant=pill]/tabs:data-[state=active]:shadow-sm",
+        "group-data-[variant=underline]/tabs:relative group-data-[variant=underline]/tabs:rounded-none group-data-[variant=underline]/tabs:px-3 group-data-[variant=underline]/tabs:data-[state=active]:text-foreground group-data-[variant=underline]/tabs:after:absolute group-data-[variant=underline]/tabs:after:inset-x-2 group-data-[variant=underline]/tabs:after:-bottom-px group-data-[variant=underline]/tabs:after:h-0.5 group-data-[variant=underline]/tabs:after:rounded-full group-data-[variant=underline]/tabs:data-[state=active]:after:bg-brand",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {
+  return <TabsPrimitive.Content className={cn("outline-none data-[state=active]:animate-fade-in", className)} {...props} />;
+}
