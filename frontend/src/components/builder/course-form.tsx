@@ -23,7 +23,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { RadioCard, RadioGroup } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TagsInput } from "@/components/ui/tags-input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "./rich-text-editor";
 import { toast } from "sonner";
 
 type FormT = (key: "validation.titleMin" | "validation.tooLong" | "validation.wholeNumber") => string;
@@ -161,7 +161,13 @@ export function CourseForm({
             <Input placeholder="Sicher kommunizieren in Alltagssituationen" {...fieldA11y("subtitle", errors.subtitle?.message)} {...form.register("subtitle")} />
           </Field>
           <Field label={t("courseForm.description")} htmlFor="description" error={errors.description?.message} hint={t("courseForm.descriptionHint")}>
-            <Textarea rows={7} {...fieldA11y("description", errors.description?.message)} {...form.register("description")} />
+            <Controller
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <RichTextEditor id="description" value={field.value} onChange={field.onChange} placeholder={t("courseForm.descriptionPlaceholder")} className="[&_.tiptap]:min-h-40" />
+              )}
+            />
           </Field>
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label={t("courseForm.level")} htmlFor="level" error={errors.level?.message} required>

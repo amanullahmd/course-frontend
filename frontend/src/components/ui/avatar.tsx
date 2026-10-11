@@ -17,10 +17,13 @@ export function UserAvatar({
   name,
   src,
   className,
+  onDark = false,
 }: {
   name: string | null | undefined;
   src?: string | null;
   className?: string;
+  /** Light initials on a translucent white disc, for use on dark/brand surfaces. */
+  onDark?: boolean;
 }) {
   const color = palette[hashString(name ?? "") % palette.length];
   return (
@@ -28,7 +31,7 @@ export function UserAvatar({
       {src && <AvatarPrimitive.Image src={src} alt={name ?? "Avatar"} className="aspect-square size-full object-cover" />}
       <AvatarPrimitive.Fallback
         delayMs={src ? 400 : 0}
-        className={cn("flex size-full items-center justify-center text-[0.8em] font-semibold", color)}
+        className={cn("flex size-full items-center justify-center text-[0.8em] font-semibold", onDark ? "bg-white/15 text-white" : color)}
       >
         {initials(name)}
       </AvatarPrimitive.Fallback>

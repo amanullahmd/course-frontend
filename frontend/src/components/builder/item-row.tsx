@@ -59,7 +59,16 @@ export function ItemRowContent({
         <Link href={href} className="block truncate text-sm font-medium hover:underline">
           {item.title}
         </Link>
-        <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          {actions && (item.visibility === "SCHEDULED" || item.visibility === "EXPIRED") && (
+            <VisibilityBadge
+              visibility={item.visibility}
+              publishAt={item.publishAt}
+              unpublishAt={item.unpublishAt}
+              compact
+              className="md:hidden"
+            />
+          )}
           {item.attachments.length > 0 && (
             <span className="flex items-center gap-1" title={t("builder.attachments")}>
               <Paperclip className="size-3" /> {item.attachments.length}

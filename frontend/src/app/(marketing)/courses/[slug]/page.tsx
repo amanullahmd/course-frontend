@@ -61,11 +61,11 @@ async function CourseDetail({ params }: { params: PageProps<"/courses/[slug]">["
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-primary/40" />
         <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-          <nav aria-label={t("course.breadcrumb")} className="flex items-center gap-1 text-sm text-primary-foreground/70">
-            <Link href="/courses" className="hover:text-primary-foreground">
+          <nav aria-label={t("course.breadcrumb")} className="flex min-w-0 items-center gap-1 text-sm text-primary-foreground/70">
+            <Link href="/courses" className="shrink-0 hover:text-primary-foreground">
               {t("course.courses")}
             </Link>
-            <ChevronRight className="size-3.5" />
+            <ChevronRight className="size-3.5 shrink-0" />
             <span className="truncate">{course.title}</span>
           </nav>
           <div className="mt-6 max-w-3xl">
@@ -81,7 +81,7 @@ async function CourseDetail({ params }: { params: PageProps<"/courses/[slug]">["
             {course.subtitle && <p className="mt-4 text-lg text-primary-foreground/80">{course.subtitle}</p>}
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-primary-foreground/80">
               <span className="flex items-center gap-2">
-                <UserAvatar name={course.instructor.fullName} src={course.instructor.avatarUrl} className="size-7 ring-2 ring-white/20" />
+                <UserAvatar name={course.instructor.fullName} src={course.instructor.avatarUrl} className="size-7 ring-2 ring-white/20" onDark />
                 {course.instructor.fullName}
               </span>
               <span className="flex items-center gap-1.5">

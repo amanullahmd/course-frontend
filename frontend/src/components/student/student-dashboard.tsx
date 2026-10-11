@@ -127,10 +127,10 @@ export function StudentDashboard() {
         }
       />
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:grid-cols-3 sm:gap-4">
         <StatCard label={t("activeCourses")} value={active.length} icon={BookOpen} loading={enrollments.isPending} accent="brand" />
         <StatCard label={t("pendingApplications")} value={pending} icon={Hourglass} loading={enrollments.isPending} accent="info" />
-        <StatCard label={t("avgProgress")} value={`${avg}%`} icon={TrendingUp} loading={enrollments.isPending} accent="success" />
+        <StatCard label={t("avgProgress")} value={`${avg}%`} icon={TrendingUp} loading={enrollments.isPending} accent="success" className="col-span-2 sm:col-span-1" />
       </div>
 
       {enrollments.isError ? (

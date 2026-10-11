@@ -45,7 +45,7 @@ class MediaTest extends IntegrationTestSupport {
         // full download, no auth header needed
         MvcResult full = mvc.perform(get(pathAndQuery(url)))
                 .andExpect(status().isOk())
-                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, org.hamcrest.Matchers.startsWith("text/plain")))
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, org.hamcrest.Matchers.equalToIgnoringCase("text/plain;charset=UTF-8")))
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
                         org.hamcrest.Matchers.containsString("inline; filename=\"Ubung 1.txt\"; filename*=UTF-8''%C3%9Cbung%201.txt")))
                 .andReturn();

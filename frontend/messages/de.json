@@ -471,7 +471,10 @@
   "access": {
     "forbiddenTitle": "Du hast keinen Zugriff auf diesen Bereich",
     "forbiddenText": "Diese Seite ist einer anderen Rolle vorbehalten. Wenn du glaubst, dass das ein Fehler ist, wende dich an die Verwaltung.",
-    "goDashboard": "Zu meinem Dashboard"
+    "goDashboard": "Zu meinem Dashboard",
+    "offlineTitle": "Sprachweg ist gerade nicht erreichbar",
+    "offlineText": "Du bist weiterhin angemeldet. Sobald der Dienst wieder da ist, verbinden wir dich automatisch.",
+    "retry": "Erneut versuchen"
   },
   "footer": {
     "tagline": "Der Sprachweg für Deutschlehrkräfte und Lernende. Kurse aus beliebigem Material erstellen, nach Plan veröffentlichen und im eigenen Tempo lernen.",
@@ -579,20 +582,6 @@
     "featuredErrorTitle": "Die Kurse laden gerade langsam",
     "featuredErrorText": "Der Kurskatalog ist gerade nicht erreichbar. Bitte versuch es gleich noch einmal.",
     "openCatalog": "Katalog öffnen",
-    "testimonialsEyebrow": "Stimmen",
-    "testimonialsTitle": "Beliebt bei Lehrkräften und Lernenden",
-    "t1": {
-      "quote": "Endlich habe ich alle PDFs, Audiodateien und Quizze an einem Ort – und jede Einheit wird montagmorgens freigeschaltet, ohne dass ich etwas tun muss.",
-      "role": "Freiberufliche DaF-Lehrerin, Leipzig"
-    },
-    "t2": {
-      "quote": "Die Hörübungen mit langsamerer Wiedergabe haben alles verändert. Drei Wochen nach meinem Umzug nach Berlin habe ich die B1-Prüfung bestanden.",
-      "role": "Lernender, B1"
-    },
-    "t3": {
-      "quote": "Die Warteliste hält meine Gruppen klein und persönlich. Zehn Lernende auf einmal zuzulassen dauert nur Sekunden.",
-      "role": "Leiter einer Sprachschule"
-    },
     "ctaTitle": "Bereit? Dein Weg beginnt hier.",
     "ctaText": "Erstelle in weniger als einer Minute ein kostenloses Konto. Lehrkräfte können ihren ersten Kurs noch heute veröffentlichen.",
     "ctaPrimary": "Kostenlos registrieren",
@@ -606,6 +595,29 @@
       "progress": "Kursfortschritt",
       "approved": "Luca wurde zugelassen",
       "waitlist": "Wartelistenplatz 1 → angemeldet"
+    },
+    "useCases": {
+      "eyebrow": "Einsatzbereiche",
+      "title": "Gemacht für echten Deutschunterricht",
+      "text": "Drei typische Arten, wie Lehrkräfte und Lernende Sprachweg nutzen.",
+      "weekly": {
+        "audience": "Freiberufliche Lehrkräfte",
+        "title": "Jede Woche eine neue Einheit",
+        "text": "Lade die PDFs, Folien, Audios und Quizze eines ganzen Kurses einmal hoch. Plane jede Einheit – sie wird genau dann freigeschaltet, wenn du es willst.",
+        "chip": "Mo. 08:00 · Einheit 3 geht live"
+      },
+      "groups": {
+        "audience": "Sprachschulen",
+        "title": "Kleine, ausgewählte Gruppen",
+        "text": "Begrenze die Plätze, lies jede Bewerbung samt Nachricht und lass Lernende einzeln oder gesammelt zu. Niemand sieht Inhalte, bevor du zustimmst.",
+        "chip": "Warteliste · 12 Plätze"
+      },
+      "exam": {
+        "audience": "Prüfungsvorbereitung",
+        "title": "Probeprüfungen mit echtem Feedback",
+        "text": "Zeitgesteuerte Prüfungen mit Hörverstehen, automatisch bewerteten Fragen und Aufsätzen, die deine Lehrkraft mit persönlichem Feedback bewertet.",
+        "chip": "Prüfung · 30 Min. · Aufsatz"
+      }
     }
   },
   "auth": {
@@ -640,7 +652,8 @@
       "newHere": "Neu bei Sprachweg?",
       "createAccount": "Konto erstellen",
       "demo": "Demo-Konten (nur Entwicklung)",
-      "demoHint": "Füllt das Formular mit den Testzugangsdaten."
+      "demoHint": "Füllt das Formular mit den Testzugangsdaten.",
+      "sessionEnded": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an, um weiterzumachen."
     },
     "register": {
       "title": "Erstelle dein Konto",
@@ -677,7 +690,9 @@
       "failTitle": "Dieser Link hat nicht funktioniert",
       "failHint": "Bestätigungslinks sind 24 Stunden gültig und können nur einmal verwendet werden.",
       "yourEmail": "Deine E-Mail-Adresse",
-      "sendNew": "Neuen Link senden"
+      "sendNew": "Neuen Link senden",
+      "usedTitle": "Dieser Link wurde bereits verwendet",
+      "usedText": "Deine E-Mail-Adresse ist wahrscheinlich schon bestätigt – melde dich einfach an. Falls das nicht klappt, fordere auf der Anmeldeseite einen neuen Link an."
     },
     "forgot": {
       "title": "Passwort vergessen?",
@@ -755,11 +770,11 @@
     "doneTitle": "Gut gemacht! Lektion erledigt.",
     "finished": "Lektion fertig?",
     "doneText": "Dein Fortschritt wurde gespeichert.",
-    "markHint": "Markiere sie als erledigt, um deinen Fortschritt zu verfolgen. Tastenkürzel",
+    "markHint": "Markiere sie als erledigt, um deinen Fortschritt zu verfolgen.",
     "markIncomplete": "Als nicht erledigt markieren",
     "markComplete": "Als erledigt markieren",
     "lessonNav": "Lektionsnavigation",
-    "previous": "Zurück",
+    "previous": "Vorherige Lektion",
     "completeContinue": "Erledigt & weiter",
     "nextLesson": "Nächste Lektion",
     "end": "Du hast das Ende der veröffentlichten Inhalte erreicht.",
@@ -772,7 +787,8 @@
     "openImage": "Bild {name} öffnen",
     "imageViewer": "Bildbetrachter. Mit den Pfeiltasten navigieren.",
     "prevImage": "Vorheriges Bild",
-    "nextImage": "Nächstes Bild"
+    "nextImage": "Nächstes Bild",
+    "shortcut": "Tastenkürzel"
   },
   "audio": {
     "play": "Abspielen",
@@ -907,7 +923,12 @@
       "lesson": "Lektion",
       "item": "Inhalt"
     },
-    "nowStatus": "Jetzt: {status}"
+    "nowStatus": "Jetzt: {status}",
+    "errUnpublishPast": "Das Datum zum Zurückziehen muss in der Zukunft liegen.",
+    "upToDate": "Keine Änderungen",
+    "update": "Änderungen speichern",
+    "unpublish": "Zurück in den Entwurf",
+    "publishEntity": "{entity} veröffentlichen"
   },
   "builder": {
     "breadcrumb": "Brotkrümelnavigation",
@@ -968,7 +989,9 @@
     "chooseType": "Inhaltstyp wählen",
     "newItem": "Neu: {type}",
     "openEditor": "Nach dem Erstellen den Editor öffnen",
-    "itemAdded": "{type} hinzugefügt"
+    "itemAdded": "{type} hinzugefügt",
+    "urlRequired": "Füge den Link zur Seite oder zum Tool ein, das du einbetten möchtest.",
+    "videoUrlHint": "YouTube- oder Vimeo-Link. Du kannst im Editor auch eine Videodatei hochladen."
   },
   "courseForm": {
     "basics": "Grundlagen",
@@ -998,7 +1021,8 @@
     "createTitle": "Kurs erstellen",
     "createText": "Beginne mit dem Wichtigsten. Dein Kurs bleibt ein privater Entwurf, bis du ihn veröffentlichst.",
     "created": "Kurs erstellt. Füge jetzt dein erstes Modul hinzu.",
-    "newCourse": "Neuer Kurs"
+    "newCourse": "Neuer Kurs",
+    "descriptionPlaceholder": "Was erreichen die Lernenden? Für wen ist der Kurs? Wie ist er aufgebaut?"
   },
   "publishing": {
     "visibility": "Sichtbarkeit des Kurses",
@@ -1111,7 +1135,8 @@
     "deleteItem": "Inhalt löschen",
     "deleteText": "Dadurch werden der Inhalt sowie alle Fortschritte und Versuche dazu entfernt. Das kann nicht rückgängig gemacht werden.",
     "quizWord": "Quiz",
-    "examWord": "Prüfung"
+    "examWord": "Prüfung",
+    "introPlaceholder": "Erkläre, worum es in diesem Test geht und wie sich die Lernenden vorbereiten können …"
   },
   "editor": {
     "placeholder": "Schreib hier deine Lektion … Nutze Überschriften, Listen und Hervorhebungen zur Gliederung.",

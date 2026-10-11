@@ -245,7 +245,17 @@ export function ScheduleView() {
         ) : !month || schedule.isPending ? (
           <Skeleton className="h-[36rem] rounded-xl" />
         ) : view === "calendar" ? (
-          <MonthGrid month={month} events={events} today={today} />
+          <>
+            <MonthGrid month={month} events={events} today={today} />
+            {events.length === 0 && (
+              <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                <CalendarDays className="size-4 shrink-0" aria-hidden />
+                <span>
+                  <span className="font-medium text-foreground">{t("nothingInPeriod")}.</span> {t("nothingInPeriodText")}
+                </span>
+              </p>
+            )}
+          </>
         ) : (
           <Agenda events={events} />
         )}

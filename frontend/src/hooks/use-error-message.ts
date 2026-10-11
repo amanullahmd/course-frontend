@@ -27,7 +27,8 @@ export function useErrorMessage() {
       if (code && code.endsWith("_NOT_FOUND")) return t("codes.NOT_FOUND");
       if (error.status >= 500) return withRef(t("server"));
       const status = String(error.status);
-      if (error.status === 400 && error.detail) return error.detail;
+      // Unknown 4xx codes: the backend's detail is already localised (Accept-Language) and more specific.
+      if (error.status < 500 && error.detail) return error.detail;
       if (isStatus(status)) return t(`status.${status}`);
       return error.detail || t("unknown");
     },

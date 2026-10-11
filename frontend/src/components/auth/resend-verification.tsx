@@ -5,12 +5,14 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { authApi } from "@/lib/api/auth";
+import { useErrorMessage } from "@/hooks/use-error-message";
 import { Button, type ButtonProps } from "@/components/ui/button";
 
 const COOLDOWN = 30;
 
 export function ResendVerificationButton({ email, ...props }: { email: string } & Omit<ButtonProps, "onClick">) {
   const t = useTranslations("auth");
+  const errorMessage = useErrorMessage();
   const [cooldown, setCooldown] = React.useState(0);
   const resend = useMutation({
     mutationFn: () => authApi.resendVerification(email),
@@ -18,6 +20,7 @@ export function ResendVerificationButton({ email, ...props }: { email: string } 
       toast.success(res?.message || t("resent"));
       setCooldown(COOLDOWN);
     },
+    onError: (err) => toast.error(errorMessage(err)),
   });
 
   React.useEffect(() => {

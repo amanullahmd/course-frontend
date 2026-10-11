@@ -7,7 +7,6 @@ import {
   FileStack,
   GraduationCap,
   Layers,
-  Quote,
   Search,
   Send,
   UserCheck,
@@ -233,28 +232,35 @@ export function HowItWorks() {
   );
 }
 
-const testimonials = [
-  { key: "t1", name: "Anna Weber" },
-  { key: "t2", name: "Luca Bianchi" },
-  { key: "t3", name: "Dr. Jonas Krüger" },
+const useCases = [
+  { key: "weekly", icon: CalendarClock, accent: "bg-info-soft text-info" },
+  { key: "groups", icon: UserCheck, accent: "bg-success-soft text-success" },
+  { key: "exam", icon: ClipboardCheck, accent: "bg-brand-soft text-brand-strong" },
 ] as const;
 
-export function Testimonials() {
-  const t = useTranslations("marketing");
+/** Typical teaching scenarios Sprachweg is built for (product capabilities, not customer quotes). */
+export function UseCases() {
+  const t = useTranslations("marketing.useCases");
   return (
-    <section className="py-24 sm:py-32">
+    <section className="border-y bg-muted/30 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeading eyebrow={t("testimonialsEyebrow")} title={t("testimonialsTitle")} />
+        <SectionHeading eyebrow={t("eyebrow")} title={t("title")} description={t("text")} />
         <div className="mt-16 grid gap-6 md:grid-cols-3">
-          {testimonials.map((item) => (
-            <figure key={item.key} className="flex flex-col rounded-2xl border bg-card p-7 shadow-xs">
-              <Quote className="size-6 text-brand" aria-hidden />
-              <blockquote className="mt-4 flex-1 text-[15px] leading-relaxed">“{t(`${item.key}.quote`)}”</blockquote>
-              <figcaption className="mt-6 border-t pt-4">
-                <p className="text-sm font-semibold">{item.name}</p>
-                <p className="text-xs text-muted-foreground">{t(`${item.key}.role`)}</p>
-              </figcaption>
-            </figure>
+          {useCases.map(({ key, icon: Icon, accent }) => (
+            <article key={key} className="group flex flex-col rounded-2xl border bg-card p-7 shadow-xs transition-shadow hover:shadow-md">
+              <div className="flex items-center gap-3">
+                <span className={cn("grid size-10 place-items-center rounded-xl", accent)}>
+                  <Icon className="size-5" aria-hidden />
+                </span>
+                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{t(`${key}.audience`)}</p>
+              </div>
+              <h3 className="mt-5 text-lg font-semibold tracking-tight">{t(`${key}.title`)}</h3>
+              <p className="mt-2 flex-1 text-[15px] leading-relaxed text-muted-foreground">{t(`${key}.text`)}</p>
+              <p className="mt-6 inline-flex w-fit items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
+                <span className="size-1.5 rounded-full bg-brand" aria-hidden />
+                {t(`${key}.chip`)}
+              </p>
+            </article>
           ))}
         </div>
       </div>

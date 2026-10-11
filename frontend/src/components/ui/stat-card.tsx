@@ -28,21 +28,21 @@ export function StatCard({
     warning: "bg-warning-soft text-warning",
   }[accent];
   return (
-    <div className={cn("rounded-xl border bg-card p-5 shadow-xs", className)}>
+    <div className={cn("min-w-0 rounded-xl border bg-card p-4 shadow-xs sm:p-5", className)}>
       <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-medium text-muted-foreground">{label}</p>
+        <p className="min-w-0 text-xs leading-snug font-medium break-words hyphens-auto text-muted-foreground sm:text-sm">{label}</p>
         {Icon && (
-          <span className={cn("grid size-8 place-items-center rounded-lg", accentClass)}>
+          <span className={cn("grid size-7 shrink-0 place-items-center rounded-lg sm:size-8", accentClass)}>
             <Icon className="size-4" />
           </span>
         )}
       </div>
       {loading ? (
-        <Skeleton className="mt-3 h-8 w-16" />
+        <Skeleton className="mt-2 h-7 w-14 sm:mt-3 sm:h-8 sm:w-16" />
       ) : (
-        <p className="mt-2 text-3xl font-semibold tracking-tight tabular-nums">{value}</p>
+        <p className="mt-1.5 text-2xl font-semibold tracking-tight tabular-nums sm:mt-2 sm:text-3xl">{value}</p>
       )}
-      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+      {hint && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }

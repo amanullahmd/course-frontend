@@ -24,6 +24,7 @@ function ApplyDialog({ course, open, onOpenChange }: { course: CourseLike; open:
   const t = useTranslations();
   const [message, setMessage] = React.useState("");
   const apply = useApply(course.id);
+  const submitting = React.useRef(false);
   const isOpen = course.enrollmentMode === "OPEN";
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -36,7 +37,13 @@ function ApplyDialog({ course, open, onOpenChange }: { course: CourseLike; open:
           className="grid gap-4"
           onSubmit={(e) => {
             e.preventDefault();
+            // Ignore double submits (a second request would race the first one).
+            if (submitting.current) return;
+            submitting.current = true;
             apply.mutate(message.trim() || null, {
+              onSettled: () => {
+                submitting.current = false;
+              },
               onSuccess: (enrollment) => {
                 onOpenChange(false);
                 setMessage("");

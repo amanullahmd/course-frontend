@@ -150,7 +150,7 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
               <TableHeader>
                 <TableRow>
                   <TableHead>#</TableHead>
-                  <TableHead>{t("submitted")}</TableHead>
+                  <TableHead className="hidden sm:table-cell">{t("submitted")}</TableHead>
                   <TableHead>{t("status")}</TableHead>
                   <TableHead className="text-right">{t("score")}</TableHead>
                   <TableHead />
@@ -160,7 +160,7 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
                 {attempts.data.map((a, i) => (
                   <TableRow key={a.id}>
                     <TableCell className="tabular-nums">{attempts.data.length - i}</TableCell>
-                    <TableCell className="whitespace-nowrap text-muted-foreground">
+                    <TableCell className="hidden whitespace-nowrap text-muted-foreground sm:table-cell">
                       {a.submittedAt ? fmt.dateTime(a.submittedAt) : t("inProgress")}
                     </TableCell>
                     <TableCell>
@@ -173,6 +173,7 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
                       ) : (
                         <Badge variant="destructive">{t("notPassed")}</Badge>
                       )}
+                      {a.submittedAt && <p className="mt-1 text-xs whitespace-nowrap text-muted-foreground sm:hidden">{fmt.date(a.submittedAt)}</p>}
                     </TableCell>
                     <TableCell className="text-right font-medium tabular-nums">
                       {a.percent != null ? `${Math.round(a.percent)}%` : "–"}

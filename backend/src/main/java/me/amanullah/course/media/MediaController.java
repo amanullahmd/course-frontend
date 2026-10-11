@@ -78,6 +78,9 @@ public class MediaController {
         boolean attachment = download || active;
         if (active) {
             type = MediaType.APPLICATION_OCTET_STREAM;
+        } else if ("text".equalsIgnoreCase(type.getType()) && type.getCharset() == null) {
+            // Without a charset browsers fall back to windows-1252 and garble umlauts (e.g. "TschÃ¼ss").
+            type = new MediaType(type, java.nio.charset.StandardCharsets.UTF_8);
         }
         return ResponseEntity.ok()
                 .contentType(type)

@@ -11,8 +11,27 @@ export function TabsList({
   variant = "pill",
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.List> & { variant?: "pill" | "underline" }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  // Keep the active tab visible when the list scrolls horizontally (narrow screens, long German labels).
+  React.useEffect(() => {
+    const list = ref.current;
+    if (!list) return;
+    const reveal = () => {
+      const active = list.querySelector<HTMLElement>('[data-state="active"]');
+      if (!active || list.scrollWidth <= list.clientWidth) return;
+      const left = active.offsetLeft - list.offsetLeft;
+      if (left < list.scrollLeft || left + active.offsetWidth > list.scrollLeft + list.clientWidth) {
+        list.scrollTo({ left: Math.max(0, left - 16), behavior: "smooth" });
+      }
+    };
+    reveal();
+    const observer = new MutationObserver(reveal);
+    observer.observe(list, { attributes: true, subtree: true, attributeFilter: ["data-state"] });
+    return () => observer.disconnect();
+  }, []);
   return (
     <TabsPrimitive.List
+      ref={ref}
       data-variant={variant}
       className={cn(
         "group/tabs inline-flex max-w-full items-center overflow-x-auto [scrollbar-width:none]",

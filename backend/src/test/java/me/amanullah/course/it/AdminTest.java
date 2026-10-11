@@ -45,4 +45,39 @@ class AdminTest extends IntegrationTestSupport {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("CANNOT_MODIFY_SELF"));
     }
+
+    @Test
+    void disablingOrChangingRoleInvalidatesExistingAccessTokens() throws Exception {
+        String adminEmail = uniqueEmail("admin2");
+        signUp(adminEmail, "STUDENT");
+        tx.executeWithoutResult(s -> users.findByEmailIgnoreCase(adminEmail).orElseThrow().setRole(Role.ADMIN));
+        String adminToken = login(adminEmail);
+
+        String userEmail = uniqueEmail("victim");
+        String userToken = signUp(userEmail, "INSTRUCTOR");
+        String userId = read(mvc.perform(auth(get("/api/users/me"), userToken)).andReturn(), "$.id");
+        mvc.perform(auth(get("/api/instructor/courses"), userToken)).andExpect(status().isOk());
+
+        // role change: the old token (role INSTRUCTOR) is rejected, so the client refreshes and gets the new role
+        mvc.perform(auth(jsonBody(put("/api/admin/users/" + userId), Map.of("role", "STUDENT")), adminToken))
+                .andExpect(status().isOk());
+        mvc.perform(auth(get("/api/instructor/courses"), userToken))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+        String studentToken = login(userEmail);
+        mvc.perform(auth(get("/api/users/me"), studentToken)).andExpect(status().isOk());
+        mvc.perform(auth(get("/api/instructor/courses"), studentToken)).andExpect(status().isForbidden());
+
+        // disabling: a token issued before is rejected immediately
+        mvc.perform(auth(jsonBody(put("/api/admin/users/" + userId), Map.of("enabled", false)), adminToken))
+                .andExpect(status().isOk());
+        mvc.perform(auth(get("/api/users/me"), studentToken))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+
+        // re-enabling restores access with the same (still unexpired) token
+        mvc.perform(auth(jsonBody(put("/api/admin/users/" + userId), Map.of("enabled", true)), adminToken))
+                .andExpect(status().isOk());
+        mvc.perform(auth(get("/api/users/me"), studentToken)).andExpect(status().isOk());
+    }
 }

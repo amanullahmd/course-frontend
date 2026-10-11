@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/
 import { LocaleSwitcher } from "./locale-switcher";
 import { Logo } from "./logo";
 import { NotificationsBell } from "./notifications-bell";
+import { ThemeToggleButton } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 import { homeForRole, isActive, navForRole } from "./nav-config";
 
@@ -104,6 +105,10 @@ export function AppHeader() {
           <DesktopNav />
         </React.Suspense>
         <div className="ml-auto flex items-center gap-1.5">
+          <LocaleSwitcher className="hidden sm:inline-flex" />
+          <span className="hidden sm:inline-flex">
+            <ThemeToggleButton />
+          </span>
           {user && <NotificationsBell />}
           <UserMenu />
         </div>

@@ -109,6 +109,7 @@ export function useSubmitAttempt(itemId: string, courseId: string) {
       void qc.invalidateQueries({ queryKey: qk.student.attempts(itemId) });
       void qc.invalidateQueries({ queryKey: qk.student.item(itemId) });
       void qc.invalidateQueries({ queryKey: qk.student.learn(courseId) });
+      void qc.invalidateQueries({ queryKey: qk.student.enrollments });
     },
   });
 }

@@ -284,7 +284,13 @@ function ItemEditorLoaded({
 
               <section className="grid gap-2" aria-label={t("itemEditor.bodyAria")}>
                 <h2 className="text-sm font-semibold">{isAssessmentType(type) ? t("itemEditor.introduction") : t("itemEditor.lessonContent")}</h2>
-                <Controller control={form.control} name="body" render={({ field }) => <RichTextEditor value={field.value} onChange={field.onChange} />} />
+                <Controller control={form.control} name="body" render={({ field }) => (
+                    <RichTextEditor
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder={isAssessmentType(type) ? t("itemEditor.introPlaceholder") : undefined}
+                    />
+                  )} />
               </section>
 
               <Card>

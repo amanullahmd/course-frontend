@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { ItemType } from "@/lib/api/types";
 import { ITEM_TYPES } from "@/lib/constants";
+import { isApiError } from "@/lib/api/client";
+import { useErrorMessage } from "@/hooks/use-error-message";
 import { useCreateItem } from "@/hooks/queries/instructor";
 import { ItemTypeIcon } from "@/components/course/item-type-icon";
 import { Button } from "@/components/ui/button";
@@ -41,14 +43,25 @@ export function AddContentMenu({ courseId, moduleId }: { courseId: string; modul
   const [type, setType] = React.useState<ItemType | null>(null);
   const [title, setTitle] = React.useState("");
   const [openEditor, setOpenEditor] = React.useState(true);
+  const [url, setUrl] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+  const errorMessage = useErrorMessage();
+  const needsUrl = type === "EMBED";
+  const showUrl = type === "EMBED" || type === "VIDEO";
 
   const choose = (next: ItemType) => {
     setType(next);
     setTitle(DEFAULT_TITLES[next]);
+    setUrl("");
+    setError(null);
   };
 
   const submit = () => {
     if (!type || !title.trim()) return;
+    const trimmedUrl = url.trim();
+    if (needsUrl && !trimmedUrl) return setError(t("builder.urlRequired"));
+    if (trimmedUrl && !/^https?:\/\/\S+\.\S+/i.test(trimmedUrl)) return setError(t("validation.url"));
+    setError(null);
     create.mutate(
       {
         moduleId,
@@ -57,12 +70,16 @@ export function AddContentMenu({ courseId, moduleId }: { courseId: string; modul
           title: title.trim(),
           summary: null,
           body: null,
-          externalUrl: null,
+          externalUrl: showUrl && trimmedUrl ? trimmedUrl : null,
           durationMinutes: null,
           attachmentIds: [],
         },
       },
       {
+        onError: (err) => {
+          const field = isApiError(err) ? (err.fieldErrors?.externalUrl ?? err.fieldErrors?.title) : undefined;
+          setError(field ?? errorMessage(err));
+        },
         onSuccess: (item) => {
           setType(null);
           toast.success(t("builder.itemAdded", { type: t(`itemTypes.${item.type}.label`) }));
@@ -117,6 +134,30 @@ export function AddContentMenu({ courseId, moduleId }: { courseId: string; modul
                 <Label htmlFor="new-item-title">{t("builder.title")}</Label>
                 <Input id="new-item-title" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus maxLength={200} onFocus={(e) => e.currentTarget.select()} />
               </div>
+              {showUrl && (
+                <div className="grid gap-2">
+                  <Label htmlFor="new-item-url">
+                    {type === "VIDEO" ? t("itemEditor.videoUrl") : t("itemEditor.externalUrl")}
+                    {!needsUrl && <span className="font-normal text-muted-foreground"> · {t("common.optional")}</span>}
+                  </Label>
+                  <Input
+                    id="new-item-url"
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    aria-invalid={!!error || undefined}
+                    aria-describedby={error ? "new-item-error" : undefined}
+                  />
+                  {type === "VIDEO" && <p className="text-xs text-muted-foreground">{t("builder.videoUrlHint")}</p>}
+                </div>
+              )}
+              {error && (
+                <p id="new-item-error" role="alert" className="text-sm text-destructive">
+                  {error}
+                </p>
+              )}
               <label className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Checkbox checked={openEditor} onCheckedChange={(c) => setOpenEditor(c === true)} />
                 {t("builder.openEditor")}

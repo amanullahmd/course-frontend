@@ -249,8 +249,8 @@ export function SubmissionsPanel({ itemId, initialAttemptId = null }: { itemId: 
               <TableRow>
                 <TableHead>{t("learner")}</TableHead>
                 <TableHead className="hidden sm:table-cell">{t("submitted")}</TableHead>
-                <TableHead>{t("status")}</TableHead>
-                <TableHead className="text-right">{t("score")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("status")}</TableHead>
+                <TableHead className="hidden text-right sm:table-cell">{t("score")}</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
@@ -265,11 +265,23 @@ export function SubmissionsPanel({ itemId, initialAttemptId = null }: { itemId: 
                         <p className="truncate text-xs text-muted-foreground">{a.student.email}</p>
                       </div>
                     </div>
+                    <div className="mt-2 flex items-center gap-2 sm:hidden">
+                      {a.percent != null && <span className="text-sm font-medium tabular-nums">{Math.round(a.percent)}%</span>}
+                      {a.pendingManualGrading ? (
+                        <Badge variant="info">
+                          <Hourglass /> {t("needsGrading")}
+                        </Badge>
+                      ) : a.passed ? (
+                        <Badge variant="success">{tq("passed")}</Badge>
+                      ) : (
+                        <Badge variant="destructive">{tq("notPassed")}</Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="hidden whitespace-nowrap text-muted-foreground sm:table-cell">{fmt.dateTime(a.submittedAt)}
                     {a.late && ` · ${t("late")}`}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     {a.pendingManualGrading ? (
                       <Badge variant="info">
                         <Hourglass /> {t("needsGrading")}
@@ -280,7 +292,7 @@ export function SubmissionsPanel({ itemId, initialAttemptId = null }: { itemId: 
                       <Badge variant="destructive">{tq("notPassed")}</Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-right font-medium tabular-nums">{a.percent != null ? `${Math.round(a.percent)}%` : "–"}</TableCell>
+                  <TableCell className="hidden text-right font-medium tabular-nums sm:table-cell">{a.percent != null ? `${Math.round(a.percent)}%` : "–"}</TableCell>
                   <TableCell className="text-right">
                     <Button size="xs" variant={a.pendingManualGrading ? "default" : "ghost"} onClick={() => setOpen(a.id)}>
                       {a.pendingManualGrading ? t("grade") : t("view")}

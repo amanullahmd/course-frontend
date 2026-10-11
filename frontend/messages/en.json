@@ -471,7 +471,10 @@
   "access": {
     "forbiddenTitle": "You don't have access to this area",
     "forbiddenText": "This page is reserved for a different role. If you believe this is a mistake, contact the platform administrator.",
-    "goDashboard": "Go to my dashboard"
+    "goDashboard": "Go to my dashboard",
+    "offlineTitle": "Can’t reach Sprachweg right now",
+    "offlineText": "You’re still signed in. We’ll reconnect automatically as soon as the service is back.",
+    "retry": "Try again"
   },
   "footer": {
     "tagline": "The language path for German teachers and learners. Build courses from any material, release them on your schedule, and learn at your own pace.",
@@ -579,20 +582,6 @@
     "featuredErrorTitle": "Courses are loading slowly",
     "featuredErrorText": "We couldn't reach the course catalog right now. Please try again in a moment.",
     "openCatalog": "Open catalog",
-    "testimonialsEyebrow": "Testimonials",
-    "testimonialsTitle": "Loved by teachers and learners",
-    "t1": {
-      "quote": "I finally have all my PDFs, audio tracks and quizzes in one place, and each unit unlocks on Monday morning without me lifting a finger.",
-      "role": "Freelance DaF teacher, Leipzig"
-    },
-    "t2": {
-      "quote": "The listening exercises with slower playback were a game changer. I passed my B1 exam three weeks after moving to Berlin.",
-      "role": "Learner, B1"
-    },
-    "t3": {
-      "quote": "The waitlist keeps my groups small and personal. Approving ten learners at once takes seconds.",
-      "role": "Language school director"
-    },
     "ctaTitle": "Ready? Your path starts here.",
     "ctaText": "Create a free account in under a minute. Teachers can publish their first course today.",
     "ctaPrimary": "Create free account",
@@ -606,6 +595,29 @@
       "progress": "Course progress",
       "approved": "Luca was approved",
       "waitlist": "Waitlist position #1 → enrolled"
+    },
+    "useCases": {
+      "eyebrow": "Use cases",
+      "title": "Made for the way German is taught",
+      "text": "Three typical ways teachers and learners use Sprachweg.",
+      "weekly": {
+        "audience": "Freelance teachers",
+        "title": "One new unit every week",
+        "text": "Upload a whole term of PDFs, slides, audio and quizzes once. Schedule each unit and it unlocks on its own, exactly when you planned.",
+        "chip": "Mon 08:00 · Unit 3 goes live"
+      },
+      "groups": {
+        "audience": "Language schools",
+        "title": "Small, hand-picked groups",
+        "text": "Limit seats, read every application with its message and admit learners individually or in bulk. Nobody sees content before you say yes.",
+        "chip": "Waitlist · 12 seats"
+      },
+      "exam": {
+        "audience": "Exam preparation",
+        "title": "Mock exams with real feedback",
+        "text": "Timed exams with listening tasks, auto-graded questions and essays your instructor grades with personal feedback.",
+        "chip": "Exam · 30 min · essay"
+      }
     }
   },
   "auth": {
@@ -640,7 +652,8 @@
       "newHere": "New to Sprachweg?",
       "createAccount": "Create an account",
       "demo": "Demo accounts (development only)",
-      "demoHint": "Fills the form with the seeded credentials."
+      "demoHint": "Fills the form with the seeded credentials.",
+      "sessionEnded": "Your session has ended. Please log in again to continue."
     },
     "register": {
       "title": "Create your account",
@@ -677,7 +690,9 @@
       "failTitle": "This link didn't work",
       "failHint": "Verification links expire after 24 hours and can only be used once.",
       "yourEmail": "Your e-mail address",
-      "sendNew": "Send a new link"
+      "sendNew": "Send a new link",
+      "usedTitle": "This link was already used",
+      "usedText": "Your e-mail address is probably verified already, so you can simply log in. If logging in doesn’t work, request a new link from the login page."
     },
     "forgot": {
       "title": "Forgot your password?",
@@ -755,11 +770,11 @@
     "doneTitle": "Nice work! Lesson completed.",
     "finished": "Finished this lesson?",
     "doneText": "Your progress has been saved.",
-    "markHint": "Mark it as complete to track your progress. Shortcut",
+    "markHint": "Mark it as complete to track your progress.",
     "markIncomplete": "Mark as incomplete",
     "markComplete": "Mark as complete",
     "lessonNav": "Lesson navigation",
-    "previous": "Previous",
+    "previous": "Previous lesson",
     "completeContinue": "Complete & continue",
     "nextLesson": "Next lesson",
     "end": "You've reached the end of the published content.",
@@ -772,7 +787,8 @@
     "openImage": "Open image {name}",
     "imageViewer": "Image viewer. Use the arrow keys to navigate.",
     "prevImage": "Previous image",
-    "nextImage": "Next image"
+    "nextImage": "Next image",
+    "shortcut": "Shortcut"
   },
   "audio": {
     "play": "Play",
@@ -907,7 +923,12 @@
       "lesson": "lesson",
       "item": "item"
     },
-    "nowStatus": "Now {status}"
+    "nowStatus": "Now {status}",
+    "errUnpublishPast": "The unpublish date must be in the future.",
+    "upToDate": "No changes",
+    "update": "Save changes",
+    "unpublish": "Move back to draft",
+    "publishEntity": "Publish {entity}"
   },
   "builder": {
     "breadcrumb": "Breadcrumb",
@@ -968,7 +989,9 @@
     "chooseType": "Choose a content type",
     "newItem": "New: {type}",
     "openEditor": "Open the editor after creating",
-    "itemAdded": "{type} added"
+    "itemAdded": "{type} added",
+    "urlRequired": "Add the link to the page or tool you want to embed.",
+    "videoUrlHint": "YouTube or Vimeo link. You can also upload a video file in the editor."
   },
   "courseForm": {
     "basics": "Basics",
@@ -998,7 +1021,8 @@
     "createTitle": "Create a course",
     "createText": "Start with the essentials. Your course stays a private draft until you publish it.",
     "created": "Course created. Now add your first module.",
-    "newCourse": "New course"
+    "newCourse": "New course",
+    "descriptionPlaceholder": "What will learners achieve? Who is the course for? How is it organised?"
   },
   "publishing": {
     "visibility": "Course visibility",
@@ -1111,7 +1135,8 @@
     "deleteItem": "Delete item",
     "deleteText": "This removes the item and all learner progress and attempts for it. This cannot be undone.",
     "quizWord": "quiz",
-    "examWord": "exam"
+    "examWord": "exam",
+    "introPlaceholder": "Explain what this assessment covers and how learners should prepare…"
   },
   "editor": {
     "placeholder": "Write your lesson here… Use headings, lists and highlights to structure it.",
@@ -1151,7 +1176,7 @@
     "settings": "Settings",
     "settingsText": "Rules that apply to every attempt.",
     "instructions": "Instructions",
-    "instructionsPlaceholder": "Lies die Fragen genau. You have 20 minutes and two attempts.",
+    "instructionsPlaceholder": "Read each question carefully. You have 20 minutes and two attempts.",
     "timeLimit": "Time limit",
     "noLimit": "No limit",
     "maxAttempts": "Max attempts",

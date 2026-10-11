@@ -44,10 +44,19 @@ export function PublicationForm({
   const [withEnd, setWithEnd] = React.useState<boolean>(!!entity.unpublishAt);
   const [error, setError] = React.useState<string | null>(null);
 
+  const unchanged =
+    mode === initialMode(entity) &&
+    (mode === "DRAFT" ||
+      ((mode === "NOW" || publishAt === entity.publishAt) && (withEnd ? unpublishAt : null) === entity.unpublishAt));
+  const alreadyPublished = entity.publishStatus === "PUBLISHED";
+
   const submit = async () => {
     setError(null);
     if (mode === "SCHEDULE" && !publishAt) return setError(t("errPublishAt"));
     if (mode !== "DRAFT" && withEnd && !unpublishAt) return setError(t("errUnpublishAt"));
+    if (mode !== "DRAFT" && withEnd && unpublishAt && new Date(unpublishAt).getTime() <= Date.now()) {
+      return setError(t("errUnpublishPast"));
+    }
     if (mode === "SCHEDULE" && withEnd && publishAt && unpublishAt && unpublishAt <= publishAt) {
       return setError(t("errOrder"));
     }
@@ -120,8 +129,18 @@ export function PublicationForm({
           {error}
         </p>
       )}
-      <Button onClick={submit} loading={pending}>
-        {mode === "DRAFT" ? t("saveDraft") : mode === "NOW" ? t("publish") : t("doSchedule")}
+      <Button onClick={submit} loading={pending} disabled={unchanged && !pending}>
+        {unchanged
+          ? t("upToDate")
+          : mode === "DRAFT"
+            ? alreadyPublished
+              ? t("unpublish")
+              : t("saveDraft")
+            : mode === "NOW"
+              ? alreadyPublished
+                ? t("update")
+                : t("publish")
+              : t("doSchedule")}
       </Button>
     </div>
   );
@@ -140,7 +159,7 @@ export function PublicationPopover({
   entityLabel: EntityKind;
   onSubmit: (body: PublicationRequest) => Promise<unknown>;
   pending?: boolean;
-  trigger?: "badge" | "icon" | "button";
+  trigger?: "badge" | "icon" | "button" | "primary";
   align?: "start" | "center" | "end";
 }) {
   const t = useTranslations();
@@ -158,6 +177,12 @@ export function PublicationPopover({
             </Button>
           </PopoverTrigger>
         </Tooltip>
+      ) : trigger === "primary" ? (
+        <PopoverTrigger asChild>
+          <Button size="sm">
+            <Rocket /> {t("publication.publishEntity", { entity: entityName })}
+          </Button>
+        </PopoverTrigger>
       ) : trigger === "button" ? (
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm">

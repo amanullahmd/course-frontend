@@ -92,7 +92,7 @@ function SidebarHeader({ data }: { data: LearnCourseDto }) {
       </Link>
       <div className="flex items-start gap-2">
         <LevelBadge level={data.course.level} />
-        <p className="text-sm leading-snug font-semibold">{data.course.title}</p>
+        <p className="line-clamp-3 text-sm leading-snug font-semibold break-words" title={data.course.title}>{data.course.title}</p>
       </div>
       <div className="grid gap-1.5">
         <div className="flex justify-between text-xs text-muted-foreground">

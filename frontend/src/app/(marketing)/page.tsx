@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { FeaturedCourses, FeaturedCoursesSkeleton, FeaturedHeader } from "@/components/marketing/featured-courses";
-import { Features, FinalCta, Hero, HowItWorks, LevelStrip, Testimonials } from "@/components/marketing/sections";
+import { Features, FinalCta, Hero, HowItWorks, LevelStrip, UseCases } from "@/components/marketing/sections";
 
 export default function LandingPage() {
   return (
@@ -17,7 +17,7 @@ export default function LandingPage() {
           </Suspense>
         </div>
       </section>
-      <Testimonials />
+      <UseCases />
       <FinalCta />
     </>
   );

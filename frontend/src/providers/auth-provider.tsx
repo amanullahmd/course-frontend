@@ -3,11 +3,12 @@
 import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { authApi } from "@/lib/api/auth";
-import { hasSessionHint, onSessionChange, refreshSession, setSession } from "@/lib/api/client";
+import { hasSessionHint, lastRefreshUnavailable, onSessionChange, refreshSession, setSession } from "@/lib/api/client";
 import { meApi } from "@/lib/api/me";
 import type { AuthResponse, RegisterRequest, UserDto } from "@/lib/api/types";
 
-export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
+/** "offline": a session probably exists, but the API could not be reached to restore it. */
+export type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "offline";
 
 interface AuthContextValue {
   user: UserDto | null;
@@ -18,6 +19,8 @@ interface AuthContextValue {
   /** Replace the cached user (e.g. after a profile update). */
   setUser: (user: UserDto) => void;
   reloadUser: () => Promise<void>;
+  /** Try again to restore the session after the API was unreachable. */
+  retry: () => Promise<void>;
 }
 
 const AuthContext = React.createContext<AuthContextValue | null>(null);
@@ -39,6 +42,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let active = true;
     bootstrap.then((session) => {
       if (!active) return;
+      if (!session && lastRefreshUnavailable()) {
+        bootstrap = null;
+        setStatus("offline");
+        return;
+      }
       setUserState(session?.user ?? null);
       setStatus(session ? "authenticated" : "unauthenticated");
     });
@@ -78,9 +86,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUserState(fresh);
   }, []);
 
+  const retry = React.useCallback(async () => {
+    const session = await refreshSession();
+    if (!session && lastRefreshUnavailable()) return;
+    setUserState(session?.user ?? null);
+    setStatus(session ? "authenticated" : "unauthenticated");
+  }, []);
+
   const value = React.useMemo<AuthContextValue>(
-    () => ({ user, status, login, register, logout, setUser: setUserState, reloadUser }),
-    [user, status, login, register, logout, reloadUser],
+    () => ({ user, status, login, register, logout, setUser: setUserState, reloadUser, retry }),
+    [user, status, login, register, logout, reloadUser, retry],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

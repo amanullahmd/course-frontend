@@ -55,7 +55,7 @@ export function InstructorDashboard() {
         <ErrorState className="mt-8" error={dashboard.error} onRetry={() => dashboard.refetch()} />
       ) : (
         <>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:gap-4 xl:grid-cols-4">
             <StatCard label={t("instructor.courses")} value={d?.courseCount ?? 0} icon={Library} loading={dashboard.isPending} />
             <StatCard label={t("instructor.liveCourses")} value={d?.liveCourseCount ?? 0} icon={BookCheck} loading={dashboard.isPending} accent="success" />
             <StatCard label={t("instructor.learners")} value={d?.studentCount ?? 0} icon={Users} loading={dashboard.isPending} accent="brand" />
@@ -103,6 +103,7 @@ export function InstructorDashboard() {
                               size="xs"
                               onClick={() => approve.mutate(e.id, { onSuccess: () => toast.success(t("students.approvedToast", { name: e.student.fullName })) })}
                               aria-label={t("instructor.approveName", { name: e.student.fullName })}
+                              disabled={approve.isPending && approve.variables === e.id}
                             >
                               <Check /> <span className="hidden sm:inline">{t("students.approve")}</span>
                             </Button>

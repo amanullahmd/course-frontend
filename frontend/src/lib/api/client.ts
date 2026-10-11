@@ -108,7 +108,15 @@ export function refreshSession(): Promise<AuthResponse | null> {
           credentials: "include",
           headers: { Accept: "application/json", "Accept-Language": apiLocale },
         });
+        if (res.status >= 500) {
+          // The server is down or restarting: keep the session hint so we can retry later.
+          refreshUnavailable = true;
+          return null;
+        }
+        refreshUnavailable = false;
         if (!res.ok) {
+          // A session existed (token in memory or hint) but can no longer be renewed: it expired or was revoked.
+          if (accessToken !== null || hasSessionHint()) sessionEnded = true;
           setSession(null);
           return null;
         }
@@ -116,7 +124,8 @@ export function refreshSession(): Promise<AuthResponse | null> {
         setSession(session);
         return session;
       } catch {
-        setSession(null);
+        // Network error (API unreachable): the refresh cookie may still be valid.
+        refreshUnavailable = true;
         return null;
       } finally {
         refreshInFlight = null;
@@ -124,6 +133,21 @@ export function refreshSession(): Promise<AuthResponse | null> {
     })();
   }
   return refreshInFlight;
+}
+
+let refreshUnavailable = false;
+let sessionEnded = false;
+
+/** True once, after a previously active session could not be renewed (expired, revoked or disabled). */
+export function consumeSessionEnded(): boolean {
+  const ended = sessionEnded;
+  sessionEnded = false;
+  return ended;
+}
+
+/** True when the last refresh attempt could not reach the API (network error or 5xx). */
+export function lastRefreshUnavailable(): boolean {
+  return refreshUnavailable;
 }
 
 function tokenNeedsRefresh(): boolean {

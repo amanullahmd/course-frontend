@@ -32,6 +32,7 @@ export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next");
+  const expired = params.get("reason") === "expired";
   const [error, setError] = React.useState<{ message: string; unverified: boolean } | null>(null);
   const schema = React.useMemo(
     () => z.object({ email: makeEmailSchema((k) => t(`validation.${k}`)), password: z.string().min(1, t("validation.passwordRequired")) }),
@@ -70,6 +71,7 @@ export function LoginForm() {
     <>
       <AuthHeading title={t("auth.login.title")} description={t("auth.login.subtitle")} />
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
+        {expired && !error && <FormAlert tone="info">{t("auth.login.sessionEnded")}</FormAlert>}
         {error && (
           <FormAlert
             tone={error.unverified ? "warning" : "error"}

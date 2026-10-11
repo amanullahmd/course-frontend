@@ -15,6 +15,8 @@ import me.amanullah.course.common.web.Links;
 import me.amanullah.course.course.ContentItem;
 import me.amanullah.course.course.Course;
 import me.amanullah.course.course.CourseAccess;
+import me.amanullah.course.learning.ItemProgress;
+import me.amanullah.course.learning.ItemProgressRepository;
 import me.amanullah.course.learning.LearnerAccess;
 import me.amanullah.course.notification.EmailTemplates;
 import me.amanullah.course.notification.NotificationService;
@@ -50,11 +52,13 @@ public class AttemptService {
     private final AttemptMapper mapper;
     private final NotificationService notifications;
     private final EmailTemplates templates;
+    private final ItemProgressRepository progress;
     private final Clock clock;
 
     public AttemptService(AssessmentRepository assessments, AttemptRepository attempts, UserRepository users,
                           LearnerAccess learnerAccess, CourseAccess courseAccess, AttemptMapper mapper,
-                          NotificationService notifications, EmailTemplates templates, Clock clock) {
+                          NotificationService notifications, EmailTemplates templates, ItemProgressRepository progress,
+                          Clock clock) {
         this.assessments = assessments;
         this.attempts = attempts;
         this.users = users;
@@ -63,6 +67,7 @@ public class AttemptService {
         this.mapper = mapper;
         this.notifications = notifications;
         this.templates = templates;
+        this.progress = progress;
         this.clock = clock;
     }
 
@@ -143,8 +148,12 @@ public class AttemptService {
         attempt.recomputeScore();
         boolean manual = attempt.needsManualGrading();
         attempt.setStatus(manual ? AttemptStatus.SUBMITTED : AttemptStatus.GRADED);
+        ContentItem item = attempt.getAssessment().getItem();
+        // Submitting a quiz/exam counts as working through that item, so it shows up in the course progress.
+        if (!progress.existsByStudentIdAndItemId(me.id(), item.getId())) {
+            progress.save(new ItemProgress(attempt.getStudent(), item, now));
+        }
         if (manual) {
-            ContentItem item = attempt.getAssessment().getItem();
             Course course = item.getModule().getCourse();
             notifications.notify(course.getInstructor(), NotificationType.ATTEMPT_SUBMITTED,
                     "notification.attemptSubmitted", Links.instructorAttempt(attempt.getId()), null,

@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { CircleCheck, LoaderCircle, MailX } from "lucide-react";
 import { authApi } from "@/lib/api/auth";
+import { isApiError } from "@/lib/api/client";
 import { useErrorMessage } from "@/hooks/use-error-message";
 import { AuthHeading } from "@/components/auth/auth-card";
 import { ResendVerificationButton } from "@/components/auth/resend-verification";
@@ -15,7 +16,6 @@ import { Input } from "@/components/ui/input";
 
 export function VerifyEmail() {
   const t = useTranslations("auth.verify");
-  const ta = useTranslations("auth");
   const errorMessage = useErrorMessage();
   const token = useSearchParams().get("token") ?? "";
   // A query (not an effect) so the single-use token is sent exactly once, even in StrictMode.
@@ -27,13 +27,18 @@ export function VerifyEmail() {
     staleTime: Infinity,
     gcTime: Infinity,
   });
-  const [email, setEmail] = React.useState("");
-
-  if (!token) return <AuthHeading icon={MailX} tone="error" title={t("missingTitle")} description={t("missingText")} />;
+  if (!token) {
+    return (
+      <>
+        <AuthHeading icon={MailX} tone="error" title={t("missingTitle")} description={t("missingText")} />
+        <ResendForm />
+      </>
+    );
+  }
 
   if (verify.isPending) {
     return (
-      <div className="grid place-items-center gap-4 py-10 text-center">
+      <div className="grid place-items-center gap-4 py-10 text-center" role="status">
         <LoaderCircle className="size-8 animate-spin text-brand" />
         <p className="text-sm text-muted-foreground">{t("verifying")}</p>
       </div>
@@ -51,18 +56,49 @@ export function VerifyEmail() {
     );
   }
 
+  // A used link most likely means the address is already verified (e.g. the link was clicked twice).
+  if (isApiError(verify.error) && verify.error.code === "TOKEN_USED") {
+    return (
+      <>
+        <AuthHeading icon={CircleCheck} tone="success" title={t("usedTitle")} description={t("usedText")} />
+        <Button size="lg" className="w-full" asChild>
+          <Link href="/login">{t("continue")}</Link>
+        </Button>
+      </>
+    );
+  }
+
   return (
     <>
       <AuthHeading icon={MailX} tone="error" title={t("failTitle")} description={`${errorMessage(verify.error)} ${t("failHint")}`} />
-      <div className="grid gap-3">
-        <Input type="email" placeholder={ta("emailPlaceholder")} value={email} onChange={(e) => setEmail(e.target.value)} aria-label={t("yourEmail")} />
-        <ResendVerificationButton email={email} className="w-full">
+      <ResendForm />
+    </>
+  );
+}
+
+function ResendForm() {
+  const t = useTranslations("auth.verify");
+  const ta = useTranslations("auth");
+  const [email, setEmail] = React.useState("");
+  const valid = /^\S+@\S+\.\S+$/.test(email.trim());
+  return (
+    <div className="grid gap-3">
+      <form className="grid gap-3" onSubmit={(e) => e.preventDefault()}>
+        <Input
+          type="email"
+          autoComplete="email"
+          placeholder={ta("emailPlaceholder")}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          aria-label={t("yourEmail")}
+        />
+        <ResendVerificationButton email={valid ? email.trim() : ""} className="w-full">
           {t("sendNew")}
         </ResendVerificationButton>
-        <Button variant="ghost" asChild>
-          <Link href="/login">{ta("checkEmail.back")}</Link>
-        </Button>
-      </div>
-    </>
+      </form>
+      <Button variant="ghost" asChild>
+        <Link href="/login">{ta("checkEmail.back")}</Link>
+      </Button>
+    </div>
   );
 }

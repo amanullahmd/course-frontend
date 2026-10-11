@@ -56,7 +56,7 @@ export function AdminView() {
   return (
     <PageContainer wide>
       <PageHeader eyebrow={t("admin.eyebrow")} title={t("admin.title")} description={t("admin.intro")} />
-      <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard label={t("admin.users")} value={s?.users ?? 0} icon={Users} loading={stats.isPending} />
         <StatCard label={t("admin.students")} value={s?.students ?? 0} icon={GraduationCap} loading={stats.isPending} accent="info" />
         <StatCard label={t("admin.instructors")} value={s?.instructors ?? 0} icon={Presentation} loading={stats.isPending} accent="brand" />
@@ -119,13 +119,35 @@ export function AdminView() {
                   <TableHead>{t("admin.user")}</TableHead>
                   <TableHead className="hidden md:table-cell">{t("admin.joined")}</TableHead>
                   <TableHead className="hidden sm:table-cell">{t("admin.verified")}</TableHead>
-                  <TableHead>{t("admin.role")}</TableHead>
-                  <TableHead className="text-right">{t("admin.active")}</TableHead>
+                  <TableHead className="hidden sm:table-cell">{t("admin.role")}</TableHead>
+                  <TableHead className="hidden text-right sm:table-cell">{t("admin.active")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.data.content.map((u) => {
                   const self = u.id === me?.id;
+                  const roleSelect = (
+                    <Select value={u.role} onValueChange={(r) => change(u, { role: r as Role })} disabled={self}>
+                      <SelectTrigger size="sm" className="w-36" aria-label={t("admin.roleOf", { name: u.fullName })}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLES.map((r) => (
+                          <SelectItem key={r} value={r}>
+                            {t(`roles.${r}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                  const activeSwitch = (
+                    <Switch
+                      checked={u.enabled}
+                      disabled={self}
+                      onCheckedChange={(c) => change(u, { enabled: c })}
+                      aria-label={u.enabled ? t("admin.disable", { name: u.fullName }) : t("admin.enable", { name: u.fullName })}
+                    />
+                  );
                   return (
                     <TableRow key={u.id} className={!u.enabled ? "opacity-60" : undefined}>
                       <TableCell>
@@ -138,32 +160,20 @@ export function AdminView() {
                             <p className="truncate text-xs text-muted-foreground">{u.email}</p>
                           </div>
                         </div>
+                        <div className="mt-3 flex items-center justify-between gap-3 sm:hidden">
+                          {roleSelect}
+                          {activeSwitch}
+                        </div>
                       </TableCell>
                       <TableCell className="hidden text-muted-foreground md:table-cell">{fmt.date(u.createdAt)}</TableCell>
                       <TableCell className="hidden sm:table-cell">
                         {u.emailVerified ? <Badge variant="success">{t("admin.verified")}</Badge> : <Badge variant="warning">{t("admin.pending")}</Badge>}
                       </TableCell>
-                      <TableCell>
-                        <Select value={u.role} onValueChange={(r) => change(u, { role: r as Role })} disabled={self}>
-                          <SelectTrigger size="sm" className="w-32" aria-label={t("admin.roleOf", { name: u.fullName })}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {ROLES.map((r) => (
-                              <SelectItem key={r} value={r}>
-                                {t(`roles.${r}`)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      <TableCell className="hidden sm:table-cell">
+                        {roleSelect}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Switch
-                          checked={u.enabled}
-                          disabled={self}
-                          onCheckedChange={(c) => change(u, { enabled: c })}
-                          aria-label={u.enabled ? t("admin.disable", { name: u.fullName }) : t("admin.enable", { name: u.fullName })}
-                        />
+                      <TableCell className="hidden text-right sm:table-cell">
+                        {activeSwitch}
                       </TableCell>
                     </TableRow>
                   );

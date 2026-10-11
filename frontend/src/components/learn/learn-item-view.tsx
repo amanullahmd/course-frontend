@@ -158,7 +158,11 @@ export function LearnItemView() {
                     t("learn.doneText")
                   ) : (
                     <>
-                      {t("learn.markHint")} <Kbd>M</Kbd>
+                      {t("learn.markHint")}
+                      <span className="hidden sm:inline">
+                        {" "}
+                        {t("learn.shortcut")} <Kbd>M</Kbd>
+                      </span>
                     </>
                   )}
                 </p>

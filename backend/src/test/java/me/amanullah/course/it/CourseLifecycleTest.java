@@ -304,6 +304,11 @@ class CourseLifecycleTest extends IntegrationTestSupport {
         mvc.perform(auth(post("/api/student/attempts/" + attemptId + "/submit"), student)
                         .contentType("application/json").content("{\"answers\":[]}"))
                 .andExpect(status().isConflict());
+        // submitting an attempt marks the quiz item as completed
+        mvc.perform(auth(get("/api/student/courses/" + courseId + "/learn"), student))
+                .andExpect(jsonPath("$.progressPercent").value(100));
+        mvc.perform(auth(get("/api/student/items/" + quizId), student))
+                .andExpect(jsonPath("$.completed").value(true));
 
         // instructor grades the essay → GRADED, student notified
         mvc.perform(auth(get("/api/instructor/items/" + quizId + "/attempts"), teacher))

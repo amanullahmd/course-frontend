@@ -130,8 +130,40 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
 
   const clearSelection = () => setSelected(new Set());
 
-  const approveOne = (e: EnrollmentDto) =>
-    approve.mutate(e.id, { onSuccess: () => toast.success(t("approvedToast", { name: e.student.fullName })) });
+  const renderActions = (e: EnrollmentDto) => (
+    <div className="flex gap-1.5 sm:justify-end">
+      {e.status === "PENDING" && (
+        <>
+          <Button size="xs" onClick={() => approveOne(e)} disabled={approve.isPending}>
+            <Check /> {t("approve")}
+          </Button>
+          <Button size="xs" variant="outline" onClick={() => setReasonAction({ kind: "reject", ids: [e.id], names: e.student.fullName })}>
+            {t("reject")}
+          </Button>
+        </>
+      )}
+      {e.status === "APPROVED" && (
+        <Button size="xs" variant="destructive-ghost" onClick={() => setReasonAction({ kind: "revoke", ids: [e.id], names: e.student.fullName })}>
+          {t("revoke")}
+        </Button>
+      )}
+    </div>
+  );
+
+  // A double click must not approve the next row, which moves up under the cursor once the first one is gone.
+  const approving = React.useRef(false);
+  const approveOne = (e: EnrollmentDto) => {
+    if (approving.current) return;
+    approving.current = true;
+    approve.mutate(e.id, {
+      onSuccess: () => toast.success(t("approvedToast", { name: e.student.fullName })),
+      onSettled: () => {
+        window.setTimeout(() => {
+          approving.current = false;
+        }, 400);
+      },
+    });
+  };
 
   const confirmReason = (reason: string | null) => {
     if (!reasonAction) return;
@@ -269,7 +301,7 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
                 <TableHead>{t("learner")}</TableHead>
                 <TableHead className="hidden md:table-cell">{tab === "inactive" ? t("reason") : t("message")}</TableHead>
                 <TableHead className="hidden sm:table-cell">{tab === "pending" ? t("applied") : tab === "approved" ? t("progress") : t("status")}</TableHead>
-                <TableHead className="text-right">{tc("actions")}</TableHead>
+                <TableHead className="hidden text-right sm:table-cell">{tc("actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -300,6 +332,10 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
                         <p className="truncate text-xs text-muted-foreground">{e.student.email}</p>
                       </div>
                     </div>
+                    {(tab === "inactive" ? e.decisionReason : e.message) && (
+                      <p className="mt-2 line-clamp-2 text-[13px] text-muted-foreground md:hidden">{tab === "inactive" ? e.decisionReason : e.message}</p>
+                    )}
+                    <div className="mt-2.5 sm:hidden">{renderActions(e)}</div>
                   </TableCell>
                   <TableCell className="hidden max-w-xs md:table-cell">
                     {(() => {
@@ -326,25 +362,7 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
                     )}
                     {tab === "inactive" && <EnrollmentStatusBadge status={e.status} />}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1.5">
-                      {e.status === "PENDING" && (
-                        <>
-                          <Button size="xs" onClick={() => approveOne(e)} disabled={approve.isPending}>
-                            <Check /> {t("approve")}
-                          </Button>
-                          <Button size="xs" variant="outline" onClick={() => setReasonAction({ kind: "reject", ids: [e.id], names: e.student.fullName })}>
-                            {t("reject")}
-                          </Button>
-                        </>
-                      )}
-                      {e.status === "APPROVED" && (
-                        <Button size="xs" variant="destructive-ghost" onClick={() => setReasonAction({ kind: "revoke", ids: [e.id], names: e.student.fullName })}>
-                          {t("revoke")}
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
+                  <TableCell className="hidden text-right sm:table-cell">{renderActions(e)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

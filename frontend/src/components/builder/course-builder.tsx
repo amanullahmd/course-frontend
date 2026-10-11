@@ -100,18 +100,18 @@ export function CourseBuilder() {
 
   return (
     <PageContainer wide>
-      <nav aria-label={t("builder.breadcrumb")} className="flex items-center gap-1 text-sm text-muted-foreground">
-        <Link href="/instructor/courses" className="hover:text-foreground">
+      <nav aria-label={t("builder.breadcrumb")} className="flex min-w-0 items-center gap-1 text-sm text-muted-foreground">
+        <Link href="/instructor/courses" className="shrink-0 hover:text-foreground">
           {t("builder.myCourses")}
         </Link>
-        <ChevronRight className="size-3.5" />
+        <ChevronRight className="size-3.5 shrink-0" />
         <span className="truncate text-foreground">{c.title}</span>
       </nav>
 
       <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-[28px]">{c.title}</h1>
+            <h1 className="line-clamp-3 text-2xl font-semibold tracking-tight break-words text-balance sm:text-[28px]">{c.title}</h1>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <LevelBadge level={c.level} />
@@ -142,6 +142,15 @@ export function CourseBuilder() {
                 <ExternalLink /> {t("builder.publicPage")}
               </Link>
             </Button>
+          )}
+          {c.visibility !== "LIVE" && (
+            <PublicationPopover
+              entity={c}
+              entityLabel="course"
+              trigger="primary"
+              pending={publish.isPending}
+              onSubmit={(body) => publish.mutateAsync(body)}
+            />
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

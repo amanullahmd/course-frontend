@@ -16,6 +16,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     long countByRole(Role role);
 
+    @Query("select new me.amanullah.course.user.AccountState(u.enabled, u.role) from User u where u.id = :id")
+    Optional<AccountState> findAccountState(@Param("id") UUID id);
+
     @Query("""
             select u from User u
             where (:role is null or u.role = :role)

@@ -30,8 +30,8 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { newKey, newQuestion, QuestionEditor, validateQuestion, type DraftQuestion } from "./question-editor";
+import { RichTextEditor } from "./rich-text-editor";
 
 interface Draft extends Omit<AssessmentDto, "questions"> {
   questions: DraftQuestion[];
@@ -205,31 +205,36 @@ function AssessmentEditorInner({
         <CardContent className="grid gap-5">
           <div className="grid gap-2">
             <Label htmlFor="instructions">{t("assessmentEditor.instructions")}</Label>
-            <Textarea
+            <RichTextEditor
               id="instructions"
-              rows={3}
               value={draft.instructions ?? ""}
-              onChange={(e) => set({ instructions: e.target.value })}
+              onChange={(html) => set({ instructions: html })}
               placeholder={t("assessmentEditor.instructionsPlaceholder")}
+              className="[&_.tiptap]:min-h-28"
             />
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
-            <div className="grid gap-2">
+            <div className="grid content-start gap-2">
               <Label htmlFor="time-limit">{t("assessmentEditor.timeLimit")}</Label>
               <div className="relative">
                 <Input
                   id="time-limit"
                   type="number"
-                  min={0}
+                  min={1}
+                  max={1440}
                   placeholder={t("assessmentEditor.noLimit")}
                   value={draft.timeLimitMinutes ?? ""}
-                  onChange={(e) => set({ timeLimitMinutes: e.target.value ? Math.max(0, Number(e.target.value)) : null })}
+                  // 0 or empty means "no limit" (the API accepts 1–1440 minutes or null)
+                  onChange={(e) => {
+                    const n = Math.floor(Number(e.target.value));
+                    set({ timeLimitMinutes: e.target.value && n > 0 ? Math.min(n, 1440) : null });
+                  }}
                   className="pr-12"
                 />
                 <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs text-muted-foreground">{t("common.min")}</span>
               </div>
             </div>
-            <div className="grid gap-2">
+            <div className="grid content-start gap-2">
               <Label htmlFor="max-attempts">{t("assessmentEditor.maxAttempts")}</Label>
               <Input
                 id="max-attempts"
