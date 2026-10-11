@@ -35,7 +35,7 @@ Notification (id, user, type, title, body, link, readAt, createdAt)
 │ Next.js 16 (App Router)  │ ───────────────────────────▶ │ Spring Boot 4.1.1 (Java 25)    │
 │ React 19, TypeScript,    │ ◀─── refresh cookie (httpOnly)│ Spring MVC · Security 7 (JWT) │
 │ Tailwind 4, TanStack     │                               │ Data JPA/Hibernate · Flyway   │
-│ Query, RHF + Zod, Tiptap │   signed media URLs (range)   │ Mail · Validation · OpenAPI   │
+│ Query, RHF + Zod, Tiptap │   signed media URLs (range)   │ Mail (Resend SMTP) · OpenAPI  │
 └──────────────────────────┘ ───────────────────────────▶ │ Local file storage (pluggable)│
                                                            └──────────────┬────────────────┘
                                                                           │
@@ -52,6 +52,17 @@ Notification (id, user, type, title, body, link, readAt, createdAt)
 * **Frontend**: App Router with route groups `(marketing)`, `(auth)`, `(app)`; client-side
   auth provider with silent refresh; TanStack Query for server state; accessible primitives
   (Radix) styled with Tailwind; drag & drop with dnd-kit; rich text with Tiptap.
+
+### 5.1 E-mail delivery (Resend SMTP)
+
+Transactional e-mails (verification, password reset, enrollment decisions, new application) are sent
+asynchronously through Spring Mail.
+
+| Environment | Transport | Configuration |
+|---|---|---|
+| `dev` (default) | Logged to the console (`app.mail.enabled=false`), so links can be copied from the log | — |
+| Docker Compose (local) | Mailpit catch-all SMTP, UI at http://localhost:8025 | `MAIL_HOST=mailpit`, `MAIL_PORT=1025` |
+| `prod` | **Resend SMTP** | host `smtp.resend.com`, port `587` (STARTTLS) or `465` (SSL), username `resend`, password = `RESEND_API_KEY`, sender `MAIL_FROM` on a domain verified in Resend |
 
 ## 6. REST API contract (base `/api`)
 
