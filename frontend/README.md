@@ -28,7 +28,8 @@ In development the login page shows a "Demo accounts" helper that fills the form
 
 | Variable | Default | Description |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | `http://localhost:8080` | API base URL used by the browser (inlined at build time) |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8080` | API base URL used by the browser (inlined at build time). Production: `https://api.course.amanullah.me` |
+| `NEXT_PUBLIC_SITE_URL` | `https://course.amanullah.me` | Public frontend URL for `metadataBase`, canonical URLs and OpenGraph |
 | `API_URL_INTERNAL` | – | Optional API base URL for server-side rendering (e.g. `http://backend:8080` in Docker) |
 
 ## Architecture
@@ -59,12 +60,16 @@ src/
 * **Builder** – drag & drop modules and items (also across modules) with dnd-kit, keyboard accessible.
 * **Learning** – outline sidebar, viewers for PDF / office files / video (incl. YouTube & Vimeo) / audio with
   speed control / images with lightbox / embeds, quiz player with timer, autosave and results review.
+* **Production** – frontend at `https://course.amanullah.me`, API at `https://api.course.amanullah.me`
+  (the backend must allow that origin via CORS and set the refresh cookie for the shared parent domain).
 * **Notification links** – `/instructor/courses/{id}/enrollments` and `/instructor/attempts/{id}` redirect to the
   matching builder tab / grading drawer.
 
 ## Docker
 
 ```bash
-docker build -t sprachweg-frontend --build-arg NEXT_PUBLIC_API_URL=https://api.example.com .
+docker build -t sprachweg-frontend \
+  --build-arg NEXT_PUBLIC_API_URL=https://api.course.amanullah.me \
+  --build-arg NEXT_PUBLIC_SITE_URL=https://course.amanullah.me .
 docker run -p 3000:3000 -e API_URL_INTERNAL=http://backend:8080 sprachweg-frontend
 ```

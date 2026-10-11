@@ -20,7 +20,13 @@ export async function generateMetadata({ params }: PageProps<"/courses/[slug]">)
   const { slug } = await params;
   const result = await fetchPublicCourse(slug);
   if (!result.ok) return { title: "Course" };
-  return { title: result.data.title, description: result.data.subtitle ?? undefined };
+  const description = result.data.subtitle ?? undefined;
+  return {
+    title: result.data.title,
+    description,
+    alternates: { canonical: `/courses/${slug}` },
+    openGraph: { title: result.data.title, description, url: `/courses/${slug}`, images: result.data.coverImageUrl ? [result.data.coverImageUrl] : undefined },
+  };
 }
 
 async function CourseDetail({ params }: { params: PageProps<"/courses/[slug]">["params"] }) {

@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const metadata: Metadata = {
   title: "Course catalog",
   description: "Browse German courses from A1 to C2 and apply to join.",
+  alternates: { canonical: "/courses" },
 };
 
 const PAGE_SIZE = 12;
