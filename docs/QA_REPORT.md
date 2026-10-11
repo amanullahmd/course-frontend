@@ -37,7 +37,7 @@ Flows covered:
 
 ## 3. Bugs found & fixed
 
-25 bugs: **5 high**, **11 medium**, **9 low**.
+32 bugs: **5 high**, **13 medium**, **14 low** (#26–#32 were follow-ups from the first pass, fixed in a second round).
 
 | # | Sev | Area | Bug | Fix |
 |---|---|---|---|---|
@@ -66,9 +66,16 @@ Flows covered:
 | 23 | Low | Course page | Instructor initials avatar in the dark hero was dark-on-dark (unreadable) | Light "onDark" avatar variant |
 | 24 | Medium | Quiz builder | Assessment instructions are stored/rendered as HTML but edited in a plain textarea, so instructors saw raw `<p>…</p>` markup | Instructions use the rich-text editor |
 | 25 | Low | Quiz builder | Entering 0 as time limit was sent to the API (accepts 1–1440 or empty) and failed validation; "Time limit" and "Max attempts" inputs were vertically misaligned | 0/empty = no limit, clamp to 1440; aligned grid |
+| 26 | Medium | Notifications | "Result available" opened the quiz overview, not the graded attempt | Backend links `ATTEMPT_GRADED` to `/learn/{course}/{item}?attempt={id}` (`Links.learnAttempt`, asserted in `CourseLifecycleTest`); the player opens that result directly. Old links without `?attempt` still work |
+| 27 | Low | Navigation | Horizontally scrollable tab bars gave no visual hint that more tabs exist | Edge fade (mask) on whichever side has hidden tabs, updated on scroll/resize |
+| 28 | Medium | Admin | Disabling an account or changing a role happened on a single click, without confirmation | Confirmation dialogs explaining the immediate effect (sessions end / permissions change). Enabling stays one click |
+| 29 | Low | Builder | Generic embed URLs (most sites forbid framing) silently became a link card for learners | Info note in the item editor and quick-create dialog: which providers embed directly, and that other sites appear as a link card |
+| 30 | Low | A11y | The EN/DE switcher's radios were each a separate Tab stop, without arrow-key support | Roving tabindex radiogroup: one Tab stop, ←/→/↑/↓/Home/End switch language |
+| 31 | Low | i18n | Quick-create default titles were always German ("Neue Lektion", …) | Localised defaults (`builder.defaultTitles.*`) |
+| 32 | Low | Learning player / seed | Seeded lessons began with an `<h2>` repeating the item title, plus a large gap after the summary | Removed duplicated leading headings from the seed data; prose has no outer margin on its first/last child; summary→body spacing tightened |
 
 Backend regression tests added: `AdminTest.disablingOrChangingRoleInvalidatesExistingAccessTokens` (#1),
-`CourseLifecycleTest` (submitting an attempt completes the item, #8), `MediaTest` (`text/plain;charset=UTF-8`, #6).
+`CourseLifecycleTest` (submitting an attempt completes the item, #8; the graded notification deep-links to the attempt, #26), `MediaTest` (`text/plain;charset=UTF-8`, #6).
 
 ## 4. UX improvements made
 
@@ -102,7 +109,7 @@ Backend regression tests added: `AdminTest.disablingOrChangingRoleInvalidatesExi
 | `mvn -q clean verify` (JDK 25) | ✅ green (all unit + integration tests, including the new ones) |
 | `npm run lint` | ✅ 0 errors, 0 warnings |
 | `npm run build` | ✅ success, no warnings |
-| en/de message parity | ✅ identical key sets (1,182 keys) |
+| en/de message parity | ✅ identical key sets (1,197 keys) |
 | 360 px sweep (24 pages) | ✅ no horizontal page scroll; the only remaining off-screen items are tabs inside horizontally scrollable tab bars (by design) |
 
 ## 6. Screenshots
@@ -123,16 +130,12 @@ Mobile: [landing](screenshots/13-landing-mobile-de.png) · [learning player](scr
 
 ## 7. Known limitations / follow-ups
 
-* **Notification deep links**: "Result available" links to the quiz page (which lists the attempt with a Review
-  button), not straight to the attempt review.
-* **Tabs on narrow screens** scroll horizontally without a visual fade hint. The active tab is now kept in view.
-* **Admin disable** has no confirmation dialog. It is a reversible switch and a toast confirms the change.
-* **Embeds**: pages that forbid framing (e.g. dw.com) fall back to a link card, which is correct, but the editor does
-  not warn about it beforehand. YouTube/Vimeo show a live preview.
-* **Locale switcher** is a set of radio buttons that are each tabbable, without roving arrow-key focus.
+The first pass listed six follow-ups. All of them are now fixed (#26–#31). Remaining notes:
+
 * **Dev-only noise**: in `next dev`, React Query Devtools throws `Incorrect locale information` in headless
   Chromium and next-themes logs a script-tag warning. Neither occurs in the production build.
-* **Default item titles** in the quick-create dialog are German ("Neue Lektion", …) regardless of UI language, since
-  course content is German. Consider localising them.
 * **Access-token check** (#1) adds one primary-key lookup per authenticated request. That is fine at this scale; a short
   cache (or token versioning) could remove it later.
+* **Embeds**: detection of embeddable providers is an allow-list (YouTube, Vimeo, Google Docs/Slides/Drive, H5P,
+  LearningApps). Other sites that do allow framing are still shown as a link card.
+* **Seed data**: the dev database must be deleted (`rm -rf backend/data`) to pick up the cleaned-up seed lessons.

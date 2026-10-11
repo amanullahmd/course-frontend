@@ -991,7 +991,17 @@
     "openEditor": "Open the editor after creating",
     "itemAdded": "{type} added",
     "urlRequired": "Add the link to the page or tool you want to embed.",
-    "videoUrlHint": "YouTube or Vimeo link. You can also upload a video file in the editor."
+    "videoUrlHint": "YouTube or Vimeo link. You can also upload a video file in the editor.",
+    "defaultTitles": {
+      "TEXT": "New lesson",
+      "DOCUMENT": "Worksheet",
+      "VIDEO": "Video",
+      "AUDIO": "Listening practice",
+      "IMAGE": "Image gallery",
+      "EMBED": "External exercise",
+      "QUIZ": "Quiz",
+      "EXAM": "Exam"
+    }
   },
   "courseForm": {
     "basics": "Basics",
@@ -1111,7 +1121,6 @@
     "videoUrl": "Video link (YouTube or Vimeo)",
     "externalUrl": "External URL",
     "embedDetected": "{provider} embed detected",
-    "linkCard": "This link will be shown as a link card.",
     "duration": "Estimated duration",
     "introduction": "Introduction",
     "lessonContent": "Lesson content",
@@ -1136,7 +1145,9 @@
     "deleteText": "This removes the item and all learner progress and attempts for it. This cannot be undone.",
     "quizWord": "quiz",
     "examWord": "exam",
-    "introPlaceholder": "Explain what this assessment covers and how learners should prepare…"
+    "introPlaceholder": "Explain what this assessment covers and how learners should prepare…",
+    "linkCardTitle": "{host} will appear as a link card.",
+    "linkCardText": "Many websites don’t allow being embedded in other pages, so learners open this link in a new tab. YouTube, Vimeo, Google Docs/Slides/Drive, H5P and LearningApps links are embedded directly."
   },
   "editor": {
     "placeholder": "Write your lesson here… Use headings, lists and highlights to structure it.",
@@ -1383,6 +1394,12 @@
     "roleChanged": "{name} is now {role}",
     "enabled": "{name} enabled",
     "disabled": "{name} disabled",
-    "total": "{count, plural, one {# user} other {# users}}"
+    "total": "{count, plural, one {# user} other {# users}}",
+    "confirmDisableTitle": "Disable {name}?",
+    "confirmDisableText": "They are signed out right away and can’t log in until you enable the account again. Their courses, enrollments and results are kept.",
+    "confirmDisable": "Disable account",
+    "confirmRoleTitle": "Change the role of {name} to {role}?",
+    "confirmRoleText": "The new permissions apply immediately, including in sessions that are already open.",
+    "confirmRole": "Change role"
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CalendarClock, CircleCheck, ClipboardList, Clock, Lock, PlayCircle, RotateCcw, Target, Trophy } from "lucide-react";
 import type { AttemptResultDto, AttemptSessionDto, LearnItemDto } from "@/lib/api/types";
 import { useTranslations } from "next-intl";
@@ -31,7 +32,18 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
   const tc = useTranslations("common");
   const fmt = useFormat();
   const info = item.assessment;
-  const [view, setView] = React.useState<View>({ kind: "intro" });
+  // Notification links ("result available") open one attempt directly via ?attempt=<id>.
+  const params = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const linkedAttempt = params.get("attempt");
+  const [view, setView] = React.useState<View>(() =>
+    linkedAttempt && /^[0-9a-f-]{36}$/i.test(linkedAttempt) ? { kind: "result", attemptId: linkedAttempt } : { kind: "intro" },
+  );
+  const backToOverview = () => {
+    setView({ kind: "intro" });
+    if (linkedAttempt) router.replace(pathname, { scroll: false });
+  };
   const attempts = useMyAttempts(item.id, !!info);
   const start = useStartAttempt(item.id);
   const now = useNow();
@@ -57,7 +69,7 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
     return (
       <div className="grid gap-4">
         <ResultLoader attemptId={view.attemptId} passingScore={info.passingScore} />
-        <Button variant="outline" className="w-fit" onClick={() => setView({ kind: "intro" })}>
+        <Button variant="outline" className="w-fit" onClick={backToOverview}>
           {t("backToOverview")}
         </Button>
       </div>

@@ -12,23 +12,47 @@ export function TabsList({
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.List> & { variant?: "pill" | "underline" }) {
   const ref = React.useRef<HTMLDivElement>(null);
-  // Keep the active tab visible when the list scrolls horizontally (narrow screens, long German labels).
+  const [fade, setFade] = React.useState({ left: false, right: false });
   React.useEffect(() => {
     const list = ref.current;
     if (!list) return;
+    // Fade the edges that hide more tabs, so a horizontally scrollable tab bar reads as scrollable.
+    const update = () => {
+      const max = list.scrollWidth - list.clientWidth;
+      const next = { left: max > 1 && list.scrollLeft > 1, right: max > 1 && list.scrollLeft < max - 1 };
+      setFade((f) => (f.left === next.left && f.right === next.right ? f : next));
+    };
+    // Keep the active tab visible when the list scrolls horizontally (narrow screens, long German labels).
     const reveal = () => {
       const active = list.querySelector<HTMLElement>('[data-state="active"]');
-      if (!active || list.scrollWidth <= list.clientWidth) return;
-      const left = active.offsetLeft - list.offsetLeft;
-      if (left < list.scrollLeft || left + active.offsetWidth > list.scrollLeft + list.clientWidth) {
-        list.scrollTo({ left: Math.max(0, left - 16), behavior: "smooth" });
+      if (active && list.scrollWidth > list.clientWidth) {
+        const left = active.offsetLeft - list.offsetLeft;
+        if (left < list.scrollLeft || left + active.offsetWidth > list.scrollLeft + list.clientWidth) {
+          list.scrollTo({ left: Math.max(0, left - 16), behavior: "smooth" });
+        }
       }
+      update();
     };
     reveal();
     const observer = new MutationObserver(reveal);
     observer.observe(list, { attributes: true, subtree: true, attributeFilter: ["data-state"] });
-    return () => observer.disconnect();
+    const resize = new ResizeObserver(update);
+    resize.observe(list);
+    list.addEventListener("scroll", update, { passive: true });
+    return () => {
+      observer.disconnect();
+      resize.disconnect();
+      list.removeEventListener("scroll", update);
+    };
   }, []);
+  const mask =
+    fade.left && fade.right
+      ? "[mask-image:linear-gradient(to_right,transparent,black_28px,black_calc(100%-28px),transparent)]"
+      : fade.left
+        ? "[mask-image:linear-gradient(to_right,transparent,black_28px)]"
+        : fade.right
+          ? "[mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)]"
+          : undefined;
   return (
     <TabsPrimitive.List
       ref={ref}
@@ -36,6 +60,7 @@ export function TabsList({
       className={cn(
         "group/tabs inline-flex max-w-full items-center overflow-x-auto [scrollbar-width:none]",
         variant === "pill" ? "h-9 gap-1 rounded-lg bg-muted p-1" : "h-11 w-full gap-1 border-b",
+        mask,
         className,
       )}
       {...props}

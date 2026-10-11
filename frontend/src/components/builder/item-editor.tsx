@@ -6,9 +6,10 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ChevronRight, ClipboardList, Eye, FileText, Inbox, Save, Trash } from "lucide-react";
+import { ChevronRight, ClipboardList, Eye, FileText, Inbox, Info, Save, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 import type { ContentItemDto, ItemType, ItemUpsert, MediaDto } from "@/lib/api/types";
 import { isApiError } from "@/lib/api/client";
 import { ITEM_TYPES, ITEM_TYPE_META, isAssessmentType } from "@/lib/constants";
@@ -267,11 +268,12 @@ function ItemEditorLoaded({
                       label={type === "VIDEO" ? t("itemEditor.videoUrl") : t("itemEditor.externalUrl")}
                       htmlFor="externalUrl"
                       error={errors.externalUrl?.message}
-                      hint={embed ? (embed.embedUrl ? t("itemEditor.embedDetected", { provider: embed.label }) : t("itemEditor.linkCard")) : undefined}
+                      hint={embed?.embedUrl ? t("itemEditor.embedDetected", { provider: embed.label }) : undefined}
                     >
                       <Input type="url" placeholder="https://" {...fieldA11y("externalUrl", errors.externalUrl?.message)} {...form.register("externalUrl")} />
                     </Field>
                   )}
+                  {showUrl && embed && !embed.embedUrl && !errors.externalUrl && <EmbedLinkNote host={embed.label} />}
                   {showUrl && embed && !errors.externalUrl && <EmbedFrame url={externalUrl} title={title} className="max-w-2xl" />}
                   <Field label={t("itemEditor.duration")} htmlFor="durationMinutes" error={errors.durationMinutes?.message} className="max-w-48">
                     <div className="relative">
@@ -457,5 +459,18 @@ export function ItemEditor() {
       initialTab={initialTab}
       initialAttemptId={initialAttemptId}
     />
+  );
+}
+
+/** Shown for URLs we cannot embed: most sites forbid framing, so learners get a link card instead. */
+export function EmbedLinkNote({ host, className }: { host: string; className?: string }) {
+  const t = useTranslations("itemEditor");
+  return (
+    <p role="note" className={cn("flex max-w-2xl gap-2.5 rounded-lg border border-info/25 bg-info-soft/50 px-3 py-2.5 text-[13px] text-info", className)}>
+      <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <span>
+        <span className="font-medium">{t("linkCardTitle", { host })}</span> {t("linkCardText")}
+      </span>
+    </p>
   );
 }

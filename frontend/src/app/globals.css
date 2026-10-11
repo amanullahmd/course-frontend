@@ -236,6 +236,13 @@
     --tw-prose-invert-code: var(--color-foreground);
     line-height: 1.75;
   }
+  /* No stray outer margins: the container's spacing decides the gap (e.g. after the summary). */
+  .prose-sw > :first-child {
+    margin-top: 0;
+  }
+  .prose-sw > :last-child {
+    margin-bottom: 0;
+  }
   .prose-sw :where(a) {
     text-underline-offset: 3px;
   }

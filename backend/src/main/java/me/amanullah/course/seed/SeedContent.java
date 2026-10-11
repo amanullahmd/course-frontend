@@ -39,7 +39,6 @@ final class SeedContent {
             <blockquote>Tipp: Wenn du unsicher bist, benutze <em>Sie</em> – das ist immer höflich.</blockquote>""";
 
     static final String INTRODUCE = """
-            <h2>Sich vorstellen</h2>
             <p>Mit diesen Sätzen kannst du dich vorstellen:</p>
             <ul><li>Ich heiße Luca. / Mein Name ist Luca Rossi.</li>
             <li>Ich komme aus Italien. Ich komme aus Mailand.</li>
@@ -59,7 +58,6 @@ final class SeedContent {
             <p><em>Übung:</em> Schreibe fünf Sätze über dich und lies sie laut vor.</p>""";
 
     static final String ARTICLES = """
-            <h2>Der, die, das</h2>
             <p>Jedes deutsche Nomen hat ein grammatisches Geschlecht (<em>Genus</em>): \
             <strong>maskulin</strong> (der), <strong>feminin</strong> (die) oder <strong>neutral</strong> (das). \
             Im Plural ist der Artikel immer <strong>die</strong>.</p>
@@ -79,7 +77,6 @@ final class SeedContent {
             <em>das Mädchen</em> ist neutral!</blockquote>""";
 
     static final String NUMBERS = """
-            <h2>Zahlen von 0 bis 100</h2>
             <p>0 null · 1 eins · 2 zwei · 3 drei · 4 vier · 5 fünf · 6 sechs · 7 sieben · 8 acht · 9 neun · 10 zehn</p>
             <p>11 elf · 12 zwölf · 13 dreizehn · 14 vierzehn · 15 fünfzehn · 16 <strong>sech</strong>zehn · \
             17 <strong>sieb</strong>zehn · 18 achtzehn · 19 neunzehn</p>
@@ -94,7 +91,6 @@ final class SeedContent {
             <li>Preise: 3,50 € → drei Euro fünfzig.</li></ul>""";
 
     static final String TIME = """
-            <h2>Wochentage und Uhrzeit</h2>
             <p>Montag, Dienstag, Mittwoch, Donnerstag, Freitag, Samstag (in Norddeutschland auch Sonnabend), Sonntag. \
             Alle Wochentage sind maskulin: <strong>der</strong> Montag. Präposition: <strong>am</strong> Montag.</p>
             <h3>Wie spät ist es?</h3>
@@ -107,7 +103,6 @@ final class SeedContent {
             <blockquote>Achtung: „halb neun“ bedeutet 8:30, nicht 9:30!</blockquote>""";
 
     static final String PERFEKT = """
-            <h2>Das Perfekt</h2>
             <p>Wenn wir über die Vergangenheit <em>sprechen</em>, benutzen wir meistens das Perfekt:</p>
             <p><strong>haben/sein</strong> (konjugiert, Position 2) + <strong>Partizip II</strong> (am Satzende)</p>
             <ul><li>Ich <strong>habe</strong> gestern lange <strong>gearbeitet</strong>.</li>
@@ -122,7 +117,6 @@ final class SeedContent {
             </tbody></table>""";
 
     static final String HABEN_SEIN = """
-            <h2>haben oder sein?</h2>
             <p>Die meisten Verben bilden das Perfekt mit <strong>haben</strong>. Mit <strong>sein</strong> bilden \
             das Perfekt:</p>
             <ul><li>Verben der <strong>Bewegung</strong> von A nach B: gehen, fahren, fliegen, laufen, kommen</li>
@@ -133,7 +127,6 @@ final class SeedContent {
             <blockquote>In Süddeutschland und Österreich sagt man auch: Ich <em>bin</em> gesessen / gestanden.</blockquote>""";
 
     static final String EMAIL = """
-            <h2>Formelle E-Mails</h2>
             <h3>Anrede</h3>
             <ul><li>Sehr geehrte Frau Becker, / Sehr geehrter Herr Wagner,</li>
             <li>Sehr geehrte Damen und Herren, (wenn du den Namen nicht kennst)</li></ul>
@@ -146,7 +139,6 @@ final class SeedContent {
             <p>Mit freundlichen Grüßen<br>Luca Rossi</p>""";
 
     static final String INTERVIEW = """
-            <h2>Das Vorstellungsgespräch</h2>
             <p>Typische Fragen und nützliche Redemittel:</p>
             <ul><li><strong>Erzählen Sie etwas über sich.</strong> – Ich habe … studiert und arbeite seit … als …</li>
             <li><strong>Warum möchten Sie bei uns arbeiten?</strong> – Mich interessiert besonders …</li>
@@ -155,7 +147,6 @@ final class SeedContent {
             <blockquote>Tipp: Bereite zu jeder Stärke ein konkretes Beispiel vor.</blockquote>""";
 
     static final String GOETHE = """
-            <h2>Das Goethe-Zertifikat B2</h2>
             <p>Die Prüfung besteht aus vier Modulen, die du einzeln oder zusammen ablegen kannst:</p>
             <table><thead><tr><th>Modul</th><th>Dauer</th></tr></thead><tbody>
             <tr><td>Lesen</td><td>65 Minuten</td></tr><tr><td>Hören</td><td>ca. 40 Minuten</td></tr>

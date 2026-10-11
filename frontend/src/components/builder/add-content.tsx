@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { ItemType } from "@/lib/api/types";
 import { ITEM_TYPES } from "@/lib/constants";
+import { getEmbedInfo } from "@/lib/embed";
 import { isApiError } from "@/lib/api/client";
 import { useErrorMessage } from "@/hooks/use-error-message";
 import { useCreateItem } from "@/hooks/queries/instructor";
@@ -24,16 +25,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const DEFAULT_TITLES: Record<ItemType, string> = {
-  TEXT: "Neue Lektion",
-  DOCUMENT: "Arbeitsblatt",
-  VIDEO: "Video",
-  AUDIO: "Hörverstehen",
-  IMAGE: "Bildergalerie",
-  EMBED: "Externe Übung",
-  QUIZ: "Quiz",
-  EXAM: "Prüfung",
-};
 
 /** "Add content" menu listing all eight item types, followed by a quick title dialog. */
 export function AddContentMenu({ courseId, moduleId }: { courseId: string; moduleId: string }) {
@@ -48,10 +39,11 @@ export function AddContentMenu({ courseId, moduleId }: { courseId: string; modul
   const errorMessage = useErrorMessage();
   const needsUrl = type === "EMBED";
   const showUrl = type === "EMBED" || type === "VIDEO";
+  const embedInfo = getEmbedInfo(url);
 
   const choose = (next: ItemType) => {
     setType(next);
-    setTitle(DEFAULT_TITLES[next]);
+    setTitle(t(`builder.defaultTitles.${next}`));
     setUrl("");
     setError(null);
   };
@@ -151,6 +143,13 @@ export function AddContentMenu({ courseId, moduleId }: { courseId: string; modul
                     aria-describedby={error ? "new-item-error" : undefined}
                   />
                   {type === "VIDEO" && <p className="text-xs text-muted-foreground">{t("builder.videoUrlHint")}</p>}
+                  {type === "EMBED" && embedInfo && (
+                    <p className="text-xs text-muted-foreground">
+                      {embedInfo.embedUrl
+                        ? t("itemEditor.embedDetected", { provider: embedInfo.label })
+                        : `${t("itemEditor.linkCardTitle", { host: embedInfo.label })} ${t("itemEditor.linkCardText")}`}
+                    </p>
+                  )}
                 </div>
               )}
               {error && (

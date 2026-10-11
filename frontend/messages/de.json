@@ -991,7 +991,17 @@
     "openEditor": "Nach dem Erstellen den Editor öffnen",
     "itemAdded": "{type} hinzugefügt",
     "urlRequired": "Füge den Link zur Seite oder zum Tool ein, das du einbetten möchtest.",
-    "videoUrlHint": "YouTube- oder Vimeo-Link. Du kannst im Editor auch eine Videodatei hochladen."
+    "videoUrlHint": "YouTube- oder Vimeo-Link. Du kannst im Editor auch eine Videodatei hochladen.",
+    "defaultTitles": {
+      "TEXT": "Neue Lektion",
+      "DOCUMENT": "Arbeitsblatt",
+      "VIDEO": "Video",
+      "AUDIO": "Hörverstehen",
+      "IMAGE": "Bildergalerie",
+      "EMBED": "Externe Übung",
+      "QUIZ": "Quiz",
+      "EXAM": "Prüfung"
+    }
   },
   "courseForm": {
     "basics": "Grundlagen",
@@ -1111,7 +1121,6 @@
     "videoUrl": "Video-Link (YouTube oder Vimeo)",
     "externalUrl": "Externe URL",
     "embedDetected": "{provider}-Einbettung erkannt",
-    "linkCard": "Dieser Link wird als Linkkarte angezeigt.",
     "duration": "Geschätzte Dauer",
     "introduction": "Einleitung",
     "lessonContent": "Lektionsinhalt",
@@ -1136,7 +1145,9 @@
     "deleteText": "Dadurch werden der Inhalt sowie alle Fortschritte und Versuche dazu entfernt. Das kann nicht rückgängig gemacht werden.",
     "quizWord": "Quiz",
     "examWord": "Prüfung",
-    "introPlaceholder": "Erkläre, worum es in diesem Test geht und wie sich die Lernenden vorbereiten können …"
+    "introPlaceholder": "Erkläre, worum es in diesem Test geht und wie sich die Lernenden vorbereiten können …",
+    "linkCardTitle": "{host} wird als Link-Karte angezeigt.",
+    "linkCardText": "Viele Websites erlauben keine Einbettung in andere Seiten – Lernende öffnen den Link deshalb in einem neuen Tab. Links von YouTube, Vimeo, Google Docs/Slides/Drive, H5P und LearningApps werden direkt eingebettet."
   },
   "editor": {
     "placeholder": "Schreib hier deine Lektion … Nutze Überschriften, Listen und Hervorhebungen zur Gliederung.",
@@ -1383,6 +1394,12 @@
     "roleChanged": "{name} ist jetzt {role}",
     "enabled": "{name} aktiviert",
     "disabled": "{name} deaktiviert",
-    "total": "{count, plural, one {# Nutzer:in} other {# Nutzer:innen}}"
+    "total": "{count, plural, one {# Nutzer:in} other {# Nutzer:innen}}",
+    "confirmDisableTitle": "{name} deaktivieren?",
+    "confirmDisableText": "Die Person wird sofort abgemeldet und kann sich erst wieder anmelden, wenn du das Konto aktivierst. Kurse, Anmeldungen und Ergebnisse bleiben erhalten.",
+    "confirmDisable": "Konto deaktivieren",
+    "confirmRoleTitle": "Rolle von {name} zu „{role}“ ändern?",
+    "confirmRoleText": "Die neuen Berechtigungen gelten sofort, auch in bereits geöffneten Sitzungen.",
+    "confirmRole": "Rolle ändern"
   }
 }

@@ -122,7 +122,7 @@ export function CourseBuilder() {
               pending={publish.isPending}
               onSubmit={(body) => publish.mutateAsync(body)}
             />
-            <span>·</span>
+            <span className="hidden sm:inline">·</span>
             <span>
               {t("course.modulesCount", { count: c.modules.length })} · {t("course.itemsCount", { count: itemCount })} ·{" "}
               {t("course.learnersCount", { count: c.studentCount })}

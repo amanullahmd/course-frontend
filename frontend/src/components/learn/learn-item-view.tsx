@@ -116,10 +116,10 @@ export function LearnItemView() {
             </div>
           </div>
         </div>
-        {data.summary && <p className="mt-5 text-lg leading-relaxed text-pretty text-muted-foreground">{data.summary}</p>}
+        {data.summary && <p className="mt-4 text-lg leading-relaxed text-pretty text-muted-foreground">{data.summary}</p>}
       </header>
 
-      <div className="mt-8 grid gap-10">
+      <div className="mt-6 grid gap-8 sm:mt-8">
         {isAssessment ? (
           <>
             {data.body && <RichContent html={data.body} />}

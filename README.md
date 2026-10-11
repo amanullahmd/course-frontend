@@ -6,7 +6,7 @@ from a waiting list. Learners register, verify their e-mail, apply, and learn th
 
 | Folder | Contents |
 |---|---|
-| [`docs/`](docs) | [Product story & user stories](docs/STORY.md) · [Development plan, architecture & API contract](docs/PLAN.md) |
+| [`docs/`](docs) | [Product story & user stories](docs/STORY.md) · [Development plan, architecture & API contract](docs/PLAN.md) · [QA report & screenshots](docs/QA_REPORT.md) |
 | [`backend/`](backend) | Spring Boot 4.1.1 · Java 25 · Maven (jar) · YAML config · JPA + Flyway · JWT security |
 | [`frontend/`](frontend) | Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 · TanStack Query |
 
@@ -28,5 +28,7 @@ Demo accounts (password `Password123!`): `admin@sprachweg.de`, `lehrer@sprachweg
 ```bash
 docker compose up --build
 ```
+
+UI languages: English (default) and German, switchable in the header.
 
 This starts PostgreSQL 17, Mailpit (catch-all mail UI at http://localhost:8025), the backend and the frontend.

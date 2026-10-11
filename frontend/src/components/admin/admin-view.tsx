@@ -12,6 +12,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { PageContainer, PageHeader } from "@/components/layout/page-header";
 import { UserAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Pagination } from "@/components/ui/pagination";
@@ -38,7 +39,15 @@ export function AdminView() {
   const update = useUpdateUser();
   const s = stats.data;
 
-  const change = (u: AdminUserDto, patch: Partial<{ role: Role; enabled: boolean }>) =>
+  type Patch = Partial<{ role: Role; enabled: boolean }>;
+  // Disabling an account and changing a role take effect immediately (open sessions end), so they are confirmed first.
+  const [pendingChange, setPendingChange] = React.useState<{ user: AdminUserDto; patch: Patch } | null>(null);
+  const request = (u: AdminUserDto, patch: Patch) => {
+    if (patch.enabled === true) change(u, patch);
+    else setPendingChange({ user: u, patch });
+  };
+
+  const change = (u: AdminUserDto, patch: Patch, onDone?: () => void) =>
     update.mutate(
       { id: u.id, body: { role: patch.role ?? u.role, enabled: patch.enabled ?? u.enabled } },
       {
@@ -50,6 +59,7 @@ export function AdminView() {
                 ? t("admin.enabled", { name: u.fullName })
                 : t("admin.disabled", { name: u.fullName }),
           ),
+        onSettled: () => onDone?.(),
       },
     );
 
@@ -127,7 +137,7 @@ export function AdminView() {
                 {users.data.content.map((u) => {
                   const self = u.id === me?.id;
                   const roleSelect = (
-                    <Select value={u.role} onValueChange={(r) => change(u, { role: r as Role })} disabled={self}>
+                    <Select value={u.role} onValueChange={(r) => r !== u.role && request(u, { role: r as Role })} disabled={self}>
                       <SelectTrigger size="sm" className="w-36" aria-label={t("admin.roleOf", { name: u.fullName })}>
                         <SelectValue />
                       </SelectTrigger>
@@ -144,7 +154,7 @@ export function AdminView() {
                     <Switch
                       checked={u.enabled}
                       disabled={self}
-                      onCheckedChange={(c) => change(u, { enabled: c })}
+                      onCheckedChange={(c) => request(u, { enabled: c })}
                       aria-label={u.enabled ? t("admin.disable", { name: u.fullName }) : t("admin.enable", { name: u.fullName })}
                     />
                   );
@@ -189,6 +199,23 @@ export function AdminView() {
           </div>
         )}
       </section>
+      <ConfirmDialog
+        open={pendingChange !== null}
+        onOpenChange={(open) => !open && !update.isPending && setPendingChange(null)}
+        destructive={pendingChange?.patch.enabled === false}
+        loading={update.isPending}
+        title={
+          pendingChange?.patch.enabled === false
+            ? t("admin.confirmDisableTitle", { name: pendingChange.user.fullName })
+            : t("admin.confirmRoleTitle", {
+                name: pendingChange?.user.fullName ?? "",
+                role: pendingChange?.patch.role ? t(`roles.${pendingChange.patch.role}`) : "",
+              })
+        }
+        description={pendingChange?.patch.enabled === false ? t("admin.confirmDisableText") : t("admin.confirmRoleText")}
+        confirmLabel={pendingChange?.patch.enabled === false ? t("admin.confirmDisable") : t("admin.confirmRole")}
+        onConfirm={() => pendingChange && change(pendingChange.user, pendingChange.patch, () => setPendingChange(null))}
+      />
     </PageContainer>
   );
 }

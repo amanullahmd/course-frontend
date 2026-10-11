@@ -326,6 +326,10 @@ class CourseLifecycleTest extends IntegrationTestSupport {
         mvc.perform(auth(get("/api/student/attempts/" + attemptId), student))
                 .andExpect(jsonPath("$.status").value("GRADED"))
                 .andExpect(jsonPath("$.answers[?(@.type=='ESSAY')].feedback").value(org.hamcrest.Matchers.hasItem("Gut gemacht!")));
+        // the "result available" notification deep-links to this attempt's review
+        mvc.perform(auth(get("/api/notifications"), student))
+                .andExpect(jsonPath("$.content[?(@.type=='ATTEMPT_GRADED')].link").value(org.hamcrest.Matchers.hasItem(
+                        "/learn/" + courseId + "/" + quizId + "?attempt=" + attemptId)));
         mvc.perform(auth(get("/api/student/items/" + quizId), student))
                 .andExpect(jsonPath("$.assessment.attemptsUsed").value(1))
                 .andExpect(jsonPath("$.assessment.bestPercent").value(70.0))
