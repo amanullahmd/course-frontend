@@ -4,7 +4,8 @@ import * as React from "react";
 import { ArrowLeft, ArrowRight, Flag, Send, Timer } from "lucide-react";
 import { toast } from "sonner";
 import type { AttemptResultDto, AttemptSessionDto } from "@/lib/api/types";
-import { cn, pluralize } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 import { useSubmitAttempt } from "@/hooks/queries/student";
 import { removePersisted, usePersistentState } from "@/hooks/use-local-storage";
 import { useNow } from "@/hooks/use-now";
@@ -24,6 +25,7 @@ function formatRemaining(ms: number): string {
 }
 
 function Countdown({ deadline, onExpire }: { deadline: string; onExpire: () => void }) {
+  const t = useTranslations("quiz");
   const now = useNow();
   const end = React.useMemo(() => new Date(deadline).getTime(), [deadline]);
   const remaining = now ? end - now : Number.POSITIVE_INFINITY;
@@ -44,7 +46,7 @@ function Countdown({ deadline, onExpire }: { deadline: string; onExpire: () => v
     <div
       role="timer"
       aria-live={urgent ? "assertive" : "off"}
-      aria-label="Time remaining"
+      aria-label={t("timer")}
       className={cn(
         "flex items-center gap-1.5 rounded-lg border px-2.5 py-1 font-mono text-sm font-semibold tabular-nums transition-colors",
         urgent ? "animate-pulse border-destructive/40 bg-destructive-soft text-destructive" : warn ? "border-warning/40 bg-warning-soft text-warning" : "bg-card",
@@ -69,6 +71,8 @@ export function QuizPlayer({
   title: string;
   onSubmitted: (result: AttemptResultDto) => void;
 }) {
+  const t = useTranslations("quiz");
+  const tc = useTranslations("common");
   const storageKey = `sw.attempt.${session.id}`;
   const [answers, setAnswers] = usePersistentState<Record<string, DraftAnswer>>(storageKey, {});
   const [flags, setFlags] = React.useState<Record<string, boolean>>({});
@@ -97,14 +101,14 @@ export function QuizPlayer({
         {
           onSuccess: (result) => {
             removePersisted(storageKey);
-            if (auto) toast.info("Time's up! Your answers were submitted automatically.");
-            else toast.success("Submitted. Gut gemacht!");
+            if (auto) toast.info(t("timeUp"));
+            else toast.success(t("submittedToast"));
             onSubmitted(result);
           },
         },
       );
     },
-    [answers, onSubmitted, questions, session.id, storageKey, submit],
+    [answers, onSubmitted, questions, session.id, storageKey, submit, t],
   );
 
   if (!q) return null;
@@ -116,7 +120,7 @@ export function QuizPlayer({
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{title}</p>
           <p className="text-xs text-muted-foreground tabular-nums">
-            {answeredCount} of {questions.length} answered · autosaved
+            {t("answeredAutosaved", { answered: answeredCount, total: questions.length })}
           </p>
         </div>
         {session.deadline && <Countdown deadline={session.deadline} onExpire={() => doSubmit(true)} />}
@@ -127,7 +131,7 @@ export function QuizPlayer({
         <div className="p-5 sm:p-8">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm text-muted-foreground tabular-nums">
-              Question {index + 1} of {questions.length} · {pluralize(q.points, "point")}
+              {t("questionOf", { current: index + 1, total: questions.length })} · {tc("points", { count: q.points })}
             </p>
             <Button
               variant="ghost"
@@ -136,7 +140,7 @@ export function QuizPlayer({
               onClick={() => setFlags({ ...flags, [q.id]: !flags[q.id] })}
               className={cn(flags[q.id] && "text-warning")}
             >
-              <Flag className={cn(flags[q.id] && "fill-current")} /> {flags[q.id] ? "Flagged" : "Flag for review"}
+              <Flag className={cn(flags[q.id] && "fill-current")} /> {flags[q.id] ? t("flagged") : t("flag")}
             </Button>
           </div>
           <div className="mt-4 grid gap-5" key={q.id}>
@@ -148,22 +152,22 @@ export function QuizPlayer({
           </div>
           <div className="mt-8 flex items-center justify-between gap-3 border-t pt-5">
             <Button variant="ghost" disabled={index === 0} onClick={() => setIndex(index - 1)}>
-              <ArrowLeft /> Back
+              <ArrowLeft /> {tc("back")}
             </Button>
             {index < questions.length - 1 ? (
               <Button onClick={() => setIndex(index + 1)}>
-                Next <ArrowRight />
+                {tc("next")} <ArrowRight />
               </Button>
             ) : (
               <Button variant="brand" onClick={() => setConfirmOpen(true)} loading={submit.isPending}>
-                <Send /> Submit answers
+                <Send /> {t("submitAnswers")}
               </Button>
             )}
           </div>
         </div>
 
-        <aside className="border-t p-4 lg:border-t-0 lg:border-l" aria-label="Question navigator">
-          <p className="mb-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">Questions</p>
+        <aside className="border-t p-4 lg:border-t-0 lg:border-l" aria-label={t("navigator")}>
+          <p className="mb-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">{t("questions")}</p>
           <div className="grid grid-cols-8 gap-1.5 sm:grid-cols-10 lg:grid-cols-5">
             {questions.map((x, i) => {
               const done = isAnswered(x, answers[x.id]);
@@ -173,7 +177,7 @@ export function QuizPlayer({
                   type="button"
                   onClick={() => setIndex(i)}
                   aria-current={i === index ? "step" : undefined}
-                  aria-label={`Question ${i + 1}${done ? ", answered" : ""}${flags[x.id] ? ", flagged" : ""}`}
+                  aria-label={[t("questionLabel", { n: i + 1 }), done ? t("answered") : null, flags[x.id] ? t("flaggedLabel") : null].filter(Boolean).join(", ")}
                   className={cn(
                     "relative grid aspect-square place-items-center rounded-md border text-xs font-medium tabular-nums transition-colors hover:border-foreground/30",
                     done && "border-transparent bg-primary text-primary-foreground",
@@ -187,7 +191,7 @@ export function QuizPlayer({
             })}
           </div>
           <Button variant="outline" size="sm" className="mt-4 w-full" onClick={() => setConfirmOpen(true)}>
-            Finish attempt
+            {t("finish")}
           </Button>
         </aside>
       </div>
@@ -195,13 +199,9 @@ export function QuizPlayer({
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title="Submit your answers?"
-        description={
-          unanswered > 0
-            ? `You still have ${pluralize(unanswered, "unanswered question")}. You can't change your answers after submitting.`
-            : "All questions are answered. You can't change your answers after submitting."
-        }
-        confirmLabel="Submit now"
+        title={t("confirmTitle")}
+        description={unanswered > 0 ? t("confirmUnanswered", { count: unanswered }) : t("confirmAll")}
+        confirmLabel={t("submitNow")}
         loading={submit.isPending}
         onConfirm={() => {
           setConfirmOpen(false);

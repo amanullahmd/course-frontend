@@ -64,13 +64,13 @@ public class AdminService {
         boolean self = user.getId().equals(me.id());
         if (req.role() != null && req.role() != user.getRole()) {
             if (self) {
-                throw new BadRequestException("CANNOT_MODIFY_SELF", "You cannot change your own role");
+                throw new BadRequestException("CANNOT_MODIFY_SELF", "You cannot change your own role").key("error.CANNOT_MODIFY_SELF.role");
             }
             user.setRole(req.role());
         }
         if (req.enabled() != null && req.enabled() != user.isEnabled()) {
             if (self) {
-                throw new BadRequestException("CANNOT_MODIFY_SELF", "You cannot disable your own account");
+                throw new BadRequestException("CANNOT_MODIFY_SELF", "You cannot disable your own account").key("error.CANNOT_MODIFY_SELF.disable");
             }
             user.setEnabled(req.enabled());
             if (!req.enabled()) {
@@ -83,6 +83,6 @@ public class AdminService {
     private AdminUserDto toDto(User u) {
         var d = userMapper.toDto(u);
         return new AdminUserDto(d.id(), d.fullName(), d.email(), d.role(), d.emailVerified(), d.bio(), d.avatarUrl(),
-                d.avatarMediaId(), d.createdAt(), u.isEnabled());
+                d.avatarMediaId(), d.locale(), d.createdAt(), u.isEnabled());
     }
 }

@@ -2,21 +2,21 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ChevronLeft, ChevronRight, SearchX, ServerCrash } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { fetchCatalog } from "@/lib/api/server";
 import type { CefrLevel } from "@/lib/api/types";
 import { CEFR_LEVELS } from "@/lib/constants";
-import { cn, pluralize } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { CatalogFilters } from "@/components/course/catalog-filters";
 import { CourseCard, CourseCardSkeleton } from "@/components/course/course-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export const metadata: Metadata = {
-  title: "Course catalog",
-  description: "Browse German courses from A1 to C2 and apply to join.",
-  alternates: { canonical: "/courses" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("meta");
+  return { title: t("catalog"), description: t("catalogDescription"), alternates: { canonical: "/courses" } };
+}
 
 const PAGE_SIZE = 12;
 
@@ -42,17 +42,18 @@ async function CatalogResults({ searchParams }: { searchParams: SearchParams }) 
   const level = CEFR_LEVELS.includes(levelRaw as CefrLevel) ? (levelRaw as CefrLevel) : undefined;
   const page = Math.max(0, (Number.parseInt(first(sp.page) ?? "1", 10) || 1) - 1);
 
+  const t = await getTranslations();
   const result = await fetchCatalog({ q, level, page, size: PAGE_SIZE });
 
   if (!result.ok) {
     return (
       <EmptyState
         icon={ServerCrash}
-        title="The catalog is temporarily unavailable"
-        description="We couldn't reach the course service. Please refresh the page in a moment."
+        title={t("catalog.unavailableTitle")}
+        description={t("catalog.unavailableText")}
         action={
           <Button variant="outline" asChild>
-            <Link href="/courses">Retry</Link>
+            <Link href="/courses">{t("common.retry")}</Link>
           </Button>
         }
       />
@@ -64,12 +65,12 @@ async function CatalogResults({ searchParams }: { searchParams: SearchParams }) 
     return (
       <EmptyState
         icon={SearchX}
-        title="No courses match your search"
-        description={q || level ? "Try a different search term or another level." : "No courses have been published yet."}
+        title={t("catalog.noMatchTitle")}
+        description={q || level ? t("catalog.noMatchFiltered") : t("catalog.noCourses")}
         action={
           (q || level) && (
             <Button variant="outline" asChild>
-              <Link href="/courses">Clear filters</Link>
+              <Link href="/courses">{t("catalog.clearFilters")}</Link>
             </Button>
           )
         }
@@ -81,7 +82,7 @@ async function CatalogResults({ searchParams }: { searchParams: SearchParams }) 
   return (
     <div className="grid gap-8">
       <p className="text-sm text-muted-foreground" aria-live="polite">
-        {pluralize(totalElements, "course")} {q && <>for “{q}”</>} {level && <>at level {level}</>}
+        {t("catalog.count", { count: totalElements })} {q && t("catalog.forQuery", { q })} {level && t("catalog.atLevel", { level })}
       </p>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {content.map((c) => (
@@ -89,16 +90,16 @@ async function CatalogResults({ searchParams }: { searchParams: SearchParams }) 
         ))}
       </div>
       {totalPages > 1 && (
-        <nav aria-label="Pagination" className="flex items-center justify-center gap-2">
+        <nav aria-label={t("ui.pagination")} className="flex items-center justify-center gap-2">
           <Link
             aria-disabled={page === 0}
             href={pageHref(keep, Math.max(0, page - 1))}
             className={cn(buttonVariants({ variant: "outline", size: "sm" }), page === 0 && "pointer-events-none opacity-50")}
           >
-            <ChevronLeft /> Previous
+            <ChevronLeft /> {t("common.previous")}
           </Link>
           <span className="px-3 text-sm text-muted-foreground tabular-nums">
-            Page {page + 1} of {totalPages}
+            {t("ui.pageOf", { page: page + 1, total: totalPages })}
           </span>
           <Link
             aria-disabled={page >= totalPages - 1}
@@ -108,7 +109,7 @@ async function CatalogResults({ searchParams }: { searchParams: SearchParams }) 
               page >= totalPages - 1 && "pointer-events-none opacity-50",
             )}
           >
-            Next <ChevronRight />
+            {t("common.next")} <ChevronRight />
           </Link>
         </nav>
       )}
@@ -129,17 +130,16 @@ function ResultsSkeleton() {
   );
 }
 
-export default function CatalogPage({ searchParams }: PageProps<"/courses">) {
+export default async function CatalogPage({ searchParams }: PageProps<"/courses">) {
+  const t = await getTranslations("catalog");
   return (
     <div className="relative">
       <div className="bg-grid absolute inset-x-0 top-0 -z-10 h-80 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <div className="mx-auto max-w-7xl px-4 pt-12 pb-24 sm:px-6 lg:px-8">
         <div className="max-w-2xl">
-          <p className="text-sm font-semibold tracking-wide text-brand-strong uppercase">Kurskatalog</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Find your next German course</h1>
-          <p className="mt-3 text-muted-foreground">
-            From your very first „Hallo“ to C2 nuance. Every course is taught by a real instructor who reviews each application.
-          </p>
+          <p className="text-sm font-semibold tracking-wide text-brand-strong uppercase">{t("eyebrow")}</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{t("title")}</h1>
+          <p className="mt-3 text-muted-foreground">{t("intro")}</p>
         </div>
         <div className="mt-8">
           <Suspense fallback={<Skeleton className="h-24 max-w-xl" />}>

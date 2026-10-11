@@ -10,6 +10,7 @@ import me.amanullah.course.common.exception.ConflictException;
 import me.amanullah.course.common.exception.ForbiddenException;
 import me.amanullah.course.common.exception.NotFoundException;
 import me.amanullah.course.common.exception.ValidationException;
+import me.amanullah.course.common.i18n.MessageRef;
 import me.amanullah.course.common.web.Links;
 import me.amanullah.course.course.ContentItem;
 import me.amanullah.course.course.Course;
@@ -85,10 +86,11 @@ public class AttemptService {
             return mapper.toSession(inProgress.get());
         }
         if (a.getAvailableFrom() != null && now.isBefore(a.getAvailableFrom())) {
-            throw new ForbiddenException("ASSESSMENT_NOT_AVAILABLE", "This assessment is not open yet");
+            throw new ForbiddenException("ASSESSMENT_NOT_AVAILABLE", "This assessment is not open yet")
+                    .key("error.ASSESSMENT_NOT_AVAILABLE.notYet");
         }
         if (a.getAvailableUntil() != null && !now.isBefore(a.getAvailableUntil())) {
-            throw new ForbiddenException("ASSESSMENT_NOT_AVAILABLE", "This assessment is closed");
+            throw new ForbiddenException("ASSESSMENT_NOT_AVAILABLE", "This assessment is closed").key("error.ASSESSMENT_NOT_AVAILABLE.closed");
         }
         if (a.getQuestions().isEmpty()) {
             throw new BadRequestException("NO_QUESTIONS", "This assessment has no questions yet");
@@ -145,9 +147,8 @@ public class AttemptService {
             ContentItem item = attempt.getAssessment().getItem();
             Course course = item.getModule().getCourse();
             notifications.notify(course.getInstructor(), NotificationType.ATTEMPT_SUBMITTED,
-                    "Neue Abgabe zur Bewertung",
-                    attempt.getStudent().getFullName() + " hat „" + item.getTitle() + "“ abgegeben.",
-                    Links.instructorAttempt(attempt.getId()));
+                    "notification.attemptSubmitted", Links.instructorAttempt(attempt.getId()), null,
+                    attempt.getStudent().getFullName(), item.getTitle());
         }
         return mapper.toResult(attempt, attempt.getAssessment().isShowCorrectAnswers());
     }
@@ -184,18 +185,18 @@ public class AttemptService {
         }
         Map<UUID, AttemptAnswer> byQuestion = new HashMap<>();
         attempt.getAnswers().forEach(a -> byQuestion.put(a.getQuestionId(), a));
-        Map<String, String> errors = new HashMap<>();
+        Map<String, MessageRef> errors = new java.util.LinkedHashMap<>();
         for (int i = 0; i < grades.size(); i++) {
             Grade g = grades.get(i);
             AttemptAnswer answer = byQuestion.get(g.questionId());
             if (answer == null) {
-                errors.put("grades[" + i + "].questionId", "unknown question");
+                errors.put("grades[" + i + "].questionId", new MessageRef("validation.unknownQuestion"));
             } else if (g.pointsAwarded() > answer.getPoints()) {
-                errors.put("grades[" + i + "].pointsAwarded", "must not exceed " + answer.getPoints());
+                errors.put("grades[" + i + "].pointsAwarded", new MessageRef("validation.grade.max", answer.getPoints()));
             }
         }
         if (!errors.isEmpty()) {
-            throw new ValidationException("Invalid grades", errors);
+            throw new ValidationException(errors);
         }
         for (Grade g : grades) {
             AttemptAnswer answer = byQuestion.get(g.questionId());
@@ -213,9 +214,8 @@ public class AttemptService {
             UUID courseId = item.getModule().getCourse().getId();
             String link = Links.learnItem(courseId, item.getId());
             User student = attempt.getStudent();
-            notifications.notifyWithEmail(student, NotificationType.ATTEMPT_GRADED, "Ergebnis verfügbar",
-                    "Deine Abgabe für „" + item.getTitle() + "“ wurde bewertet.", link,
-                    templates.attemptGraded(student.getFullName(), item.getTitle(), templates.link(link)));
+            notifications.notifyWithEmail(student, NotificationType.ATTEMPT_GRADED, "notification.attemptGraded", link,
+                    null, templates.attemptGraded(student, item.getTitle(), templates.link(link)), item.getTitle());
         }
         return mapper.toResult(attempt, true);
     }

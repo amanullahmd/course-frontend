@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
 } from "./alert-dialog";
 import { Button } from "./button";
+import { useTranslations } from "next-intl";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -29,11 +30,12 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmLabel = "Confirm",
+  confirmLabel,
   destructive = false,
   loading = false,
   onConfirm,
 }: ConfirmDialogProps) {
+  const t = useTranslations("common");
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -51,7 +53,7 @@ export function ConfirmDialog({
           </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{t("cancel")}</AlertDialogCancel>
           <Button
             variant={destructive ? "destructive" : "default"}
             loading={loading}
@@ -59,7 +61,7 @@ export function ConfirmDialog({
               void onConfirm();
             }}
           >
-            {confirmLabel}
+            {confirmLabel ?? t("confirm")}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

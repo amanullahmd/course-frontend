@@ -41,7 +41,8 @@ public class MediaController {
         this.frameAncestors = "frame-ancestors 'self' " + String.join(" ", props.cors().allowedOrigins());
     }
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    /** multipart/form-data with a {@code file} part; anything else → 400 FILE_REQUIRED. */
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public MediaDto upload(@RequestPart("file") MultipartFile file) {
         return mediaService.upload(CurrentUser.get().id(), file);

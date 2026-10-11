@@ -27,6 +27,7 @@ import {
   Undo2,
   Unlink,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,6 +75,7 @@ function ToolButton({
 }
 
 function LinkButton({ editor, active }: { editor: Editor; active: boolean }) {
+  const t = useTranslations("editor");
   const [open, setOpen] = React.useState(false);
   const [url, setUrl] = React.useState("");
   return (
@@ -84,11 +86,11 @@ function LinkButton({ editor, active }: { editor: Editor; active: boolean }) {
         if (o) setUrl((editor.getAttributes("link").href as string | undefined) ?? "");
       }}
     >
-      <Tooltip content="Link">
+      <Tooltip content={t("link")}>
         <PopoverTrigger asChild>
           <button
             type="button"
-            aria-label="Link"
+            aria-label={t("link")}
             aria-pressed={active}
             className={cn(
               "grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground [&_svg]:size-4",
@@ -116,9 +118,9 @@ function LinkButton({ editor, active }: { editor: Editor; active: boolean }) {
             setOpen(false);
           }}
         >
-          <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" aria-label="Link URL" autoFocus />
+          <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" aria-label={t("linkUrl")} autoFocus />
           <Button type="submit" size="sm">
-            Apply
+            {t("apply")}
           </Button>
         </form>
       </PopoverContent>
@@ -127,6 +129,7 @@ function LinkButton({ editor, active }: { editor: Editor; active: boolean }) {
 }
 
 function Toolbar({ editor }: { editor: Editor }) {
+  const t = useTranslations("editor");
   const state = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -151,66 +154,66 @@ function Toolbar({ editor }: { editor: Editor }) {
   const chain = () => editor.chain().focus();
 
   return (
-    <div role="toolbar" aria-label="Formatting" className="sticky top-14 z-10 flex flex-wrap items-center gap-0.5 rounded-t-xl border-b bg-card/95 p-1.5 backdrop-blur">
-      <ToolButton label="Heading" active={state.h2} onClick={() => chain().toggleHeading({ level: 2 }).run()}>
+    <div role="toolbar" aria-label={t("formatting")} className="sticky top-14 z-10 flex flex-wrap items-center gap-0.5 rounded-t-xl border-b bg-card/95 p-1.5 backdrop-blur">
+      <ToolButton label={t("heading")} active={state.h2} onClick={() => chain().toggleHeading({ level: 2 }).run()}>
         <Heading2 />
       </ToolButton>
-      <ToolButton label="Subheading" active={state.h3} onClick={() => chain().toggleHeading({ level: 3 }).run()}>
+      <ToolButton label={t("subheading")} active={state.h3} onClick={() => chain().toggleHeading({ level: 3 }).run()}>
         <Heading3 />
       </ToolButton>
       <Sep />
-      <ToolButton label="Bold (Ctrl+B)" active={state.bold} onClick={() => chain().toggleBold().run()}>
+      <ToolButton label={t("bold")} active={state.bold} onClick={() => chain().toggleBold().run()}>
         <Bold />
       </ToolButton>
-      <ToolButton label="Italic (Ctrl+I)" active={state.italic} onClick={() => chain().toggleItalic().run()}>
+      <ToolButton label={t("italic")} active={state.italic} onClick={() => chain().toggleItalic().run()}>
         <Italic />
       </ToolButton>
-      <ToolButton label="Underline (Ctrl+U)" active={state.underline} onClick={() => chain().toggleUnderline().run()}>
+      <ToolButton label={t("underline")} active={state.underline} onClick={() => chain().toggleUnderline().run()}>
         <Underline />
       </ToolButton>
-      <ToolButton label="Strikethrough" active={state.strike} onClick={() => chain().toggleStrike().run()}>
+      <ToolButton label={t("strike")} active={state.strike} onClick={() => chain().toggleStrike().run()}>
         <Strikethrough />
       </ToolButton>
-      <ToolButton label="Highlight" active={state.highlight} onClick={() => chain().toggleHighlight().run()}>
+      <ToolButton label={t("highlight")} active={state.highlight} onClick={() => chain().toggleHighlight().run()}>
         <Highlighter />
       </ToolButton>
       <LinkButton editor={editor} active={state.link} />
       {state.link && (
-        <ToolButton label="Remove link" onClick={() => chain().extendMarkRange("link").unsetLink().run()}>
+        <ToolButton label={t("removeLink")} onClick={() => chain().extendMarkRange("link").unsetLink().run()}>
           <Unlink />
         </ToolButton>
       )}
       <Sep />
-      <ToolButton label="Bullet list" active={state.bullet} onClick={() => chain().toggleBulletList().run()}>
+      <ToolButton label={t("bullet")} active={state.bullet} onClick={() => chain().toggleBulletList().run()}>
         <List />
       </ToolButton>
-      <ToolButton label="Numbered list" active={state.ordered} onClick={() => chain().toggleOrderedList().run()}>
+      <ToolButton label={t("ordered")} active={state.ordered} onClick={() => chain().toggleOrderedList().run()}>
         <ListOrdered />
       </ToolButton>
-      <ToolButton label="Quote" active={state.quote} onClick={() => chain().toggleBlockquote().run()}>
+      <ToolButton label={t("quote")} active={state.quote} onClick={() => chain().toggleBlockquote().run()}>
         <Quote />
       </ToolButton>
-      <ToolButton label="Divider" onClick={() => chain().setHorizontalRule().run()}>
+      <ToolButton label={t("divider")} onClick={() => chain().setHorizontalRule().run()}>
         <Minus />
       </ToolButton>
       <Sep />
-      <ToolButton label="Align left" active={state.left} onClick={() => chain().setTextAlign("left").run()}>
+      <ToolButton label={t("left")} active={state.left} onClick={() => chain().setTextAlign("left").run()}>
         <TextAlignStart />
       </ToolButton>
-      <ToolButton label="Align center" active={state.center} onClick={() => chain().setTextAlign("center").run()}>
+      <ToolButton label={t("center")} active={state.center} onClick={() => chain().setTextAlign("center").run()}>
         <TextAlignCenter />
       </ToolButton>
-      <ToolButton label="Align right" active={state.right} onClick={() => chain().setTextAlign("right").run()}>
+      <ToolButton label={t("right")} active={state.right} onClick={() => chain().setTextAlign("right").run()}>
         <TextAlignEnd />
       </ToolButton>
-      <ToolButton label="Clear formatting" onClick={() => chain().unsetAllMarks().clearNodes().run()}>
+      <ToolButton label={t("clear")} onClick={() => chain().unsetAllMarks().clearNodes().run()}>
         <RemoveFormatting />
       </ToolButton>
       <span className="ml-auto flex">
-        <ToolButton label="Undo (Ctrl+Z)" disabled={!state.canUndo} onClick={() => chain().undo().run()}>
+        <ToolButton label={t("undo")} disabled={!state.canUndo} onClick={() => chain().undo().run()}>
           <Undo2 />
         </ToolButton>
-        <ToolButton label="Redo (Ctrl+Shift+Z)" disabled={!state.canRedo} onClick={() => chain().redo().run()}>
+        <ToolButton label={t("redo")} disabled={!state.canRedo} onClick={() => chain().redo().run()}>
           <Redo2 />
         </ToolButton>
       </span>
@@ -221,7 +224,7 @@ function Toolbar({ editor }: { editor: Editor }) {
 export function RichTextEditor({
   value,
   onChange,
-  placeholder = "Schreiben Sie hier Ihre Lektion… Use headings, lists and highlights to structure it.",
+  placeholder,
   id,
   className,
 }: {
@@ -231,6 +234,7 @@ export function RichTextEditor({
   id?: string;
   className?: string;
 }) {
+  const t = useTranslations("editor");
   const onChangeRef = React.useRef(onChange);
   React.useEffect(() => {
     onChangeRef.current = onChange;
@@ -245,14 +249,14 @@ export function RichTextEditor({
       }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Highlight,
-      Placeholder.configure({ placeholder }),
+      Placeholder.configure({ placeholder: placeholder ?? t("placeholder") }),
     ],
     content: value || "",
     editorProps: {
       attributes: {
         class: "prose-sw tiptap px-4 py-4 sm:px-6 sm:py-5",
         ...(id ? { id } : {}),
-        "aria-label": "Lesson content",
+        "aria-label": t("contentAria"),
         role: "textbox",
         "aria-multiline": "true",
       },

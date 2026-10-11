@@ -1,4 +1,9 @@
-import { format, formatDistanceToNow, isValid, parseISO } from "date-fns";
+import { format, formatDistanceToNow, isValid, parseISO, type Locale } from "date-fns";
+import { de, enUS } from "date-fns/locale";
+
+export function dateLocale(locale: string | undefined): Locale {
+  return locale === "de" ? de : enUS;
+}
 
 function toDate(value: string | Date | null | undefined): Date | null {
   if (!value) return null;
@@ -6,18 +11,18 @@ function toDate(value: string | Date | null | undefined): Date | null {
   return isValid(date) ? date : null;
 }
 
-export function formatDate(value: string | Date | null | undefined, pattern = "d MMM yyyy"): string {
+export function formatDate(value: string | Date | null | undefined, pattern = "d MMM yyyy", locale?: Locale): string {
   const date = toDate(value);
-  return date ? format(date, pattern) : "";
+  return date ? format(date, pattern, { locale }) : "";
 }
 
-export function formatDateTime(value: string | Date | null | undefined): string {
-  return formatDate(value, "d MMM yyyy, HH:mm");
+export function formatDateTime(value: string | Date | null | undefined, locale?: Locale): string {
+  return formatDate(value, "d MMM yyyy, HH:mm", locale);
 }
 
-export function formatRelative(value: string | Date | null | undefined): string {
+export function formatRelative(value: string | Date | null | undefined, locale?: Locale): string {
   const date = toDate(value);
-  return date ? formatDistanceToNow(date, { addSuffix: true }) : "";
+  return date ? formatDistanceToNow(date, { addSuffix: true, locale }) : "";
 }
 
 /** ISO instant → value for <input type="datetime-local"> in the user's time zone. */
@@ -31,11 +36,6 @@ export function localInputToIso(value: string | null | undefined): string | null
   if (!value) return null;
   const date = new Date(value);
   return isValid(date) ? date.toISOString() : null;
-}
-
-export function isPast(value: string | null | undefined, now: number): boolean {
-  const date = toDate(value);
-  return date ? date.getTime() <= now : false;
 }
 
 export function timeZoneName(): string {

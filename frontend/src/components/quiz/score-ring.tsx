@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 export function ScoreRing({
@@ -13,6 +14,7 @@ export function ScoreRing({
   pending?: boolean;
   className?: string;
 }) {
+  const t = useTranslations("quiz");
   const stroke = 10;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
@@ -35,7 +37,7 @@ export function ScoreRing({
       </svg>
       <div className="absolute text-center">
         <p className="text-3xl font-semibold tracking-tight tabular-nums">{percent == null ? "–" : `${Math.round(value)}%`}</p>
-        <p className="text-[11px] text-muted-foreground">{pending ? "provisional" : "score"}</p>
+        <p className="text-[11px] text-muted-foreground">{pending ? t("provisional") : t("scoreLabel")}</p>
       </div>
     </div>
   );

@@ -5,9 +5,10 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { DoorOpen, ImageUp, ShieldCheck, Trash } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { CourseDto, CourseUpsert, MediaDto } from "@/lib/api/types";
-import { getErrorMessage } from "@/lib/api/client";
-import { CEFR_LEVELS, CEFR_META, ENROLLMENT_MODE_META } from "@/lib/constants";
+import { CEFR_LEVELS, CEFR_META } from "@/lib/constants";
+import { useErrorMessage } from "@/hooks/use-error-message";
 import { applyServerErrors } from "@/lib/form-errors";
 import { useHotkey } from "@/hooks/use-hotkey";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
@@ -25,17 +26,20 @@ import { TagsInput } from "@/components/ui/tags-input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-const schema = z.object({
-  title: z.string().trim().min(3, "At least 3 characters").max(200),
-  subtitle: z.string().trim().max(300),
-  description: z.string().max(20000),
-  level: z.enum(["A1", "A2", "B1", "B2", "C1", "C2"]),
-  tags: z.array(z.string()).max(20),
-  enrollmentMode: z.enum(["APPROVAL", "OPEN"]),
-  capacity: z.string().regex(/^\d*$/, "Whole number of seats"),
-  cover: z.custom<MediaDto | null>(),
-});
-export type CourseFormValues = z.infer<typeof schema>;
+type FormT = (key: "validation.titleMin" | "validation.tooLong" | "validation.wholeNumber") => string;
+
+const makeSchema = (t: FormT) =>
+  z.object({
+    title: z.string().trim().min(3, t("validation.titleMin")).max(200, t("validation.tooLong")),
+    subtitle: z.string().trim().max(300, t("validation.tooLong")),
+    description: z.string().max(20000, t("validation.tooLong")),
+    level: z.enum(["A1", "A2", "B1", "B2", "C1", "C2"]),
+    tags: z.array(z.string()).max(20),
+    enrollmentMode: z.enum(["APPROVAL", "OPEN"]),
+    capacity: z.string().regex(/^\d*$/, t("validation.wholeNumber")),
+    cover: z.custom<MediaDto | null>(),
+  });
+export type CourseFormValues = z.infer<ReturnType<typeof makeSchema>>;
 
 export function courseToForm(course?: CourseDto): CourseFormValues {
   return {
@@ -72,6 +76,7 @@ function CoverField({
   onChange: (value: CourseFormValues["cover"]) => void;
   title: string;
 }) {
+  const t = useTranslations("courseForm");
   const { uploads, upload, cancel, dismiss, retry } = useUploads({ onUploaded: (media) => onChange(media) });
   return (
     <div className="grid gap-3 sm:grid-cols-[240px_1fr]">
@@ -84,7 +89,7 @@ function CoverField({
             size="icon-xs"
             className="absolute top-2 right-2 shadow"
             onClick={() => onChange(null)}
-            aria-label="Remove cover image"
+            aria-label={t("removeCover")}
           >
             <Trash />
           </Button>
@@ -96,8 +101,8 @@ function CoverField({
           multiple={false}
           accept="image/*"
           onFiles={upload}
-          title={value?.url ? "Replace cover image" : "Upload a cover image"}
-          hint="JPG, PNG or WebP · 1600×900 recommended"
+          title={value?.url ? t("replaceCover") : t("uploadCover")}
+          hint={t("coverHint")}
         />
         <UploadProgressList uploads={uploads} onCancel={cancel} onRetry={retry} onDismiss={dismiss} />
       </div>
@@ -116,6 +121,9 @@ export function CourseForm({
   onSubmit: (body: CourseUpsert) => Promise<unknown>;
   onCancel?: () => void;
 }) {
+  const t = useTranslations();
+  const errorMessage = useErrorMessage();
+  const schema = React.useMemo(() => makeSchema((k) => t(k)), [t]);
   const values = React.useMemo(() => courseToForm(course), [course]);
   const form = useForm<CourseFormValues>({ resolver: zodResolver(schema), values, resetOptions: { keepDirtyValues: false } });
   const { errors, isSubmitting, isDirty } = form.formState;
@@ -127,7 +135,7 @@ export function CourseForm({
       form.reset(v);
     } catch (err) {
       if (!applyServerErrors(err, form.setError, ["title", "subtitle", "description", "level", "tags", "enrollmentMode", "capacity"])) {
-        toast.error(getErrorMessage(err));
+        toast.error(errorMessage(err));
       }
     }
   });
@@ -142,21 +150,21 @@ export function CourseForm({
     <form onSubmit={submit} className="grid gap-6" noValidate>
       <Card>
         <CardHeader>
-          <CardTitle>Basics</CardTitle>
-          <CardDescription>What learners see first in the catalog.</CardDescription>
+          <CardTitle>{t("courseForm.basics")}</CardTitle>
+          <CardDescription>{t("courseForm.basicsText")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-5">
-          <Field label="Title" htmlFor="title" error={errors.title?.message} required>
+          <Field label={t("courseForm.title")} htmlFor="title" error={errors.title?.message} required>
             <Input placeholder="Deutsch für den Alltag" {...fieldA11y("title", errors.title?.message)} {...form.register("title")} />
           </Field>
-          <Field label="Subtitle" htmlFor="subtitle" error={errors.subtitle?.message} hint="One sentence that sums up the course.">
+          <Field label={t("courseForm.subtitle")} htmlFor="subtitle" error={errors.subtitle?.message} hint={t("courseForm.subtitleHint")}>
             <Input placeholder="Sicher kommunizieren in Alltagssituationen" {...fieldA11y("subtitle", errors.subtitle?.message)} {...form.register("subtitle")} />
           </Field>
-          <Field label="Description" htmlFor="description" error={errors.description?.message} hint="Goals, target group, materials, rhythm (e.g. one unit per week).">
+          <Field label={t("courseForm.description")} htmlFor="description" error={errors.description?.message} hint={t("courseForm.descriptionHint")}>
             <Textarea rows={7} {...fieldA11y("description", errors.description?.message)} {...form.register("description")} />
           </Field>
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="CEFR level" htmlFor="level" error={errors.level?.message} required>
+            <Field label={t("courseForm.level")} htmlFor="level" error={errors.level?.message} required>
               <Controller
                 control={form.control}
                 name="level"
@@ -171,7 +179,7 @@ export function CourseForm({
                           <span className="flex items-center gap-2">
                             <span className={`size-2 rounded-full ${CEFR_META[l].dot}`} />
                             <span className="font-semibold">{l}</span>
-                            <span className="text-muted-foreground">{CEFR_META[l].name}</span>
+                            <span className="text-muted-foreground">{t(`levels.${l}.name`)}</span>
                           </span>
                         </SelectItem>
                       ))}
@@ -180,11 +188,11 @@ export function CourseForm({
                 )}
               />
             </Field>
-            <Field label="Tags" htmlFor="tags" hint="Press Enter or comma to add.">
+            <Field label={t("courseForm.tags")} htmlFor="tags" hint={t("courseForm.tagsHint")}>
               <Controller
                 control={form.control}
                 name="tags"
-                render={({ field }) => <TagsInput id="tags" value={field.value} onChange={field.onChange} placeholder="Grammatik, Beruf, Prüfung…" />}
+                render={({ field }) => <TagsInput id="tags" value={field.value} onChange={field.onChange} placeholder={t("courseForm.tagsPlaceholder")} />}
               />
             </Field>
           </div>
@@ -194,9 +202,9 @@ export function CourseForm({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ImageUp className="size-4" /> Cover image
+            <ImageUp className="size-4" /> {t("courseForm.cover")}
           </CardTitle>
-          <CardDescription>Optional. Without a cover, Sprachweg generates a calm gradient.</CardDescription>
+          <CardDescription>{t("courseForm.coverText")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Controller control={form.control} name="cover" render={({ field }) => <CoverField value={field.value} onChange={(v) => field.onChange(v)} title={title} />} />
@@ -205,31 +213,35 @@ export function CourseForm({
 
       <Card>
         <CardHeader>
-          <CardTitle>Enrollment</CardTitle>
-          <CardDescription>Decide how learners join your course.</CardDescription>
+          <CardTitle>{t("courseForm.enrollment")}</CardTitle>
+          <CardDescription>{t("courseForm.enrollmentText")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-5">
           <Controller
             control={form.control}
             name="enrollmentMode"
             render={({ field }) => (
-              <RadioGroup value={field.value} onValueChange={field.onChange} className="grid gap-3 sm:grid-cols-2" aria-label="Enrollment mode">
-                <RadioCard value="APPROVAL" icon={<ShieldCheck />} title={ENROLLMENT_MODE_META.APPROVAL.label} description={ENROLLMENT_MODE_META.APPROVAL.description} />
-                <RadioCard value="OPEN" icon={<DoorOpen />} title={ENROLLMENT_MODE_META.OPEN.label} description={ENROLLMENT_MODE_META.OPEN.description} />
+              <RadioGroup value={field.value} onValueChange={field.onChange} className="grid gap-3 sm:grid-cols-2" aria-label={t("courseForm.enrollmentMode")}>
+                <RadioCard value="APPROVAL" icon={<ShieldCheck />} title={t("enrollmentMode.APPROVAL.label")} description={t("enrollmentMode.APPROVAL.description")} />
+                <RadioCard value="OPEN" icon={<DoorOpen />} title={t("enrollmentMode.OPEN.label")} description={t("enrollmentMode.OPEN.description")} />
               </RadioGroup>
             )}
           />
-          <Field label="Capacity" htmlFor="capacity" error={errors.capacity?.message} hint="Maximum number of approved learners. Leave empty for unlimited." className="max-w-xs">
-            <Input type="number" min={1} inputMode="numeric" placeholder="Unlimited" {...fieldA11y("capacity", errors.capacity?.message)} {...form.register("capacity")} />
+          <Field label={t("courseForm.capacity")} htmlFor="capacity" error={errors.capacity?.message} hint={t("courseForm.capacityHint")} className="max-w-xs">
+            <Input type="number" min={1} inputMode="numeric" placeholder={t("common.unlimited")} {...fieldA11y("capacity", errors.capacity?.message)} {...form.register("capacity")} />
           </Field>
         </CardContent>
       </Card>
 
       <div className="sticky bottom-0 z-10 -mx-1 flex items-center justify-end gap-3 border-t bg-background/85 px-1 py-3 backdrop-blur">
-        {isDirty && <span className="mr-auto text-xs text-muted-foreground">Unsaved changes · <Kbd>⌘/Ctrl</Kbd> <Kbd>S</Kbd></span>}
+        {isDirty && (
+          <span className="mr-auto text-xs text-muted-foreground">
+            {t("courseForm.unsavedShortcut")} <Kbd>⌘/Ctrl</Kbd> <Kbd>S</Kbd>
+          </span>
+        )}
         {onCancel && (
           <Button type="button" variant="ghost" onClick={onCancel}>
-            Cancel
+            {t("common.cancel")}
           </Button>
         )}
         <Button type="submit" loading={isSubmitting} disabled={!!course && !isDirty}>

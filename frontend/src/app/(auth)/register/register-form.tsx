@@ -6,10 +6,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useLocale, useTranslations } from "next-intl";
 import { GraduationCap, Presentation } from "lucide-react";
-import { getErrorMessage, isApiError } from "@/lib/api/client";
+import { isApiError } from "@/lib/api/client";
 import { applyServerErrors } from "@/lib/form-errors";
-import { emailSchema, passwordSchema } from "@/lib/validation";
+import { makeEmailSchema, makePasswordSchema, type ValidationT } from "@/lib/validation";
+import { useErrorMessage } from "@/hooks/use-error-message";
 import { useAuth } from "@/providers/auth-provider";
 import { AuthHeading, FormAlert } from "@/components/auth/auth-card";
 import { PasswordInput, PasswordStrengthMeter } from "@/components/auth/password-input";
@@ -18,27 +20,27 @@ import { Field, fieldA11y } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { RadioCard, RadioGroup } from "@/components/ui/radio-group";
 
-const schema = z.object({
-  role: z.enum(["STUDENT", "INSTRUCTOR"]),
-  fullName: z.string().trim().min(2, "Enter your full name").max(120, "That name is too long"),
-  email: emailSchema,
-  password: passwordSchema,
-});
-type Values = z.infer<typeof schema>;
-
 export function RegisterForm() {
+  const t = useTranslations();
+  const locale = useLocale();
+  const errorMessage = useErrorMessage();
   const { register: registerUser } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
   const [error, setError] = React.useState<string | null>(null);
+  const schema = React.useMemo(() => {
+    const vt: ValidationT = (k) => t(`validation.${k}`);
+    return z.object({
+      role: z.enum(["STUDENT", "INSTRUCTOR"]),
+      fullName: z.string().trim().min(2, t("validation.fullName")).max(120, t("validation.tooLong")),
+      email: makeEmailSchema(vt),
+      password: makePasswordSchema(vt),
+    });
+  }, [t]);
+  type Values = z.infer<typeof schema>;
   const form = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      role: params.get("role") === "INSTRUCTOR" ? "INSTRUCTOR" : "STUDENT",
-      fullName: "",
-      email: "",
-      password: "",
-    },
+    defaultValues: { role: params.get("role") === "INSTRUCTOR" ? "INSTRUCTOR" : "STUDENT", fullName: "", email: "", password: "" },
   });
   const { errors, isSubmitting } = form.formState;
   const password = useWatch({ control: form.control, name: "password" });
@@ -46,57 +48,55 @@ export function RegisterForm() {
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null);
     try {
-      await registerUser(values);
+      await registerUser({ ...values, locale });
       router.push(`/check-email?email=${encodeURIComponent(values.email)}`);
     } catch (err) {
       const mapped = applyServerErrors(err, form.setError, ["fullName", "email", "password", "role"]);
       if (isApiError(err) && (err.status === 409 || err.code === "EMAIL_TAKEN")) {
-        form.setError("email", { message: "An account with this e-mail already exists." });
+        form.setError("email", { message: t("errors.codes.EMAIL_TAKEN") });
       } else if (!mapped) {
-        setError(getErrorMessage(err));
+        setError(errorMessage(err));
       }
     }
   });
 
   return (
     <>
-      <AuthHeading title="Create your account" description="Free for learners and teachers. Takes less than a minute." />
+      <AuthHeading title={t("auth.register.title")} description={t("auth.register.subtitle")} />
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
         {error && <FormAlert>{error}</FormAlert>}
         <fieldset className="grid gap-2">
-          <legend className="mb-2 text-sm font-medium">I want to…</legend>
+          <legend className="mb-2 text-sm font-medium">{t("auth.register.iWantTo")}</legend>
           <Controller
             control={form.control}
             name="role"
             render={({ field }) => (
-              <RadioGroup value={field.value} onValueChange={field.onChange} className="grid grid-cols-2 gap-3" aria-label="Account type">
-                <RadioCard value="STUDENT" icon={<GraduationCap />} title="Learn German" description="Apply to courses and track progress" />
-                <RadioCard value="INSTRUCTOR" icon={<Presentation />} title="Teach German" description="Build and publish your own courses" />
+              <RadioGroup value={field.value} onValueChange={field.onChange} className="grid grid-cols-2 gap-3" aria-label={t("auth.register.accountType")}>
+                <RadioCard value="STUDENT" icon={<GraduationCap />} title={t("auth.register.learn")} description={t("auth.register.learnText")} />
+                <RadioCard value="INSTRUCTOR" icon={<Presentation />} title={t("auth.register.teach")} description={t("auth.register.teachText")} />
               </RadioGroup>
             )}
           />
         </fieldset>
-        <Field label="Full name" htmlFor="fullName" error={errors.fullName?.message}>
+        <Field label={t("auth.register.fullName")} htmlFor="fullName" error={errors.fullName?.message}>
           <Input autoComplete="name" placeholder="Luca Bianchi" {...fieldA11y("fullName", errors.fullName?.message)} {...form.register("fullName")} />
         </Field>
-        <Field label="E-mail" htmlFor="email" error={errors.email?.message}>
-          <Input type="email" autoComplete="email" placeholder="you@example.com" {...fieldA11y("email", errors.email?.message)} {...form.register("email")} />
+        <Field label={t("auth.email")} htmlFor="email" error={errors.email?.message}>
+          <Input type="email" autoComplete="email" placeholder={t("auth.emailPlaceholder")} {...fieldA11y("email", errors.email?.message)} {...form.register("email")} />
         </Field>
-        <Field label="Password" htmlFor="password" error={errors.password?.message}>
+        <Field label={t("auth.password")} htmlFor="password" error={errors.password?.message}>
           <PasswordInput autoComplete="new-password" {...fieldA11y("password", errors.password?.message)} {...form.register("password")} />
           <PasswordStrengthMeter password={password} />
         </Field>
         <Button type="submit" size="lg" loading={isSubmitting} className="w-full">
-          Create account
+          {t("auth.register.submit")}
         </Button>
-        <p className="text-center text-xs text-muted-foreground">
-          We&apos;ll send you an e-mail to confirm your address before you can log in.
-        </p>
+        <p className="text-center text-xs text-muted-foreground">{t("auth.register.verifyNote")}</p>
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        Already have an account?{" "}
+        {t("auth.register.haveAccount")}{" "}
         <Link href="/login" className="font-medium text-foreground underline-offset-4 hover:underline">
-          Log in
+          {t("auth.register.login")}
         </Link>
       </p>
     </>

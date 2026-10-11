@@ -2,25 +2,20 @@ import { CalendarClock, CircleCheck, GripVertical, Headphones, Play, Sparkles } 
 import type { ItemType, Visibility } from "@/lib/api/types";
 import { ItemTypeIcon } from "@/components/course/item-type-icon";
 import { LevelBadge } from "@/components/course/badges";
+import { useTranslations } from "next-intl";
 import { VISIBILITY_META } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
-const rows: { type: ItemType; title: string; meta: string; visibility: Visibility; when?: string }[] = [
-  { type: "TEXT", title: "Begrüßungen und Vorstellungen", meta: "12 min", visibility: "LIVE" },
-  { type: "AUDIO", title: "Hörverstehen: Im Café", meta: "2 files · 8 min", visibility: "LIVE" },
-  { type: "DOCUMENT", title: "Arbeitsblatt: Verben im Präsens", meta: "PDF · DOCX", visibility: "LIVE" },
-  { type: "VIDEO", title: "Video: Unterwegs in Berlin", meta: "14 min", visibility: "SCHEDULED", when: "Mon 08:00" },
-  { type: "QUIZ", title: "Quiz: Lektion 1", meta: "10 questions", visibility: "DRAFT" },
-];
 
 function MiniVisibility({ visibility, when }: { visibility: Visibility; when?: string }) {
+  const t = useTranslations("visibility");
   const meta = VISIBILITY_META[visibility];
   return (
     <Badge variant="plain" className={cn("text-[11px]", meta.className)}>
       {visibility === "SCHEDULED" ? <CalendarClock /> : <span className={cn("size-1.5 rounded-full", meta.dot)} />}
-      {meta.label}
+      {t(`${visibility}.label`)}
       {when && <span className="hidden opacity-80 sm:inline">· {when}</span>}
     </Badge>
   );
@@ -28,6 +23,15 @@ function MiniVisibility({ visibility, when }: { visibility: Visibility; when?: s
 
 /** Static product preview composed from the real UI building blocks. */
 export function ProductMock() {
+  const t = useTranslations("marketing.mock");
+  const tc = useTranslations("common");
+  const rows: { type: ItemType; title: string; meta: string; visibility: Visibility; when?: string }[] = [
+    { type: "TEXT", title: "Begrüßungen und Vorstellungen", meta: tc("minutesShort", { count: 12 }), visibility: "LIVE" },
+    { type: "AUDIO", title: "Hörverstehen: Im Café", meta: t("files"), visibility: "LIVE" },
+    { type: "DOCUMENT", title: "Arbeitsblatt: Verben im Präsens", meta: "PDF · DOCX", visibility: "LIVE" },
+    { type: "VIDEO", title: "Video: Unterwegs in Berlin", meta: tc("minutesShort", { count: 14 }), visibility: "SCHEDULED", when: t("monday") },
+    { type: "QUIZ", title: "Quiz: Lektion 1", meta: t("questions"), visibility: "DRAFT" },
+  ];
   return (
     <div className="relative mx-auto w-full max-w-[640px]" aria-hidden>
       <div className="absolute -inset-8 -z-10 rounded-[2.5rem] bg-gradient-to-tr from-brand/25 via-transparent to-info/20 blur-3xl" />
@@ -38,7 +42,7 @@ export function ProductMock() {
           <span className="size-2.5 rounded-full bg-border" />
           <span className="size-2.5 rounded-full bg-border" />
           <span className="size-2.5 rounded-full bg-border" />
-          <span className="ml-3 truncate text-xs text-muted-foreground">Deutsch für den Alltag · Curriculum</span>
+          <span className="ml-3 truncate text-xs text-muted-foreground">{t("window")}</span>
         </div>
         <div className="p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
@@ -72,7 +76,7 @@ export function ProductMock() {
           </span>
           <div className="min-w-0">
             <p className="truncate text-xs font-medium">Hörverstehen: Im Café</p>
-            <p className="text-[11px] text-muted-foreground">Playback 0.75×</p>
+            <p className="text-[11px] text-muted-foreground">{t("playback")}</p>
           </div>
         </div>
         <div className="mt-3 flex items-center gap-2">
@@ -85,7 +89,7 @@ export function ProductMock() {
           <span className="text-[10px] text-muted-foreground tabular-nums">1:12</span>
         </div>
         <div className="mt-4 flex items-center justify-between text-[11px] text-muted-foreground">
-          <span>Course progress</span>
+          <span>{t("progress")}</span>
           <span className="font-medium text-foreground">64%</span>
         </div>
         <Progress value={64} className="mt-1.5 h-1.5" />
@@ -95,8 +99,8 @@ export function ProductMock() {
       <div className="absolute -top-6 -right-3 hidden items-center gap-2.5 rounded-xl border bg-card px-3.5 py-2.5 shadow-lg sm:flex lg:-right-10">
         <CircleCheck className="size-4 text-success" />
         <div>
-          <p className="text-xs font-medium">Luca was approved</p>
-          <p className="text-[11px] text-muted-foreground">Waitlist position #1 → enrolled</p>
+          <p className="text-xs font-medium">{t("approved")}</p>
+          <p className="text-[11px] text-muted-foreground">{t("waitlist")}</p>
         </div>
         <Sparkles className="size-3.5 text-brand" />
       </div>

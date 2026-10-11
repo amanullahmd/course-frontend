@@ -3,6 +3,7 @@
 import * as React from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface TagsInputProps {
   id?: string;
@@ -14,7 +15,8 @@ interface TagsInputProps {
   "aria-label"?: string;
 }
 
-export function TagsInput({ id, value, onChange, placeholder = "Add and press Enter", max = 20, className, ...aria }: TagsInputProps) {
+export function TagsInput({ id, value, onChange, placeholder, max = 20, className, ...aria }: TagsInputProps) {
+  const t = useTranslations("ui");
   const [draft, setDraft] = React.useState("");
 
   const commit = () => {
@@ -48,7 +50,7 @@ export function TagsInput({ id, value, onChange, placeholder = "Add and press En
             type="button"
             onClick={() => onChange(value.filter((t) => t !== tag))}
             className="rounded-sm text-muted-foreground hover:text-foreground"
-            aria-label={`Remove ${tag}`}
+            aria-label={t("removeTag", { tag })}
           >
             <X className="size-3" />
           </button>
@@ -67,7 +69,7 @@ export function TagsInput({ id, value, onChange, placeholder = "Add and press En
           }
         }}
         onBlur={commit}
-        placeholder={value.length ? "" : placeholder}
+        placeholder={value.length ? "" : (placeholder ?? t("tagsPlaceholder"))}
         className="min-w-24 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground/80"
         {...aria}
       />

@@ -3,17 +3,19 @@
 import * as React from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { authApi } from "@/lib/api/auth";
 import { Button, type ButtonProps } from "@/components/ui/button";
 
 const COOLDOWN = 30;
 
 export function ResendVerificationButton({ email, ...props }: { email: string } & Omit<ButtonProps, "onClick">) {
+  const t = useTranslations("auth");
   const [cooldown, setCooldown] = React.useState(0);
   const resend = useMutation({
     mutationFn: () => authApi.resendVerification(email),
     onSuccess: (res) => {
-      toast.success(res?.message || "Verification e-mail sent. Check your inbox.");
+      toast.success(res?.message || t("resent"));
       setCooldown(COOLDOWN);
     },
   });
@@ -33,7 +35,7 @@ export function ResendVerificationButton({ email, ...props }: { email: string } 
       loading={resend.isPending}
       onClick={() => resend.mutate()}
     >
-      {cooldown > 0 ? `Resend in ${cooldown}s` : (props.children ?? "Resend verification e-mail")}
+      {cooldown > 0 ? t("resendIn", { seconds: cooldown }) : (props.children ?? t("resend"))}
     </Button>
   );
 }

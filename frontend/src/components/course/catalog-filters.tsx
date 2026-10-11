@@ -3,6 +3,7 @@
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { CefrLevel } from "@/lib/api/types";
 import { CEFR_LEVELS, CEFR_META } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,7 @@ import { useDebouncedValue } from "@/hooks/use-debounce";
 import { SearchInput } from "@/components/ui/search-input";
 
 export function CatalogFilters() {
+  const t = useTranslations();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -48,15 +50,15 @@ export function CatalogFilters() {
         <SearchInput
           value={q}
           onChange={setQ}
-          placeholder="Search courses, topics or tags… e.g. Grammatik, Beruf, Prüfung"
-          aria-label="Search courses"
+          placeholder={t("catalog.searchPlaceholder")}
+          aria-label={t("catalog.searchLabel")}
           className="[&_input]:h-11 [&_input]:rounded-xl [&_input]:text-[15px]"
         />
         {pending && (
-          <LoaderCircle className="absolute top-1/2 -right-7 size-4 -translate-y-1/2 animate-spin text-muted-foreground" aria-label="Loading results" />
+          <LoaderCircle className="absolute top-1/2 -right-7 size-4 -translate-y-1/2 animate-spin text-muted-foreground" aria-label={t("catalog.loadingResults")} />
         )}
       </div>
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by level">
+      <div className="flex flex-wrap gap-2" role="group" aria-label={t("catalog.filterLevel")}>
         <button
           type="button"
           aria-pressed={!currentLevel}
@@ -66,7 +68,7 @@ export function CatalogFilters() {
             !currentLevel && "border-primary bg-primary text-primary-foreground hover:bg-primary/90",
           )}
         >
-          All levels
+          {t("catalog.allLevels")}
         </button>
         {CEFR_LEVELS.map((level) => {
           const active = currentLevel === level;
@@ -76,7 +78,7 @@ export function CatalogFilters() {
               type="button"
               aria-pressed={active}
               onClick={() => navigate({ level: active ? null : level })}
-              title={CEFR_META[level].name}
+              title={t(`levels.${level}.name`)}
               className={cn(
                 "inline-flex items-center gap-2 rounded-full border bg-card px-3.5 py-1.5 text-sm font-medium transition-colors hover:bg-accent",
                 active && "border-primary bg-primary text-primary-foreground hover:bg-primary/90",
@@ -85,7 +87,7 @@ export function CatalogFilters() {
               <span className={cn("size-2 rounded-full", CEFR_META[level].dot)} aria-hidden />
               {level}
               <span className={cn("hidden text-xs font-normal sm:inline", active ? "opacity-80" : "text-muted-foreground")}>
-                {CEFR_META[level].name}
+                {t(`levels.${level}.name`)}
               </span>
             </button>
           );

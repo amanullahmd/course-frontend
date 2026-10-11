@@ -4,10 +4,13 @@ import * as React from "react";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import type { MediaDto } from "@/lib/api/types";
 import { downloadUrl } from "@/lib/api/media";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 export function ImageGallery({ images }: { images: MediaDto[] }) {
+  const t = useTranslations("learn");
+  const tc = useTranslations("common");
   const [index, setIndex] = React.useState<number | null>(null);
   if (images.length === 0) return null;
   const current = index !== null ? images[index] : null;
@@ -25,7 +28,7 @@ export function ImageGallery({ images }: { images: MediaDto[] }) {
               "group relative overflow-hidden rounded-xl border bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring",
               images.length === 1 ? "max-h-[70vh]" : "aspect-[4/3]",
             )}
-            aria-label={`Open image ${img.fileName}`}
+            aria-label={t("openImage", { name: img.fileName })}
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- signed media URL */}
             <img
@@ -49,17 +52,17 @@ export function ImageGallery({ images }: { images: MediaDto[] }) {
           }}
         >
           <DialogTitle className="truncate pr-8 text-sm font-medium text-white">{current?.fileName}</DialogTitle>
-          <DialogDescription className="sr-only">Image viewer. Use the arrow keys to navigate.</DialogDescription>
+          <DialogDescription className="sr-only">{t("imageViewer")}</DialogDescription>
           {current && (
             <div className="relative grid place-items-center">
               {/* eslint-disable-next-line @next/next/no-img-element -- signed media URL */}
               <img src={current.url} alt={current.fileName} className="max-h-[78vh] w-auto rounded-lg object-contain" />
               {images.length > 1 && (
                 <>
-                  <button type="button" onClick={() => go(-1)} className="absolute left-2 grid size-10 place-items-center rounded-full bg-white/10 backdrop-blur hover:bg-white/20" aria-label="Previous image">
+                  <button type="button" onClick={() => go(-1)} className="absolute left-2 grid size-10 place-items-center rounded-full bg-white/10 backdrop-blur hover:bg-white/20" aria-label={t("prevImage")}>
                     <ChevronLeft />
                   </button>
-                  <button type="button" onClick={() => go(1)} className="absolute right-2 grid size-10 place-items-center rounded-full bg-white/10 backdrop-blur hover:bg-white/20" aria-label="Next image">
+                  <button type="button" onClick={() => go(1)} className="absolute right-2 grid size-10 place-items-center rounded-full bg-white/10 backdrop-blur hover:bg-white/20" aria-label={t("nextImage")}>
                     <ChevronRight />
                   </button>
                 </>
@@ -70,7 +73,7 @@ export function ImageGallery({ images }: { images: MediaDto[] }) {
             <span className="tabular-nums">{index !== null && `${index + 1} / ${images.length}`}</span>
             {current && (
               <a href={downloadUrl(current)} className="flex items-center gap-1 hover:text-white">
-                <Download className="size-3.5" /> Download
+                <Download className="size-3.5" /> {tc("download")}
               </a>
             )}
           </div>

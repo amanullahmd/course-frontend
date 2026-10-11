@@ -3,9 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ChevronRight, Clock, Layers, ListChecks, ServerCrash, Users } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { fetchPublicCourse } from "@/lib/api/server";
-import { CEFR_META } from "@/lib/constants";
-import { formatMinutes } from "@/lib/utils";
 import { LevelBadge } from "@/components/course/badges";
 import { CourseCover } from "@/components/course/course-cover";
 import { CourseOutline } from "@/components/course/course-outline";
@@ -15,11 +14,12 @@ import { UserAvatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMinutes } from "@/hooks/use-minutes";
 
 export async function generateMetadata({ params }: PageProps<"/courses/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const result = await fetchPublicCourse(slug);
-  if (!result.ok) return { title: "Course" };
+  if (!result.ok) return { title: (await getTranslations("meta"))("course") };
   const description = result.data.subtitle ?? undefined;
   return {
     title: result.data.title,
@@ -31,6 +31,7 @@ export async function generateMetadata({ params }: PageProps<"/courses/[slug]">)
 
 async function CourseDetail({ params }: { params: PageProps<"/courses/[slug]">["params"] }) {
   const { slug } = await params;
+  const t = await getTranslations();
   const result = await fetchPublicCourse(slug);
   if (!result.ok && (result.status === 404 || result.status === 403)) notFound();
   if (!result.ok) {
@@ -38,11 +39,11 @@ async function CourseDetail({ params }: { params: PageProps<"/courses/[slug]">["
       <div className="mx-auto max-w-3xl px-4 py-24">
         <EmptyState
           icon={ServerCrash}
-          title="This course can't be loaded right now"
-          description="The course service is not responding. Please try again in a moment."
+          title={t("course.unavailableTitle")}
+          description={t("course.unavailableText")}
           action={
             <Button variant="outline" asChild>
-              <Link href="/courses">Back to catalog</Link>
+              <Link href="/courses">{t("course.backToCatalog")}</Link>
             </Button>
           }
         />
@@ -62,9 +63,9 @@ async function CourseDetail({ params }: { params: PageProps<"/courses/[slug]">["
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-primary/40" />
         <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-sm text-primary-foreground/70">
+          <nav aria-label={t("course.breadcrumb")} className="flex items-center gap-1 text-sm text-primary-foreground/70">
             <Link href="/courses" className="hover:text-primary-foreground">
-              Courses
+              {t("course.courses")}
             </Link>
             <ChevronRight className="size-3.5" />
             <span className="truncate">{course.title}</span>
@@ -86,10 +87,10 @@ async function CourseDetail({ params }: { params: PageProps<"/courses/[slug]">["
                 {course.instructor.fullName}
               </span>
               <span className="flex items-center gap-1.5">
-                <Layers className="size-4" /> {course.moduleCount} modules
+                <Layers className="size-4" /> {t("course.modulesCount", { count: course.moduleCount })}
               </span>
               <span className="flex items-center gap-1.5">
-                <Users className="size-4" /> {course.studentCount} learners
+                <Users className="size-4" /> {t("course.learnersCount", { count: course.studentCount })}
               </span>
             </div>
           </div>
@@ -100,10 +101,10 @@ async function CourseDetail({ params }: { params: PageProps<"/courses/[slug]">["
         <div className="order-2 grid min-w-0 gap-12 lg:order-1">
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { icon: Layers, label: "Modules", value: course.moduleCount },
-              { icon: ListChecks, label: "Lessons", value: lessons || course.itemCount },
-              { icon: Clock, label: "Duration", value: minutes ? formatMinutes(minutes) : "Self-paced" },
-              { icon: ListChecks, label: "Quizzes & exams", value: assessments },
+              { icon: Layers, label: t("course.stats.modules"), value: course.moduleCount },
+              { icon: ListChecks, label: t("course.stats.lessons"), value: lessons || course.itemCount },
+              { icon: Clock, label: t("course.stats.duration"), value: minutes ? <Minutes minutes={minutes} /> : t("course.stats.selfPaced") },
+              { icon: ListChecks, label: t("course.stats.assessments"), value: assessments },
             ].map((s) => (
               <div key={s.label} className="rounded-xl border bg-card p-4">
                 <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -117,7 +118,7 @@ async function CourseDetail({ params }: { params: PageProps<"/courses/[slug]">["
           {course.description && (
             <section aria-labelledby="about">
               <h2 id="about" className="text-xl font-semibold tracking-tight">
-                About this course
+                {t("course.about")}
               </h2>
               <RichContent html={course.description} className="mt-4" />
             </section>
@@ -126,10 +127,10 @@ async function CourseDetail({ params }: { params: PageProps<"/courses/[slug]">["
           <section aria-labelledby="outline">
             <div className="flex items-end justify-between">
               <h2 id="outline" className="text-xl font-semibold tracking-tight">
-                Course outline
+                {t("course.outline")}
               </h2>
               <span className="text-sm text-muted-foreground">
-                Level {course.level}: {CEFR_META[course.level].name}
+                {t("course.levelLine", { level: course.level, name: t(`levels.${course.level}.name`) })}
               </span>
             </div>
             <div className="mt-4">
@@ -139,14 +140,14 @@ async function CourseDetail({ params }: { params: PageProps<"/courses/[slug]">["
 
           <section aria-labelledby="instructor" className="rounded-2xl border bg-card p-6">
             <h2 id="instructor" className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-              Your instructor
+              {t("course.yourInstructor")}
             </h2>
             <div className="mt-4 flex items-start gap-4">
               <UserAvatar name={course.instructor.fullName} src={course.instructor.avatarUrl} className="size-14 text-lg" />
               <div>
                 <p className="text-lg font-semibold">{course.instructor.fullName}</p>
                 <p className="mt-2 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
-                  {course.instructor.bio || "This instructor hasn't written a bio yet."}
+                  {course.instructor.bio || t("course.noBio")}
                 </p>
               </div>
             </div>
@@ -160,6 +161,10 @@ async function CourseDetail({ params }: { params: PageProps<"/courses/[slug]">["
       </div>
     </>
   );
+}
+
+function Minutes({ minutes }: { minutes: number }) {
+  return <>{useMinutes()(minutes)}</>;
 }
 
 function DetailSkeleton() {

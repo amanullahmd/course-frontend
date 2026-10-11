@@ -72,7 +72,7 @@ public final class AssessmentDtos {
                                     List<SessionQuestion> questions) {
     }
 
-    public record SubmittedAnswer(@NotNull UUID questionId, List<UUID> selectedOptionIds,
+    public record SubmittedAnswer(@NotNull UUID questionId, @Size(max = 50) List<@NotNull UUID> selectedOptionIds,
                                   @Size(max = 20000) String textAnswer) {
     }
 

@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { CircleCheck, Headphones } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { LocaleSwitcher } from "@/components/layout/locale-switcher";
 import { Logo } from "@/components/layout/logo";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
 import { CEFR_LEVELS, CEFR_META } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 function BrandPanel() {
+  const t = useTranslations("auth");
   return (
     <div className="relative hidden overflow-hidden bg-[#121831] text-white lg:flex lg:flex-col lg:justify-between lg:p-12">
       <div className="absolute -top-32 -right-32 size-[28rem] rounded-full bg-brand/25 blur-3xl" />
@@ -18,8 +21,8 @@ function BrandPanel() {
       <div className="relative">
         <p className="text-sm font-medium text-white/60">Sprachweg</p>
         <p className="mt-6 max-w-md text-3xl leading-tight font-semibold tracking-tight">
-          „Jeder Schritt zählt.“
-          <span className="mt-2 block text-lg font-normal text-white/70">Every step counts, from A1 to C2.</span>
+          {t("panelQuote")}
+          <span className="mt-2 block text-lg font-normal text-white/70">{t("panelSub")}</span>
         </p>
       </div>
 
@@ -29,7 +32,7 @@ function BrandPanel() {
             <Headphones className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">Hörverstehen: Am Bahnhof</p>
+            <p className="truncate text-sm font-medium">{t("panelAudio")}</p>
             <div className="mt-1.5 h-1 rounded-full bg-white/10">
               <div className="h-full w-3/5 rounded-full bg-brand" />
             </div>
@@ -37,7 +40,7 @@ function BrandPanel() {
         </div>
         <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3.5 backdrop-blur">
           <CircleCheck className="size-5 text-emerald-300" />
-          <p className="text-sm">Quiz passed with 92%: sehr gut!</p>
+          <p className="text-sm">{t("panelQuiz")}</p>
         </div>
         <div className="mt-4 flex gap-1.5" aria-hidden>
           {CEFR_LEVELS.map((l) => (
@@ -52,23 +55,27 @@ function BrandPanel() {
 }
 
 export default function AuthLayout({ children }: LayoutProps<"/">) {
+  const t = useTranslations("auth");
   return (
     <div className="grid min-h-dvh flex-1 lg:grid-cols-[1fr_1.05fr]">
       <div className="flex flex-col px-5 py-6 sm:px-10">
         <div className="flex items-center justify-between">
           <Logo />
-          <ThemeToggleButton />
+          <div className="flex items-center gap-1.5">
+            <LocaleSwitcher />
+            <ThemeToggleButton />
+          </div>
         </div>
         <main id="main" className="flex flex-1 items-center justify-center py-12">
           <div className="w-full max-w-[400px] animate-slide-up">{children}</div>
         </main>
         <p className="text-center text-xs text-muted-foreground">
           <Link href="/courses" className="hover:text-foreground">
-            Browse courses
+            {t("browseCourses")}
           </Link>
           <span className="mx-2">·</span>
           <Link href="/" className="hover:text-foreground">
-            Home
+            {t("home")}
           </Link>
         </p>
       </div>

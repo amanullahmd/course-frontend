@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookDashed } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -11,6 +12,7 @@ import { useLearnContext } from "./learn-shell";
 
 /** /learn/[courseId]: jump to the first incomplete (or first) item. */
 export function LearnRedirect() {
+  const t = useTranslations("learn");
   const { data } = useLearnContext();
   const router = useRouter();
   const items = data.modules.flatMap((m) => m.items);
@@ -25,11 +27,11 @@ export function LearnRedirect() {
       <div className="mx-auto max-w-xl px-4 py-20">
         <EmptyState
           icon={BookDashed}
-          title="No lessons published yet"
-          description="Your instructor hasn't released any content yet. You'll find new lessons here as soon as they go live."
+          title={t("noLessonsTitle")}
+          description={t("noLessonsText")}
           action={
             <Button variant="outline" asChild>
-              <Link href="/dashboard">Back to my learning</Link>
+              <Link href="/dashboard">{t("backToMyLearning")}</Link>
             </Button>
           }
         />
@@ -38,7 +40,7 @@ export function LearnRedirect() {
   }
   return (
     <div className="grid place-items-center py-24">
-      <Spinner className="size-6" label="Opening your next lesson" />
+      <Spinner className="size-6" label={t("opening")} />
     </div>
   );
 }

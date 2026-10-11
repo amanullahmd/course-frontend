@@ -3,9 +3,9 @@
 import * as React from "react";
 import { Check, Hourglass, Inbox, MessageSquareText, X } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { AttemptAnswerResult, AttemptResultDto } from "@/lib/api/types";
-import { QUESTION_TYPE_META } from "@/lib/constants";
-import { formatDateTime } from "@/lib/dates";
+import { useFormat } from "@/hooks/use-format";
 import { cn } from "@/lib/utils";
 import { useGradeAttempt, useInstructorAttempt, useItemAttempts } from "@/hooks/queries/instructor";
 import { UserAvatar } from "@/components/ui/avatar";
@@ -35,6 +35,8 @@ function initialGrades(result: AttemptResultDto): Grades {
 }
 
 function GradingForm({ result, itemId, onDone }: { result: AttemptResultDto; itemId: string; onDone: () => void }) {
+  const t = useTranslations();
+  const fmt = useFormat();
   const grade = useGradeAttempt(itemId);
   const [grades, setGrades] = React.useState<Grades>(() => initialGrades(result));
   const gradable = result.answers.filter(needsGrading);
@@ -50,12 +52,15 @@ function GradingForm({ result, itemId, onDone }: { result: AttemptResultDto; ite
           <UserAvatar name={result.student.fullName} src={result.student.avatarUrl} className="size-10" />
           <div className="min-w-0 flex-1">
             <p className="truncate font-medium">{result.student.fullName}</p>
-            <p className="text-xs text-muted-foreground">Submitted {formatDateTime(result.submittedAt)}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("submissions.submittedOn", { date: fmt.dateTime(result.submittedAt) })}
+              {result.late && ` · ${t("submissions.late")}`}
+            </p>
           </div>
           <div className="text-right">
             <p className="text-lg font-semibold tabular-nums">{result.percent != null ? `${Math.round(result.percent)}%` : "–"}</p>
             <p className="text-xs text-muted-foreground tabular-nums">
-              {result.score ?? 0}/{result.maxScore ?? 0} pts
+              {t("submissions.ptsSummary", { score: result.score ?? 0, max: result.maxScore ?? 0 })}
             </p>
           </div>
         </div>
@@ -68,7 +73,7 @@ function GradingForm({ result, itemId, onDone }: { result: AttemptResultDto; ite
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">
-                      {i + 1}. {QUESTION_TYPE_META[a.type].label} · {a.points} pts
+                      {t("submissions.questionHeader", { n: i + 1, type: t(`questionTypes.${a.type}.label`), points: a.points })}
                     </p>
                     <p className="mt-1 text-sm font-medium">
                       <InlineHtml html={a.prompt} />
@@ -97,13 +102,13 @@ function GradingForm({ result, itemId, onDone }: { result: AttemptResultDto; ite
                       ))}
                     </ul>
                   ) : (
-                    <p className="whitespace-pre-line">{a.textAnswer?.trim() || <em className="text-muted-foreground">No answer</em>}</p>
+                    <p className="whitespace-pre-line">{a.textAnswer?.trim() || <em className="text-muted-foreground">{t("submissions.noAnswer")}</em>}</p>
                   )}
                 </div>
                 {editable && g && (
                   <div className="mt-3 grid gap-3 sm:grid-cols-[120px_1fr]">
                     <div className="grid gap-1.5">
-                      <Label htmlFor={`pts-${a.questionId}`}>Points</Label>
+                      <Label htmlFor={`pts-${a.questionId}`}>{t("submissions.points")}</Label>
                       <div className="relative">
                         <Input
                           id={`pts-${a.questionId}`}
@@ -120,7 +125,7 @@ function GradingForm({ result, itemId, onDone }: { result: AttemptResultDto; ite
                     </div>
                     <div className="grid gap-1.5">
                       <Label htmlFor={`fb-${a.questionId}`} className="flex items-center gap-1.5">
-                        <MessageSquareText className="size-3.5" /> Feedback
+                        <MessageSquareText className="size-3.5" /> {t("submissions.feedback")}
                       </Label>
                       <Textarea
                         id={`fb-${a.questionId}`}
@@ -128,7 +133,7 @@ function GradingForm({ result, itemId, onDone }: { result: AttemptResultDto; ite
                         value={g.feedback}
                         lang="de"
                         onChange={(e) => setGrades({ ...grades, [a.questionId]: { ...g, feedback: e.target.value } })}
-                        placeholder="Sehr gut strukturiert! Achten Sie auf die Verbposition im Nebensatz."
+                        placeholder={t("submissions.feedbackPlaceholder")}
                       />
                     </div>
                   </div>
@@ -140,7 +145,7 @@ function GradingForm({ result, itemId, onDone }: { result: AttemptResultDto; ite
       </div>
       <SheetFooter>
         <Button variant="outline" onClick={onDone}>
-          Close
+          {t("common.close")}
         </Button>
         {gradable.length > 0 && (
           <Button
@@ -161,14 +166,14 @@ function GradingForm({ result, itemId, onDone }: { result: AttemptResultDto; ite
                 },
                 {
                   onSuccess: () => {
-                    toast.success("Grades saved. The learner has been notified.");
+                    toast.success(t("submissions.gradesSaved"));
                     onDone();
                   },
                 },
               )
             }
           >
-            Save grades
+            {t("submissions.saveGrades")}
           </Button>
         )}
       </SheetFooter>
@@ -177,13 +182,14 @@ function GradingForm({ result, itemId, onDone }: { result: AttemptResultDto; ite
 }
 
 function GradingSheet({ attemptId, itemId, onClose }: { attemptId: string | null; itemId: string; onClose: () => void }) {
+  const t = useTranslations("submissions");
   const attempt = useInstructorAttempt(attemptId);
   return (
     <Sheet open={!!attemptId} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-[min(100vw-1rem,40rem)] gap-0 p-0">
         <SheetHeader className="mb-4">
-          <SheetTitle>Review attempt</SheetTitle>
-          <SheetDescription>Score essay answers and leave feedback for the learner.</SheetDescription>
+          <SheetTitle>{t("reviewTitle")}</SheetTitle>
+          <SheetDescription>{t("reviewText")}</SheetDescription>
         </SheetHeader>
         {attempt.isPending ? (
           <div className="grid gap-3 px-5">
@@ -201,6 +207,9 @@ function GradingSheet({ attemptId, itemId, onClose }: { attemptId: string | null
 }
 
 export function SubmissionsPanel({ itemId, initialAttemptId = null }: { itemId: string; initialAttemptId?: string | null }) {
+  const t = useTranslations("submissions");
+  const tq = useTranslations("quiz");
+  const fmt = useFormat();
   const attempts = useItemAttempts(itemId);
   const [open, setOpen] = React.useState<string | null>(initialAttemptId);
   const [filter, setFilter] = React.useState<"all" | "pending">("all");
@@ -211,15 +220,15 @@ export function SubmissionsPanel({ itemId, initialAttemptId = null }: { itemId: 
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {pendingCount > 0 ? `${pendingCount} attempt(s) waiting for manual grading` : "All submitted attempts are graded."}
+          {pendingCount > 0 ? t("pending", { count: pendingCount }) : t("allGraded")}
         </p>
         <Segmented
-          aria-label="Filter attempts"
+          aria-label={t("filter")}
           value={filter}
           onChange={setFilter}
           options={[
-            { value: "all", label: "All" },
-            { value: "pending", label: `Needs grading${pendingCount ? ` (${pendingCount})` : ""}` },
+            { value: "all", label: t("all") },
+            { value: "pending", label: pendingCount ? t("needsGradingCount", { count: pendingCount }) : t("needsGrading") },
           ]}
         />
       </div>
@@ -233,15 +242,15 @@ export function SubmissionsPanel({ itemId, initialAttemptId = null }: { itemId: 
         ) : attempts.isError ? (
           <ErrorState className="m-4" error={attempts.error} onRetry={() => attempts.refetch()} />
         ) : list.length === 0 ? (
-          <EmptyState className="m-4 border-none" icon={Inbox} title={filter === "pending" ? "Nothing to grade" : "No submissions yet"} description="Submitted attempts appear here." />
+          <EmptyState className="m-4 border-none" icon={Inbox} title={filter === "pending" ? t("nothingToGrade") : t("noSubmissions")} description={t("appearHere")} />
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Learner</TableHead>
-                <TableHead className="hidden sm:table-cell">Submitted</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Score</TableHead>
+                <TableHead>{t("learner")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("submitted")}</TableHead>
+                <TableHead>{t("status")}</TableHead>
+                <TableHead className="text-right">{t("score")}</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
@@ -257,22 +266,24 @@ export function SubmissionsPanel({ itemId, initialAttemptId = null }: { itemId: 
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden whitespace-nowrap text-muted-foreground sm:table-cell">{formatDateTime(a.submittedAt)}</TableCell>
+                  <TableCell className="hidden whitespace-nowrap text-muted-foreground sm:table-cell">{fmt.dateTime(a.submittedAt)}
+                    {a.late && ` · ${t("late")}`}
+                  </TableCell>
                   <TableCell>
                     {a.pendingManualGrading ? (
                       <Badge variant="info">
-                        <Hourglass /> Needs grading
+                        <Hourglass /> {t("needsGrading")}
                       </Badge>
                     ) : a.passed ? (
-                      <Badge variant="success">Passed</Badge>
+                      <Badge variant="success">{tq("passed")}</Badge>
                     ) : (
-                      <Badge variant="destructive">Not passed</Badge>
+                      <Badge variant="destructive">{tq("notPassed")}</Badge>
                     )}
                   </TableCell>
                   <TableCell className="text-right font-medium tabular-nums">{a.percent != null ? `${Math.round(a.percent)}%` : "–"}</TableCell>
                   <TableCell className="text-right">
                     <Button size="xs" variant={a.pendingManualGrading ? "default" : "ghost"} onClick={() => setOpen(a.id)}>
-                      {a.pendingManualGrading ? "Grade" : "View"}
+                      {a.pendingManualGrading ? t("grade") : t("view")}
                     </Button>
                   </TableCell>
                 </TableRow>

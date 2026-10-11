@@ -4,15 +4,19 @@ import * as React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { CircleCheck, LoaderCircle, MailX } from "lucide-react";
 import { authApi } from "@/lib/api/auth";
-import { getErrorMessage } from "@/lib/api/client";
+import { useErrorMessage } from "@/hooks/use-error-message";
 import { AuthHeading } from "@/components/auth/auth-card";
 import { ResendVerificationButton } from "@/components/auth/resend-verification";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function VerifyEmail() {
+  const t = useTranslations("auth.verify");
+  const ta = useTranslations("auth");
+  const errorMessage = useErrorMessage();
   const token = useSearchParams().get("token") ?? "";
   // A query (not an effect) so the single-use token is sent exactly once, even in StrictMode.
   const verify = useQuery({
@@ -25,15 +29,13 @@ export function VerifyEmail() {
   });
   const [email, setEmail] = React.useState("");
 
-  if (!token) {
-    return <AuthHeading icon={MailX} tone="error" title="Missing verification link" description="Open the link from your e-mail again, or request a new one below." />;
-  }
+  if (!token) return <AuthHeading icon={MailX} tone="error" title={t("missingTitle")} description={t("missingText")} />;
 
   if (verify.isPending) {
     return (
       <div className="grid place-items-center gap-4 py-10 text-center">
         <LoaderCircle className="size-8 animate-spin text-brand" />
-        <p className="text-sm text-muted-foreground">Verifying your e-mail address…</p>
+        <p className="text-sm text-muted-foreground">{t("verifying")}</p>
       </div>
     );
   }
@@ -41,14 +43,9 @@ export function VerifyEmail() {
   if (verify.isSuccess) {
     return (
       <>
-        <AuthHeading
-          icon={CircleCheck}
-          tone="success"
-          title="E-mail verified"
-          description={verify.data?.message || "Your account is ready. Log in to start your learning path."}
-        />
+        <AuthHeading icon={CircleCheck} tone="success" title={t("successTitle")} description={verify.data?.message || t("successText")} />
         <Button size="lg" className="w-full" asChild>
-          <Link href="/login">Continue to login</Link>
+          <Link href="/login">{t("continue")}</Link>
         </Button>
       </>
     );
@@ -56,19 +53,14 @@ export function VerifyEmail() {
 
   return (
     <>
-      <AuthHeading
-        icon={MailX}
-        tone="error"
-        title="This link didn't work"
-        description={`${getErrorMessage(verify.error)} Verification links expire after 24 hours and can only be used once.`}
-      />
+      <AuthHeading icon={MailX} tone="error" title={t("failTitle")} description={`${errorMessage(verify.error)} ${t("failHint")}`} />
       <div className="grid gap-3">
-        <Input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Your e-mail address" />
+        <Input type="email" placeholder={ta("emailPlaceholder")} value={email} onChange={(e) => setEmail(e.target.value)} aria-label={t("yourEmail")} />
         <ResendVerificationButton email={email} className="w-full">
-          Send a new link
+          {t("sendNew")}
         </ResendVerificationButton>
         <Button variant="ghost" asChild>
-          <Link href="/login">Back to login</Link>
+          <Link href="/login">{ta("checkEmail.back")}</Link>
         </Button>
       </div>
     </>

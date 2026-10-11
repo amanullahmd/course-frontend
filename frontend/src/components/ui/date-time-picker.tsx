@@ -5,6 +5,7 @@ import { CalendarClock, X } from "lucide-react";
 import { isoToLocalInput, localInputToIso } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { inputClass } from "./input";
+import { useTranslations } from "next-intl";
 
 interface DateTimePickerProps {
   id?: string;
@@ -27,6 +28,7 @@ export function DateTimePicker({
   className,
   ...aria
 }: DateTimePickerProps) {
+  const t = useTranslations("ui");
   const local = isoToLocalInput(value);
   return (
     <div className={cn("relative", className)}>
@@ -49,7 +51,7 @@ export function DateTimePicker({
           type="button"
           onClick={() => onChange(null)}
           className="absolute top-1/2 right-8 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-          aria-label="Clear date"
+          aria-label={t("clearDate")}
         >
           <X className="size-3.5" />
         </button>

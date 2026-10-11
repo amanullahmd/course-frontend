@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
+import { useTranslations } from "next-intl";
 
 function pageList(current: number, total: number): (number | "…")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i);
@@ -28,11 +29,13 @@ export function Pagination({
   onPageChange: (page: number) => void;
   className?: string;
 }) {
+  const t = useTranslations("ui");
+  const tc = useTranslations("common");
   if (totalPages <= 1) return null;
   return (
-    <nav aria-label="Pagination" className={cn("flex items-center justify-center gap-1", className)}>
-      <Button variant="ghost" size="sm" disabled={page <= 0} onClick={() => onPageChange(page - 1)} aria-label="Previous page">
-        <ChevronLeft /> <span className="hidden sm:inline">Previous</span>
+    <nav aria-label={t("pagination")} className={cn("flex items-center justify-center gap-1", className)}>
+      <Button variant="ghost" size="sm" disabled={page <= 0} onClick={() => onPageChange(page - 1)} aria-label={t("previousPage")}>
+        <ChevronLeft /> <span className="hidden sm:inline">{tc("previous")}</span>
       </Button>
       {pageList(page, totalPages).map((p, i) =>
         p === "…" ? (
@@ -57,9 +60,9 @@ export function Pagination({
         size="sm"
         disabled={page >= totalPages - 1}
         onClick={() => onPageChange(page + 1)}
-        aria-label="Next page"
+        aria-label={t("nextPage")}
       >
-        <span className="hidden sm:inline">Next</span> <ChevronRight />
+        <span className="hidden sm:inline">{tc("next")}</span> <ChevronRight />
       </Button>
     </nav>
   );

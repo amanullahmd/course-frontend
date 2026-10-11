@@ -12,6 +12,7 @@ import {
   Send,
   UserCheck,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { CEFR_LEVELS, CEFR_META } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ export function SectionHeading({
 }
 
 export function Hero() {
+  const t = useTranslations("marketing");
   return (
     <section className="relative overflow-hidden">
       <div className="bg-grid absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_at_top,black_20%,transparent_70%)]" />
@@ -47,35 +49,34 @@ export function Hero() {
             href="/courses"
             className="inline-flex max-w-full items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-xs transition-colors hover:text-foreground"
           >
-            <span className="shrink-0 rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-brand-strong">NEU</span>
-            <span className="truncate">Courses from A1 to C2 are open for applications</span>
+            <span className="shrink-0 rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-brand-strong">{t("badgeNew")}</span>
+            <span className="truncate">{t("badgeText")}</span>
             <ArrowRight className="size-3 shrink-0" />
           </Link>
           <h1 className="mt-6 text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
-            Teach German your way.
+            {t("heroTitle1")}
             <span className="block bg-gradient-to-r from-brand-strong via-brand to-brand-strong bg-clip-text text-transparent">
-              Learn it step by step.
+              {t("heroTitle2")}
             </span>
           </h1>
           <p className="mt-6 max-w-xl text-lg text-pretty text-muted-foreground">
-            Sprachweg turns your PDFs, slides, recordings and quizzes into a structured course, releases each unit exactly
-            when you want, and lets you hand-pick your learners.
+            {t("heroText")}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button size="lg" asChild>
               <Link href="/register?role=INSTRUCTOR">
-                Start teaching <ArrowRight />
+                {t("startTeaching")} <ArrowRight />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link href="/courses">Find a course</Link>
+              <Link href="/courses">{t("findCourse")}</Link>
             </Button>
           </div>
           <dl className="mt-10 grid max-w-md grid-cols-3 gap-6 border-t pt-6">
             {[
-              ["8", "content types"],
-              ["A1–C2", "CEFR levels"],
-              ["∞", "file formats"],
+              ["8", t("statTypes")],
+              ["A1–C2", t("statLevels")],
+              ["∞", t("statFormats")],
             ].map(([value, label]) => (
               <div key={label}>
                 <dt className="sr-only">{label}</dt>
@@ -92,11 +93,12 @@ export function Hero() {
 }
 
 export function LevelStrip() {
+  const t = useTranslations();
   return (
     <section className="border-y bg-sidebar">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <p className="text-center text-sm font-medium text-muted-foreground">
-          Every step of the Common European Framework of Reference
+          {t("marketing.levelsIntro")}
         </p>
         <ol className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {CEFR_LEVELS.map((level, i) => (
@@ -116,8 +118,8 @@ export function LevelStrip() {
                   </span>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold">{CEFR_META[level].name}</p>
-                  <p className="text-xs text-muted-foreground italic">{CEFR_META[level].german}</p>
+                  <p className="text-sm font-semibold">{t(`levels.${level}.name`)}</p>
+                  <p className="line-clamp-2 text-xs text-muted-foreground">{t(`levels.${level}.description`)}</p>
                 </div>
               </Link>
             </li>
@@ -129,55 +131,32 @@ export function LevelStrip() {
 }
 
 const features = [
-  {
-    icon: Layers,
-    title: "Build any course",
-    body: "No fixed template. Modules hold lessons of any type, reordered with drag & drop, even across modules.",
-  },
-  {
-    icon: FileStack,
-    title: "Any file type",
-    body: "PDF, Word, PowerPoint, Excel, MP3, MP4, images or ZIP. Upload with progress, preview inline, download offline.",
-  },
-  {
-    icon: CalendarClock,
-    title: "Schedule publishing",
-    body: "Publish now, at a date, or for a window. Course, module and lesson each have their own Draft · Scheduled · Live state.",
-  },
-  {
-    icon: UserCheck,
-    title: "Waitlist approval",
-    body: "Learners apply with a message; you approve, reject or revoke individually or in bulk while respecting capacity.",
-  },
-  {
-    icon: ClipboardCheck,
-    title: "Quizzes & exams",
-    body: "Six question types, audio and image prompts for Hör- und Leseverstehen, timers, attempts and manual essay grading.",
-  },
-  {
-    icon: ChartNoAxesColumn,
-    title: "Progress tracking",
-    body: "Learners see what's next and how far they've come; you see each learner's progress per course.",
-  },
-];
+  { icon: Layers, key: "build" },
+  { icon: FileStack, key: "files" },
+  { icon: CalendarClock, key: "schedule" },
+  { icon: UserCheck, key: "waitlist" },
+  { icon: ClipboardCheck, key: "quizzes" },
+  { icon: ChartNoAxesColumn, key: "progress" },
+] as const;
 
 export function Features() {
+  const t = useTranslations("marketing");
   return (
     <section id="features" className="scroll-mt-20 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          eyebrow="Features"
-          title="Everything a German course needs. Nothing it doesn't."
-          description="Designed with DaF/DaZ teachers who run small groups and want full control over what learners see and when."
+          eyebrow={t("featuresEyebrow")}
+          title={t("featuresTitle")}
+          description={t("featuresText")}
         />
         <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border bg-border sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f) => (
-            <div key={f.title} className="group bg-card p-7 transition-colors hover:bg-muted/30">
+            <div key={f.key} className="group bg-card p-7 transition-colors hover:bg-muted/30">
               <span className="grid size-10 place-items-center rounded-xl bg-brand-soft text-brand-strong transition-transform group-hover:scale-105">
                 <f.icon className="size-5" />
               </span>
-              <h3 className="mt-5 font-semibold">{f.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
+              <h3 className="mt-5 font-semibold">{t(`f.${f.key}.title`)}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t(`f.${f.key}.body`)}</p>
             </div>
           ))}
         </div>
@@ -187,21 +166,22 @@ export function Features() {
 }
 
 const instructorSteps = [
-  { icon: Layers, title: "Build", body: "Create a course, add modules and drop in your existing material." },
-  { icon: CalendarClock, title: "Schedule", body: "Release one unit per week automatically, or publish everything now." },
-  { icon: UserCheck, title: "Approve", body: "Review applications on your waitlist and admit learners in one click." },
-];
+  { icon: Layers, key: "build" },
+  { icon: CalendarClock, key: "schedule" },
+  { icon: UserCheck, key: "approve" },
+] as const;
 const learnerSteps = [
-  { icon: Search, title: "Discover", body: "Browse by level, read the outline and meet the instructor." },
-  { icon: Send, title: "Apply", body: "Send a short message; you'll be notified as soon as you're accepted." },
-  { icon: GraduationCap, title: "Learn", body: "Work through lessons, listen, read, test yourself and track progress." },
-];
+  { icon: Search, key: "discover" },
+  { icon: Send, key: "apply" },
+  { icon: GraduationCap, key: "learn" },
+] as const;
 
-function StepList({ steps }: { steps: typeof instructorSteps }) {
+function StepList({ steps }: { steps: typeof instructorSteps | typeof learnerSteps }) {
+  const t = useTranslations("marketing.steps");
   return (
     <ol className="mt-8 grid gap-6">
       {steps.map((s, i) => (
-        <li key={s.title} className="flex gap-4">
+        <li key={s.key} className="flex gap-4">
           <span className="relative grid size-10 shrink-0 place-items-center rounded-xl border bg-card shadow-xs">
             <s.icon className="size-4.5" />
             <span className="absolute -top-2 -right-2 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
@@ -209,8 +189,8 @@ function StepList({ steps }: { steps: typeof instructorSteps }) {
             </span>
           </span>
           <div>
-            <h4 className="font-semibold">{s.title}</h4>
-            <p className="mt-1 text-sm text-muted-foreground">{s.body}</p>
+            <h4 className="font-semibold">{t(`${s.key}.title`)}</h4>
+            <p className="mt-1 text-sm text-muted-foreground">{t(`${s.key}.body`)}</p>
           </div>
         </li>
       ))}
@@ -219,30 +199,31 @@ function StepList({ steps }: { steps: typeof instructorSteps }) {
 }
 
 export function HowItWorks() {
+  const t = useTranslations("marketing");
   return (
     <section id="how-it-works" className="scroll-mt-20 border-y bg-sidebar py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeading eyebrow="How it works" title="Two paths, one platform" />
+        <SectionHeading eyebrow={t("howEyebrow")} title={t("howTitle")} />
         <div className="mt-16 grid gap-6 lg:grid-cols-2">
           <div className="rounded-2xl border bg-card p-8 shadow-xs">
-            <p className="text-sm font-semibold text-brand-strong">For instructors</p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight">From folder of files to finished course</h3>
+            <p className="text-sm font-semibold text-brand-strong">{t("forInstructors")}</p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight">{t("instructorsTitle")}</h3>
             <StepList steps={instructorSteps} />
             <Button className="mt-8" variant="outline" asChild>
               <Link href="/register?role=INSTRUCTOR">
-                Create an instructor account <ArrowRight />
+                {t("createInstructor")} <ArrowRight />
               </Link>
             </Button>
           </div>
           <div className="rounded-2xl border bg-primary p-8 text-primary-foreground shadow-xs">
-            <p className="text-sm font-semibold text-brand">For learners</p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight">A clear path from Hallo to fluent</h3>
+            <p className="text-sm font-semibold text-brand">{t("forLearners")}</p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight">{t("learnersTitle")}</h3>
             <div className="[&_.bg-card]:bg-primary-foreground/10 [&_.border]:border-primary-foreground/20 [&_.text-muted-foreground]:text-primary-foreground/70">
               <StepList steps={learnerSteps} />
             </div>
             <Button className="mt-8" variant="brand" asChild>
               <Link href="/courses">
-                Browse courses <ArrowRight />
+                {t("browseCourses")} <ArrowRight />
               </Link>
             </Button>
           </div>
@@ -253,39 +234,25 @@ export function HowItWorks() {
 }
 
 const testimonials = [
-  {
-    quote:
-      "I finally have all my PDFs, audio tracks and quizzes in one place, and each unit unlocks on Monday morning without me lifting a finger.",
-    name: "Anna Weber",
-    role: "Freelance DaF teacher, Leipzig",
-  },
-  {
-    quote:
-      "The listening exercises with slower playback were a game changer. I passed my B1 exam three weeks after moving to Berlin.",
-    name: "Luca Bianchi",
-    role: "Learner, B1",
-  },
-  {
-    quote:
-      "The waitlist keeps my groups small and personal. Approving ten learners at once takes seconds.",
-    name: "Dr. Jonas Krüger",
-    role: "Language school director",
-  },
-];
+  { key: "t1", name: "Anna Weber" },
+  { key: "t2", name: "Luca Bianchi" },
+  { key: "t3", name: "Dr. Jonas Krüger" },
+] as const;
 
 export function Testimonials() {
+  const t = useTranslations("marketing");
   return (
     <section className="py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeading eyebrow="Stimmen" title="Loved by teachers and learners" />
+        <SectionHeading eyebrow={t("testimonialsEyebrow")} title={t("testimonialsTitle")} />
         <div className="mt-16 grid gap-6 md:grid-cols-3">
-          {testimonials.map((t) => (
-            <figure key={t.name} className="flex flex-col rounded-2xl border bg-card p-7 shadow-xs">
+          {testimonials.map((item) => (
+            <figure key={item.key} className="flex flex-col rounded-2xl border bg-card p-7 shadow-xs">
               <Quote className="size-6 text-brand" aria-hidden />
-              <blockquote className="mt-4 flex-1 text-[15px] leading-relaxed">“{t.quote}”</blockquote>
+              <blockquote className="mt-4 flex-1 text-[15px] leading-relaxed">“{t(`${item.key}.quote`)}”</blockquote>
               <figcaption className="mt-6 border-t pt-4">
-                <p className="text-sm font-semibold">{t.name}</p>
-                <p className="text-xs text-muted-foreground">{t.role}</p>
+                <p className="text-sm font-semibold">{item.name}</p>
+                <p className="text-xs text-muted-foreground">{t(`${item.key}.role`)}</p>
               </figcaption>
             </figure>
           ))}
@@ -296,18 +263,19 @@ export function Testimonials() {
 }
 
 export function FinalCta() {
+  const t = useTranslations("marketing");
   return (
     <section className="px-4 pb-24 sm:px-6 lg:px-8">
       <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-primary px-6 py-16 text-center text-primary-foreground sm:px-16">
         <div className="absolute -top-24 left-1/2 -z-0 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-brand/30 blur-3xl" />
         <div className="relative">
-          <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Bereit? Your path starts here.</h2>
+          <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">{t("ctaTitle")}</h2>
           <p className="mx-auto mt-4 max-w-xl text-primary-foreground/75">
-            Create a free account in under a minute. Teachers can publish their first course today.
+            {t("ctaText")}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button size="lg" variant="brand" asChild>
-              <Link href="/register">Create free account</Link>
+              <Link href="/register">{t("ctaPrimary")}</Link>
             </Button>
             <Button
               size="lg"
@@ -315,7 +283,7 @@ export function FinalCta() {
               className="text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
               asChild
             >
-              <Link href="/courses">Explore courses</Link>
+              <Link href="/courses">{t("ctaSecondary")}</Link>
             </Button>
           </div>
         </div>

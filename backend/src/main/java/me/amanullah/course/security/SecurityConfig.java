@@ -1,6 +1,7 @@
 package me.amanullah.course.security;
 
-import me.amanullah.course.common.exception.GlobalExceptionHandler;
+import me.amanullah.course.common.exception.ErrorClassifier;
+import me.amanullah.course.common.exception.Problems;
 import me.amanullah.course.config.AppProperties;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -27,7 +28,11 @@ import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.firewall.RequestRejectedHandler;
+import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.web.cors.CorsConfiguration;
@@ -41,12 +46,13 @@ import tools.jackson.databind.ObjectMapper;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper,
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper, Problems problems,
+                                                   LocaleResolver localeResolver,
                                                    CorsConfigurationSource corsConfigurationSource) throws Exception {
         AuthenticationEntryPoint entryPoint = (request, response, ex) -> writeProblem(objectMapper, response,
-                GlobalExceptionHandler.problem(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Authentication required"));
+                problems.of(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", localeResolver.resolveLocale(request)));
         AccessDeniedHandler deniedHandler = (request, response, ex) -> writeProblem(objectMapper, response,
-                GlobalExceptionHandler.problem(HttpStatus.FORBIDDEN, "FORBIDDEN", "You are not allowed to perform this action"));
+                problems.of(HttpStatus.FORBIDDEN, "FORBIDDEN", localeResolver.resolveLocale(request)));
 
         http
                 .csrf(csrf -> csrf.disable())
@@ -68,6 +74,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/instructor/**").hasAnyRole("INSTRUCTOR", "ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(rs -> rs
+                        .bearerTokenResolver(bearerTokenResolver())
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                         .authenticationEntryPoint(entryPoint)
                         .accessDeniedHandler(deniedHandler))
@@ -75,12 +82,39 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Ignores the Authorization header on public endpoints, so a stale/expired access token sent along with e.g.
+     * {@code /api/auth/refresh} or the public catalog never causes a 401.
+     */
+    private static BearerTokenResolver bearerTokenResolver() {
+        DefaultBearerTokenResolver delegate = new DefaultBearerTokenResolver();
+        return request -> {
+            String path = request.getRequestURI().substring(request.getContextPath().length());
+            if (path.startsWith("/api/auth/") || path.startsWith("/api/public/")
+                    || (path.startsWith("/api/media/") && path.endsWith("/content"))) {
+                return null;
+            }
+            return delegate.resolve(request);
+        };
+    }
+
     private static void writeProblem(ObjectMapper mapper, jakarta.servlet.http.HttpServletResponse response,
                                      ProblemDetail problem) throws java.io.IOException {
+        if (response.isCommitted()) {
+            return;
+        }
         response.setStatus(problem.getStatus());
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         mapper.writeValue(response.getOutputStream(), problem);
+    }
+
+    /** Requests rejected by the HTTP firewall (e.g. encoded slashes, ".." segments) get a ProblemDetail 400. */
+    @Bean
+    public RequestRejectedHandler requestRejectedHandler(ObjectMapper objectMapper, Problems problems,
+                                                         LocaleResolver localeResolver) {
+        return (request, response, ex) -> writeProblem(objectMapper, response, problems.of(
+                ErrorClassifier.classify(ex), localeResolver.resolveLocale(request)));
     }
 
     @Bean

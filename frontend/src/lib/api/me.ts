@@ -5,4 +5,5 @@ export const meApi = {
   get: () => api.get<UserDto>("/api/users/me"),
   update: (body: UpdateProfileRequest) => api.put<UserDto>("/api/users/me", body),
   changePassword: (body: ChangePasswordRequest) => api.put<void>("/api/users/me/password", body),
+  setLocale: (locale: string) => api.put<void>("/api/users/me/locale", { locale }),
 };

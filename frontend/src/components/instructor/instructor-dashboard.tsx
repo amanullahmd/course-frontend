@@ -4,8 +4,9 @@ import * as React from "react";
 import Link from "next/link";
 import { ArrowRight, BookCheck, CalendarDays, Check, Hourglass, Library, Plus, Users } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { EnrollmentDto } from "@/lib/api/types";
-import { formatRelative } from "@/lib/dates";
+import { useFormat } from "@/hooks/use-format";
 import { useEnrollmentActions, useInstructorDashboard } from "@/hooks/queries/instructor";
 import { useAuth } from "@/providers/auth-provider";
 import { PageContainer, PageHeader } from "@/components/layout/page-header";
@@ -20,6 +21,8 @@ import { StatCard } from "@/components/ui/stat-card";
 import { EventRow } from "./schedule-event";
 
 export function InstructorDashboard() {
+  const t = useTranslations();
+  const fmt = useFormat();
   const { user } = useAuth();
   const dashboard = useInstructorDashboard();
   const { approve, reject } = useEnrollmentActions();
@@ -29,19 +32,19 @@ export function InstructorDashboard() {
   return (
     <PageContainer wide>
       <PageHeader
-        eyebrow="Overview"
-        title={`Guten Tag, ${user?.fullName.split(" ")[0] ?? ""}`}
-        description="Here's what's happening across your courses."
+        eyebrow={t("instructor.overview")}
+        title={t("instructor.hello", { name: user?.fullName.split(" ")[0] ?? "" })}
+        description={t("instructor.intro")}
         actions={
           <>
             <Button variant="outline" asChild>
               <Link href="/instructor/schedule">
-                <CalendarDays /> Schedule
+                <CalendarDays /> {t("instructor.schedule")}
               </Link>
             </Button>
             <Button asChild>
               <Link href="/instructor/courses/new">
-                <Plus /> New course
+                <Plus /> {t("instructor.newCourse")}
               </Link>
             </Button>
           </>
@@ -53,23 +56,23 @@ export function InstructorDashboard() {
       ) : (
         <>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="Courses" value={d?.courseCount ?? 0} icon={Library} loading={dashboard.isPending} />
-            <StatCard label="Live courses" value={d?.liveCourseCount ?? 0} icon={BookCheck} loading={dashboard.isPending} accent="success" />
-            <StatCard label="Learners" value={d?.studentCount ?? 0} icon={Users} loading={dashboard.isPending} accent="brand" />
+            <StatCard label={t("instructor.courses")} value={d?.courseCount ?? 0} icon={Library} loading={dashboard.isPending} />
+            <StatCard label={t("instructor.liveCourses")} value={d?.liveCourseCount ?? 0} icon={BookCheck} loading={dashboard.isPending} accent="success" />
+            <StatCard label={t("instructor.learners")} value={d?.studentCount ?? 0} icon={Users} loading={dashboard.isPending} accent="brand" />
             <StatCard
-              label="Pending applications"
+              label={t("instructor.pending")}
               value={d?.pendingCount ?? 0}
               icon={Hourglass}
               loading={dashboard.isPending}
               accent="info"
-              hint={d && d.pendingCount > 0 ? "Waiting for your decision" : undefined}
+              hint={d && d.pendingCount > 0 ? t("instructor.waiting") : undefined}
             />
           </div>
 
           <div className="mt-8 grid gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader className="flex-row items-center justify-between">
-                <CardTitle>Recent applications</CardTitle>
+                <CardTitle>{t("instructor.recentApplications")}</CardTitle>
               </CardHeader>
               <CardContent>
                 {dashboard.isPending ? (
@@ -79,7 +82,7 @@ export function InstructorDashboard() {
                     ))}
                   </div>
                 ) : !d || d.recentApplications.length === 0 ? (
-                  <EmptyState compact icon={Users} title="No new applications" description="When learners apply, you can approve them right here." />
+                  <EmptyState compact icon={Users} title={t("instructor.noApplications")} description={t("instructor.noApplicationsText")} />
                 ) : (
                   <ul className="-mx-2 grid gap-1">
                     {d.recentApplications.map((e) => (
@@ -91,24 +94,24 @@ export function InstructorDashboard() {
                             <Link href={`/instructor/courses/${e.courseId}?tab=students`} className="hover:underline">
                               {e.courseTitle}
                             </Link>{" "}
-                            · {formatRelative(e.appliedAt)}
+                            · {fmt.relative(e.appliedAt)}
                           </p>
                         </div>
                         {e.status === "PENDING" ? (
                           <div className="flex shrink-0 gap-1.5">
                             <Button
                               size="xs"
-                              onClick={() => approve.mutate(e.id, { onSuccess: () => toast.success(`${e.student.fullName} approved`) })}
-                              aria-label={`Approve ${e.student.fullName}`}
+                              onClick={() => approve.mutate(e.id, { onSuccess: () => toast.success(t("students.approvedToast", { name: e.student.fullName })) })}
+                              aria-label={t("instructor.approveName", { name: e.student.fullName })}
                             >
-                              <Check /> <span className="hidden sm:inline">Approve</span>
+                              <Check /> <span className="hidden sm:inline">{t("students.approve")}</span>
                             </Button>
                             <Button size="xs" variant="outline" onClick={() => setRejecting(e)}>
-                              Reject
+                              {t("students.reject")}
                             </Button>
                           </div>
                         ) : (
-                          <span className="text-xs text-muted-foreground capitalize">{e.status.toLowerCase()}</span>
+                          <span className="text-xs text-muted-foreground">{t(`enrollmentStatus.${e.status}`)}</span>
                         )}
                       </li>
                     ))}
@@ -119,10 +122,10 @@ export function InstructorDashboard() {
 
             <Card>
               <CardHeader className="flex-row items-center justify-between">
-                <CardTitle>Upcoming schedule</CardTitle>
+                <CardTitle>{t("instructor.upcoming")}</CardTitle>
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="/instructor/schedule">
-                    Calendar <ArrowRight />
+                    {t("instructor.calendar")} <ArrowRight />
                   </Link>
                 </Button>
               </CardHeader>
@@ -134,7 +137,7 @@ export function InstructorDashboard() {
                     ))}
                   </div>
                 ) : !d || d.upcoming.length === 0 ? (
-                  <EmptyState compact icon={CalendarDays} title="Nothing scheduled" description="Schedule modules or lessons to release them automatically." />
+                  <EmptyState compact icon={CalendarDays} title={t("instructor.nothingScheduled")} description={t("instructor.nothingScheduledText")} />
                 ) : (
                   <ul className="-mx-2 grid gap-0.5">
                     {d.upcoming.slice(0, 8).map((ev) => (
@@ -159,7 +162,7 @@ export function InstructorDashboard() {
             { id: rejecting.id, reason },
             {
               onSuccess: () => {
-                toast.success("Application rejected");
+                toast.success(t("students.rejectedToast"));
                 setRejecting(null);
               },
             },

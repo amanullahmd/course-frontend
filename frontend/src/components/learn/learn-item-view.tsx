@@ -4,9 +4,11 @@ import * as React from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check, Clock, PartyPopper } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { isApiError } from "@/lib/api/client";
-import { ITEM_TYPE_META, isAssessmentType } from "@/lib/constants";
-import { cn, formatMinutes } from "@/lib/utils";
+import { isAssessmentType } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import { useMinutes } from "@/hooks/use-minutes";
 import { useLearnItem, useToggleComplete } from "@/hooks/queries/student";
 import { useHotkey } from "@/hooks/use-hotkey";
 import { ItemTypeIcon } from "@/components/course/item-type-icon";
@@ -40,6 +42,8 @@ function ItemSkeleton() {
 export function LearnItemView() {
   const { courseId, itemId } = useParams<{ courseId: string; itemId: string }>();
   const router = useRouter();
+  const t = useTranslations();
+  const minutes = useMinutes();
   const { data: course } = useLearnContext();
   const item = useLearnItem(itemId);
   const toggle = useToggleComplete(courseId, itemId);
@@ -63,11 +67,11 @@ export function LearnItemView() {
         {status === 403 || status === 404 ? (
           <EmptyState
             icon={Lock}
-            title="This lesson isn't available"
-            description="It may have been unpublished or is scheduled for later."
+            title={t("learn.unavailableTitle")}
+            description={t("learn.unavailableText")}
             action={
               <Button asChild variant="outline">
-                <Link href={`/learn/${courseId}`}>Go to the course</Link>
+                <Link href={`/learn/${courseId}`}>{t("learn.goToCourse")}</Link>
               </Button>
             }
           />
@@ -90,7 +94,7 @@ export function LearnItemView() {
           {currentModule && <span>{currentModule.title}</span>}
           {currentModule && <span aria-hidden>·</span>}
           <span className="tabular-nums">
-            Lesson {position + 1} of {all.length}
+            {t("learn.lessonOf", { current: position + 1, total: all.length })}
           </span>
         </p>
         <div className="mt-3 flex items-start gap-3">
@@ -98,15 +102,15 @@ export function LearnItemView() {
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{data.title}</h1>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-              <span>{ITEM_TYPE_META[data.type].label}</span>
+              <span>{t(`itemTypes.${data.type}.label`)}</span>
               {data.durationMinutes ? (
                 <span className="flex items-center gap-1">
-                  <Clock className="size-3.5" /> {formatMinutes(data.durationMinutes)}
+                  <Clock className="size-3.5" /> {minutes(data.durationMinutes)}
                 </span>
               ) : null}
               {data.completed && (
                 <span className="flex items-center gap-1 font-medium text-success">
-                  <Check className="size-3.5" /> Completed
+                  <Check className="size-3.5" /> {t("learn.completed")}
                 </span>
               )}
             </div>
@@ -148,11 +152,13 @@ export function LearnItemView() {
                 {data.completed ? <Check className="size-4" strokeWidth={3} /> : <Check className="size-4 opacity-30" />}
               </span>
               <div>
-                <p className="text-sm font-medium">{data.completed ? "Nice work! Lesson completed." : "Finished this lesson?"}</p>
+                <p className="text-sm font-medium">{data.completed ? t("learn.doneTitle") : t("learn.finished")}</p>
                 <p className="text-xs text-muted-foreground">
-                  {data.completed ? "Your progress has been saved." : (
+                  {data.completed ? (
+                    t("learn.doneText")
+                  ) : (
                     <>
-                      Mark it as complete to track your progress. Shortcut <Kbd>M</Kbd>
+                      {t("learn.markHint")} <Kbd>M</Kbd>
                     </>
                   )}
                 </p>
@@ -163,19 +169,21 @@ export function LearnItemView() {
               onClick={() => toggle.mutate(!data.completed)}
               aria-pressed={data.completed}
             >
-              {data.completed ? "Mark as incomplete" : (
+              {data.completed ? (
+                t("learn.markIncomplete")
+              ) : (
                 <>
-                  <Check /> Mark as complete
+                  <Check /> {t("learn.markComplete")}
                 </>
               )}
             </Button>
           </div>
         )}
-        <nav aria-label="Lesson navigation" className="flex items-center justify-between gap-3">
+        <nav aria-label={t("learn.lessonNav")} className="flex items-center justify-between gap-3">
           {prevId ? (
             <Button variant="ghost" asChild>
               <Link href={`/learn/${courseId}/${prevId}`}>
-                <ArrowLeft /> Previous
+                <ArrowLeft /> {t("learn.previous")}
                 <Kbd className="ml-1 hidden sm:inline-flex">[</Kbd>
               </Link>
             </Button>
@@ -190,14 +198,14 @@ export function LearnItemView() {
               }}
             >
               <Link href={`/learn/${courseId}/${nextId}`}>
-                {!isAssessment && !data.completed ? "Complete & continue" : "Next lesson"} <ArrowRight />
+                {!isAssessment && !data.completed ? t("learn.completeContinue") : t("learn.nextLesson")} <ArrowRight />
                 <Kbd className="ml-1 hidden border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground/80 sm:inline-flex">]</Kbd>
               </Link>
             </Button>
           ) : (
             isLast && (
               <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                <PartyPopper className="size-4 text-brand" /> You&apos;ve reached the end of the published content.
+                <PartyPopper className="size-4 text-brand" /> {t("learn.end")}
               </span>
             )
           )}

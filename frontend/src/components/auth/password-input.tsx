@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { passwordStrength } from "@/lib/validation";
 
 export function PasswordInput({ className, ...props }: React.ComponentProps<"input">) {
+  const t = useTranslations("auth");
   const [visible, setVisible] = React.useState(false);
   return (
     <div className="relative">
@@ -15,7 +17,7 @@ export function PasswordInput({ className, ...props }: React.ComponentProps<"inp
         type="button"
         onClick={() => setVisible((v) => !v)}
         className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
-        aria-label={visible ? "Hide password" : "Show password"}
+        aria-label={visible ? t("hidePassword") : t("showPassword")}
         aria-pressed={visible}
       >
         {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -27,7 +29,8 @@ export function PasswordInput({ className, ...props }: React.ComponentProps<"inp
 const colors = ["bg-muted", "bg-destructive", "bg-warning", "bg-info", "bg-success"];
 
 export function PasswordStrengthMeter({ password }: { password: string }) {
-  const { score, label } = passwordStrength(password);
+  const t = useTranslations("auth");
+  const score = passwordStrength(password);
   return (
     <div className="grid gap-1.5" aria-live="polite">
       <div className="grid grid-cols-4 gap-1.5">
@@ -36,13 +39,12 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
         ))}
       </div>
       <p className="text-xs text-muted-foreground">
-        {label ? (
-          <>
-            Password strength: <span className="font-medium text-foreground">{label}</span>
-          </>
-        ) : (
-          "At least 8 characters with a letter and a digit."
-        )}
+        {score > 0
+          ? t.rich("strength", {
+              label: t(`strengthLabels.${score as 1 | 2 | 3 | 4}`),
+              b: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
+            })
+          : t("strengthHint")}
       </p>
     </div>
   );

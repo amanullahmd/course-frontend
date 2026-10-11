@@ -50,7 +50,7 @@ public class ScheduleService {
         Instant f = from != null ? from : now.minus(Duration.ofDays(7));
         Instant t = to != null ? to : now.plus(Duration.ofDays(60));
         if (t.isBefore(f)) {
-            throw new ValidationException("to must not be before from", Map.of("to", "must not be before from"));
+            throw ValidationException.field("to", "validation.toBeforeFrom");
         }
         UUID instructorId = me.isAdmin() ? null : me.id();
         List<ScheduleEventDto> events = new ArrayList<>();

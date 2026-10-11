@@ -6,16 +6,19 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { ExternalLink, GripVertical, X } from "lucide-react";
 import type { MediaDto } from "@/lib/api/types";
+import { useTranslations } from "next-intl";
 import { cn, formatBytes } from "@/lib/utils";
 import { useUploads } from "@/hooks/use-uploads";
-import { fileStyle, FileTypeIcon } from "@/components/course/file-type-icon";
+import { fileStyle, FileTypeIcon, useFileLabel } from "@/components/course/file-type-icon";
 import { Button } from "@/components/ui/button";
 import { FileDropzone, UploadProgressList } from "@/components/ui/file-dropzone";
 import { Tooltip } from "@/components/ui/tooltip";
 
 function AttachmentRow({ media, onRemove }: { media: MediaDto; onRemove: () => void }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: media.id });
+  const t = useTranslations("attachments");
   const style = fileStyle(media.fileName, media.contentType, media.kind);
+  const label = useFileLabel()(style);
   return (
     <li
       ref={setNodeRef}
@@ -28,7 +31,7 @@ function AttachmentRow({ media, onRemove }: { media: MediaDto; onRemove: () => v
         {...attributes}
         {...listeners}
         className="cursor-grab touch-none rounded p-0.5 text-muted-foreground/60 hover:bg-accent hover:text-foreground"
-        aria-label={`Reorder ${media.fileName}`}
+        aria-label={t("reorder", { name: media.fileName })}
       >
         <GripVertical className="size-4" />
       </button>
@@ -43,19 +46,19 @@ function AttachmentRow({ media, onRemove }: { media: MediaDto; onRemove: () => v
           {media.fileName}
         </p>
         <p className="text-xs text-muted-foreground">
-          {style.label} · {formatBytes(media.sizeBytes)}
+          {label} · {formatBytes(media.sizeBytes)}
         </p>
       </div>
       {media.kind === "AUDIO" && <audio src={media.url} controls preload="none" className="hidden h-8 w-48 lg:block" />}
-      <Tooltip content="Preview">
+      <Tooltip content={t("preview")}>
         <Button variant="ghost" size="icon-xs" asChild>
-          <a href={media.url} target="_blank" rel="noopener noreferrer" aria-label={`Preview ${media.fileName}`}>
+          <a href={media.url} target="_blank" rel="noopener noreferrer" aria-label={t("previewName", { name: media.fileName })}>
             <ExternalLink />
           </a>
         </Button>
       </Tooltip>
-      <Tooltip content="Remove from lesson">
-        <Button type="button" variant="ghost" size="icon-xs" onClick={onRemove} aria-label={`Remove ${media.fileName}`} className="hover:text-destructive">
+      <Tooltip content={t("remove")}>
+        <Button type="button" variant="ghost" size="icon-xs" onClick={onRemove} aria-label={t("removeName", { name: media.fileName })} className="hover:text-destructive">
           <X />
         </Button>
       </Tooltip>
@@ -78,6 +81,7 @@ export function AttachmentsManager({
   accept?: string;
   hint?: string;
 }) {
+  const t = useTranslations("attachments");
   const { uploads, upload, cancel, retry, dismiss } = useUploads({ onUploaded: (media) => onAppend(media) });
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -95,7 +99,7 @@ export function AttachmentsManager({
       {value.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={value.map((m) => m.id)} strategy={verticalListSortingStrategy}>
-            <ul className="grid gap-2" aria-label="Attachments">
+            <ul className="grid gap-2" aria-label={t("list")}>
               {value.map((m) => (
                 <AttachmentRow key={m.id} media={m} onRemove={() => onChange(value.filter((x) => x.id !== m.id))} />
               ))}

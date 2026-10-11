@@ -3,6 +3,11 @@ spring:
     url: jdbc:h2:mem:sprachweg-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
     username: sa
     password: ""
+  servlet:
+    multipart:
+      # tiny limits so the upload-size handling can be tested
+      max-file-size: 10KB
+      max-request-size: 20KB
 
 app:
   storage:

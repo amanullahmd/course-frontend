@@ -25,10 +25,14 @@ public class UserController {
                                        UUID avatarMediaId) {
     }
 
-    public record ChangePasswordRequest(@NotBlank String currentPassword,
-                                        @NotBlank @Size(min = 8, max = 128)
+    public record ChangePasswordRequest(@NotBlank @Size(max = 200) String currentPassword,
+                                        @NotBlank
                                         @Pattern(regexp = PasswordPolicy.REGEX, message = PasswordPolicy.MESSAGE)
                                         String newPassword) {
+    }
+
+    public record LocaleRequest(@NotBlank @Pattern(regexp = PasswordPolicy.LOCALE_REGEX,
+            message = PasswordPolicy.LOCALE_MESSAGE) String locale) {
     }
 
     private final UserService userService;
@@ -45,6 +49,13 @@ public class UserController {
     @PutMapping
     public UserDto update(@Valid @RequestBody UpdateProfileRequest request) {
         return userService.updateProfile(CurrentUser.get().id(), request);
+    }
+
+    /** Sets the preferred language ("en" or "de") for e-mails and notifications. */
+    @PutMapping("/locale")
+    public ResponseEntity<Void> changeLocale(@Valid @RequestBody LocaleRequest request) {
+        userService.changeLocale(CurrentUser.get().id(), request.locale());
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/password")

@@ -17,6 +17,7 @@ import {
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Layers, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { ContentItemDto, CourseDto, ModuleDto } from "@/lib/api/types";
 import {
   useCreateModule,
@@ -61,13 +62,14 @@ const collision: CollisionDetection = (args) => {
 };
 
 function AddModuleInline({ courseId, autoOpen }: { courseId: string; autoOpen?: boolean }) {
+  const t = useTranslations();
   const [open, setOpen] = React.useState(!!autoOpen);
   const [title, setTitle] = React.useState("");
   const create = useCreateModule(courseId);
   if (!open) {
     return (
       <Button variant="outline" className="w-full border-dashed py-6 text-muted-foreground hover:text-foreground" onClick={() => setOpen(true)}>
-        <Plus /> Add module
+        <Plus /> {t("builder.addModule")}
       </Button>
     );
   }
@@ -82,7 +84,7 @@ function AddModuleInline({ courseId, autoOpen }: { courseId: string; autoOpen?: 
           {
             onSuccess: () => {
               setTitle("");
-              toast.success("Module added");
+              toast.success(t("builder.moduleAdded"));
             },
           },
         );
@@ -92,17 +94,17 @@ function AddModuleInline({ courseId, autoOpen }: { courseId: string; autoOpen?: 
         autoFocus
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Module title, e.g. Lektion 3: Einkaufen"
-        aria-label="New module title"
+        placeholder={t("builder.moduleTitlePlaceholder")}
+        aria-label={t("builder.newModuleTitle")}
         maxLength={200}
         onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
       />
       <div className="flex gap-2">
         <Button type="submit" loading={create.isPending} disabled={!title.trim()}>
-          Add
+          {t("common.add")}
         </Button>
         <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-          Cancel
+          {t("common.cancel")}
         </Button>
       </div>
     </form>
@@ -110,6 +112,7 @@ function AddModuleInline({ courseId, autoOpen }: { courseId: string; autoOpen?: 
 }
 
 export function CurriculumBoard({ course }: { course: CourseDto }) {
+  const t = useTranslations();
   const serverModules = React.useMemo(() => sortTree(course.modules), [course.modules]);
   const [local, setLocal] = React.useState<ModuleDto[] | null>(null);
   const modules = local ?? serverModules;
@@ -149,10 +152,10 @@ export function CurriculumBoard({ course }: { course: CourseDto }) {
       const ids = [...target.items.map((i) => i.id), itemId];
       orderItems.mutate(
         { moduleId: target.id, ids, optimisticModules: next },
-        { onSuccess: () => toast.success(`Moved to “${target.title}”`) },
+        { onSuccess: () => toast.success(t("builder.movedTo", { title: target.title })) },
       );
     },
-    [orderItems, serverModules],
+    [orderItems, serverModules, t],
   );
 
   const itemActions: ItemRowActions = {
@@ -264,8 +267,8 @@ export function CurriculumBoard({ course }: { course: CourseDto }) {
       <div className="grid gap-4">
         <EmptyState
           icon={Layers}
-          title="Start with your first module"
-          description="Modules group your lessons, e.g. one module per week or per Lektion. Add text, files, audio, video and quizzes inside."
+          title={t("builder.firstModuleTitle")}
+          description={t("builder.firstModuleText")}
         />
         <AddModuleInline courseId={course.id} autoOpen />
       </div>
@@ -286,7 +289,7 @@ export function CurriculumBoard({ course }: { course: CourseDto }) {
         }}
       >
         <SortableContext items={modules.map((m) => `module:${m.id}`)} strategy={verticalListSortingStrategy}>
-          <ol className="grid gap-4" aria-label="Modules">
+          <ol className="grid gap-4" aria-label={t("builder.modulesAria")}>
             {modules.map((m, index) => (
               <SortableModuleCard
                 key={m.id}
@@ -326,30 +329,30 @@ export function CurriculumBoard({ course }: { course: CourseDto }) {
                   {
                     onSuccess: () => {
                       setEditing(null);
-                      toast.success("Module updated");
+                      toast.success(t("builder.moduleUpdated"));
                     },
                   },
                 );
               }}
             >
               <DialogHeader>
-                <DialogTitle>Edit module</DialogTitle>
-                <DialogDescription>The title and description are shown to learners in the outline.</DialogDescription>
+                <DialogTitle>{t("builder.editModule")}</DialogTitle>
+                <DialogDescription>{t("builder.editModuleText")}</DialogDescription>
               </DialogHeader>
               <div className="grid gap-2">
-                <Label htmlFor="module-title">Title</Label>
+                <Label htmlFor="module-title">{t("builder.title")}</Label>
                 <Input id="module-title" name="title" defaultValue={editing.title} required maxLength={200} autoFocus />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="module-description">Description</Label>
+                <Label htmlFor="module-description">{t("builder.description")}</Label>
                 <Textarea id="module-description" name="description" defaultValue={editing.description ?? ""} rows={4} maxLength={2000} />
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setEditing(null)}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
                 <Button type="submit" loading={updateModule.isPending}>
-                  Save
+                  {t("common.save")}
                 </Button>
               </DialogFooter>
             </form>
@@ -360,9 +363,9 @@ export function CurriculumBoard({ course }: { course: CourseDto }) {
       <ConfirmDialog
         open={!!deletingModule}
         onOpenChange={(o) => !o && setDeletingModule(null)}
-        title={`Delete “${deletingModule?.title ?? ""}”?`}
-        description={`This permanently deletes the module and its ${deletingModule?.items.length ?? 0} item(s), including quiz attempts and learner progress.`}
-        confirmLabel="Delete module"
+        title={t("builder.deleteTitle", { title: deletingModule?.title ?? "" })}
+        description={t("builder.deleteModuleText", { count: deletingModule?.items.length ?? 0 })}
+        confirmLabel={t("builder.deleteModule")}
         destructive
         loading={deleteModule.isPending}
         onConfirm={() =>
@@ -370,7 +373,7 @@ export function CurriculumBoard({ course }: { course: CourseDto }) {
           deleteModule.mutate(deletingModule.id, {
             onSuccess: () => {
               setDeletingModule(null);
-              toast.success("Module deleted");
+              toast.success(t("builder.moduleDeleted"));
             },
           })
         }
@@ -378,9 +381,9 @@ export function CurriculumBoard({ course }: { course: CourseDto }) {
       <ConfirmDialog
         open={!!deletingItem}
         onOpenChange={(o) => !o && setDeletingItem(null)}
-        title={`Delete “${deletingItem?.title ?? ""}”?`}
-        description="The lesson, its attachments links, quiz questions and learner progress will be removed. This cannot be undone."
-        confirmLabel="Delete"
+        title={t("builder.deleteTitle", { title: deletingItem?.title ?? "" })}
+        description={t("builder.deleteItemText")}
+        confirmLabel={t("common.delete")}
         destructive
         loading={deleteItem.isPending}
         onConfirm={() =>
@@ -388,7 +391,7 @@ export function CurriculumBoard({ course }: { course: CourseDto }) {
           deleteItem.mutate(deletingItem.id, {
             onSuccess: () => {
               setDeletingItem(null);
-              toast.success("Item deleted");
+              toast.success(t("builder.itemDeleted"));
             },
           })
         }

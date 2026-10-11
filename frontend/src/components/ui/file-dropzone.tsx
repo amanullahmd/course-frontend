@@ -6,6 +6,7 @@ import { cn, formatBytes } from "@/lib/utils";
 import type { UploadEntry } from "@/hooks/use-uploads";
 import { Progress } from "./progress";
 import { FileTypeIcon } from "@/components/course/file-type-icon";
+import { useTranslations } from "next-intl";
 
 interface FileDropzoneProps {
   onFiles: (files: File[]) => void;
@@ -23,11 +24,14 @@ export function FileDropzone({
   accept,
   multiple = true,
   disabled,
-  title = "Drop files here or click to browse",
-  hint = "Any file type: PDF, Word, PowerPoint, audio, video, images, archives…",
+  title: titleProp,
+  hint: hintProp,
   compact = false,
   className,
 }: FileDropzoneProps) {
+  const t = useTranslations("ui");
+  const title = titleProp ?? t("dropTitle");
+  const hint = hintProp ?? t("dropHint");
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = React.useState(false);
   const depth = React.useRef(0);
@@ -91,7 +95,7 @@ export function FileDropzone({
         <CloudUpload className={compact ? "size-4" : "size-5"} />
       </span>
       <div className="grid gap-0.5">
-        <p className="text-sm font-medium">{dragging ? "Release to upload" : title}</p>
+        <p className="text-sm font-medium">{dragging ? t("dropRelease") : title}</p>
         {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       </div>
       <input
@@ -121,9 +125,11 @@ export function UploadProgressList({
   onRetry?: (id: string) => void;
   onDismiss?: (id: string) => void;
 }) {
+  const t = useTranslations("ui");
+  const tc = useTranslations("common");
   if (uploads.length === 0) return null;
   return (
-    <ul className="grid gap-2" aria-label="Uploads">
+    <ul className="grid gap-2" aria-label={t("uploads")}>
       {uploads.map((u) => (
         <li key={u.id} className="flex items-center gap-3 rounded-lg border bg-card p-2.5 pr-3 animate-slide-up">
           <FileTypeIcon name={u.file.name} contentType={u.file.type} className="size-9" />
@@ -142,7 +148,7 @@ export function UploadProgressList({
             )}
             {u.status === "done" && (
               <p className="mt-0.5 flex items-center gap-1 text-xs text-success">
-                <CircleCheck className="size-3" /> Uploaded
+                <CircleCheck className="size-3" /> {t("uploaded")}
               </p>
             )}
           </div>
@@ -151,7 +157,7 @@ export function UploadProgressList({
               type="button"
               className="rounded p-1 text-muted-foreground hover:bg-accent"
               onClick={() => onCancel(u.id)}
-              aria-label={`Cancel upload of ${u.file.name}`}
+              aria-label={t("cancelUpload", { name: u.file.name })}
             >
               <X className="size-4" />
             </button>
@@ -161,7 +167,7 @@ export function UploadProgressList({
               type="button"
               className="rounded p-1 text-muted-foreground hover:bg-accent"
               onClick={() => onRetry(u.id)}
-              aria-label={`Retry upload of ${u.file.name}`}
+              aria-label={t("retryUpload", { name: u.file.name })}
             >
               <RotateCw className="size-4" />
             </button>
@@ -171,7 +177,7 @@ export function UploadProgressList({
               type="button"
               className="rounded p-1 text-muted-foreground hover:bg-accent"
               onClick={() => onDismiss(u.id)}
-              aria-label="Dismiss"
+              aria-label={tc("dismiss")}
             >
               <X className="size-4" />
             </button>

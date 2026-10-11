@@ -6,7 +6,9 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ArrowRightLeft, Clock, Ellipsis, GripVertical, ListChecks, Paperclip, Pencil, Trash } from "lucide-react";
 import type { ContentItemDto, ModuleDto, PublicationRequest } from "@/lib/api/types";
-import { cn, formatMinutes } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
+import { useMinutes } from "@/hooks/use-minutes";
 import { ItemTypeIcon } from "@/components/course/item-type-icon";
 import { VisibilityBadge } from "@/components/course/badges";
 import { Button } from "@/components/ui/button";
@@ -41,6 +43,8 @@ export function ItemRowContent({
   handle?: React.ReactNode;
   dragging?: boolean;
 }) {
+  const t = useTranslations();
+  const minutes = useMinutes();
   const href = actions ? `/instructor/courses/${actions.courseId}/items/${item.id}` : "#";
   return (
     <div
@@ -57,18 +61,18 @@ export function ItemRowContent({
         </Link>
         <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
           {item.attachments.length > 0 && (
-            <span className="flex items-center gap-1" title="Attachments">
+            <span className="flex items-center gap-1" title={t("builder.attachments")}>
               <Paperclip className="size-3" /> {item.attachments.length}
             </span>
           )}
           {item.assessment && (
-            <span className="flex items-center gap-1" title="Questions">
-              <ListChecks className="size-3" /> {item.assessment.questionCount} Q · {item.assessment.totalPoints} pts
+            <span className="flex items-center gap-1" title={t("builder.questions")}>
+              <ListChecks className="size-3" /> {t("builder.qShort", { count: item.assessment.questionCount, points: item.assessment.totalPoints })}
             </span>
           )}
           {item.durationMinutes ? (
             <span className="flex items-center gap-1">
-              <Clock className="size-3" /> {formatMinutes(item.durationMinutes)}
+              <Clock className="size-3" /> {minutes(item.durationMinutes)}
             </span>
           ) : null}
         </div>
@@ -86,20 +90,20 @@ export function ItemRowContent({
           <PublicationPopover entity={item} entityLabel="lesson" trigger="icon" onSubmit={(body) => actions.onPublish(item.id, body)} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-xs" aria-label={`Actions for ${item.title}`}>
+              <Button variant="ghost" size="icon-xs" aria-label={t("builder.itemActions", { title: item.title })}>
                 <Ellipsis />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuItem asChild>
                 <Link href={href}>
-                  <Pencil /> Edit
+                  <Pencil /> {t("common.edit")}
                 </Link>
               </DropdownMenuItem>
               {actions.modules.length > 1 && (
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <ArrowRightLeft /> Move to module
+                    <ArrowRightLeft /> {t("builder.moveTo")}
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="w-56">
                     {actions.modules
@@ -114,7 +118,7 @@ export function ItemRowContent({
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem destructive onSelect={() => actions.onDelete(item)}>
-                <Trash /> Delete
+                <Trash /> {t("common.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -125,6 +129,7 @@ export function ItemRowContent({
 }
 
 export function SortableItemRow({ item, actions }: { item: ContentItemDto; actions: ItemRowActions }) {
+  const t = useTranslations("builder");
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: `item:${item.id}`,
     data: { type: "item", itemId: item.id },
@@ -145,7 +150,7 @@ export function SortableItemRow({ item, actions }: { item: ContentItemDto; actio
             {...attributes}
             {...listeners}
             className="cursor-grab touch-none rounded p-0.5 text-muted-foreground/60 hover:bg-accent hover:text-foreground active:cursor-grabbing"
-            aria-label={`Drag to reorder ${item.title}`}
+            aria-label={t("dragItem", { title: item.title })}
           >
             <GripVertical className="size-4" />
           </button>

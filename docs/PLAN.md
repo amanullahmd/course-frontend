@@ -76,13 +76,15 @@ asynchronously through Spring Mail.
 ## 6. REST API contract (base `/api`)
 
 Conventions: JSON, UUID ids, ISO-8601 UTC instants, errors as `ProblemDetail`
-`{type,title,status,detail,code?,errors?:{field:msg}}`; pages as
-`{content:[],page,size,totalElements,totalPages}` (page is 0-based).
+`{type,title,status,detail,code,errors?:{field:msg},traceId?}`; pages as
+`{content:[],page,size,totalElements,totalPages}` (page is 0-based; `size` is clamped to 1–100, `page` to ≥ 0).
+Languages: English (default) and German; `detail` and `errors` messages follow `Accept-Language` (`en`|`de`).
+Client mistakes are always 4xx with a stable `code`; a 500 has `code=INTERNAL_ERROR` and a `traceId`.
 
 ### Auth `/api/auth`
 | Method | Path | Body → Response |
 |---|---|---|
-| POST | `/register` | `{fullName,email,password,role:"STUDENT"\|"INSTRUCTOR"}` → 201 `{message}` |
+| POST | `/register` | `{fullName,email,password,role:"STUDENT"\|"INSTRUCTOR",locale?:"en"\|"de"}` → 201 `{message}` (locale defaults to `Accept-Language`, else `en`) |
 | POST | `/verify-email` | `{token}` → `{message}` |
 | POST | `/resend-verification` | `{email}` → `{message}` |
 | POST | `/login` | `{email,password}` → `AuthResponse` + `Set-Cookie: refresh_token` (403 `code=EMAIL_NOT_VERIFIED`) |
@@ -92,10 +94,11 @@ Conventions: JSON, UUID ids, ISO-8601 UTC instants, errors as `ProblemDetail`
 | POST | `/reset-password` | `{token,password}` → `{message}` |
 
 `AuthResponse = {accessToken, expiresIn, user: UserDto}`
-`UserDto = {id, fullName, email, role, emailVerified, bio, avatarUrl, createdAt}`
+`UserDto = {id, fullName, email, role, emailVerified, bio, avatarUrl, avatarMediaId, locale:"en"|"de", createdAt}`
 
 ### Me `/api/users/me`
-`GET` → UserDto · `PUT {fullName,bio,avatarMediaId}` → UserDto · `PUT /password {currentPassword,newPassword}` → 204
+`GET` → UserDto · `PUT {fullName,bio,avatarMediaId}` → UserDto · `PUT /password {currentPassword,newPassword}` → 204 ·
+`PUT /locale {locale:"en"|"de"}` → 204 (language of e-mails and notifications)
 
 ### Public catalog `/api/public`
 * `GET /courses?q=&level=&page=&size=` → Page<CourseSummaryDto>

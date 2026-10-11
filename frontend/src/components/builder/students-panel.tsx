@@ -3,9 +3,9 @@
 import * as React from "react";
 import { Check, Hourglass, ShieldX, UserCheck, Users, X } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { EnrollmentDto, EnrollmentStatus } from "@/lib/api/types";
-import { formatDate, formatRelative } from "@/lib/dates";
-import { pluralize } from "@/lib/utils";
+import { useFormat } from "@/hooks/use-format";
 import { useCourseEnrollments, useEnrollmentActions } from "@/hooks/queries/instructor";
 import { EnrollmentStatusBadge } from "@/components/course/badges";
 import { UserAvatar } from "@/components/ui/avatar";
@@ -44,6 +44,7 @@ export function ReasonDialog({
   onConfirm: (reason: string | null) => void;
   pending: boolean;
 }) {
+  const t = useTranslations();
   const [reason, setReason] = React.useState("");
   const revoke = action?.kind === "revoke";
   return (
@@ -58,14 +59,14 @@ export function ReasonDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{revoke ? "Revoke access" : "Reject application"}{action && action.ids.length > 1 ? "s" : ""}</DialogTitle>
+          <DialogTitle>{revoke ? t("students.revokeTitle") : t("students.rejectTitle")}</DialogTitle>
           <DialogDescription>
-            {action?.names}. {revoke ? "The learner immediately loses access to the course." : "The learner is notified in-app and by e-mail."}
+            {action?.names}. {revoke ? t("students.revokeText") : t("students.rejectText")}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-2">
           <Label htmlFor="decision-reason">
-            Reason <span className="font-normal text-muted-foreground">(shared with the learner, optional)</span>
+            {t("students.reasonLabel")} <span className="font-normal text-muted-foreground">{t("students.reasonHint")}</span>
           </Label>
           <Textarea
             id="decision-reason"
@@ -73,12 +74,12 @@ export function ReasonDialog({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             maxLength={1000}
-            placeholder={revoke ? "e.g. Course period has ended." : "e.g. This course is full. Please consider the B1 course instead."}
+            placeholder={revoke ? t("students.revokePlaceholder") : t("students.rejectPlaceholder")}
           />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             variant="destructive"
@@ -88,7 +89,7 @@ export function ReasonDialog({
               setReason("");
             }}
           >
-            {revoke ? "Revoke access" : "Reject"}
+            {revoke ? t("students.revokeTitle") : t("students.reject")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -97,6 +98,9 @@ export function ReasonDialog({
 }
 
 export function StudentsPanel({ courseId, capacity }: { courseId: string; capacity: number | null }) {
+  const t = useTranslations("students");
+  const tc = useTranslations("common");
+  const fmt = useFormat();
   const enrollments = useCourseEnrollments(courseId);
   const { approve, reject, revoke, bulk } = useEnrollmentActions(courseId);
   const [tab, setTab] = React.useState<Tab>("pending");
@@ -127,7 +131,7 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
   const clearSelection = () => setSelected(new Set());
 
   const approveOne = (e: EnrollmentDto) =>
-    approve.mutate(e.id, { onSuccess: () => toast.success(`${e.student.fullName} approved`) });
+    approve.mutate(e.id, { onSuccess: () => toast.success(t("approvedToast", { name: e.student.fullName })) });
 
   const confirmReason = (reason: string | null) => {
     if (!reasonAction) return;
@@ -138,14 +142,14 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
     if (reasonAction.kind === "reject")
       reject.mutate({ id: reasonAction.ids[0], reason }, {
           onSuccess: () => {
-            toast.success("Application rejected");
+            toast.success(t("rejectedToast"));
             done();
           },
         });
     else if (reasonAction.kind === "revoke")
       revoke.mutate({ id: reasonAction.ids[0], reason }, {
           onSuccess: () => {
-            toast.success("Access revoked");
+            toast.success(t("revokedToast"));
             done();
           },
         });
@@ -154,7 +158,7 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
         { ids: reasonAction.ids, action: "REJECT", reason },
         {
           onSuccess: (r) => {
-            toast.success(`${pluralize(r.length, "application")} rejected`);
+            toast.success(t("bulkRejected", { count: r.length }));
             done();
           },
         },
@@ -173,29 +177,33 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
         >
           <TabsList>
             <TabsTrigger value="pending">
-              <Hourglass /> Waitlist {counts.pending > 0 && <Badge variant="info" className="ml-0.5 px-1.5">{counts.pending}</Badge>}
+              <Hourglass /> {t("waitlist")} {counts.pending > 0 && <Badge variant="info" className="ml-0.5 px-1.5">{counts.pending}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="approved">
-              <UserCheck /> Approved <span className="text-muted-foreground tabular-nums">{counts.approved}</span>
+              <UserCheck /> {t("approved")} <span className="text-muted-foreground tabular-nums">{counts.approved}</span>
             </TabsTrigger>
             <TabsTrigger value="inactive">
-              <ShieldX /> Rejected & revoked
+              <ShieldX /> {t("inactive")}
             </TabsTrigger>
           </TabsList>
         </Tabs>
-        <SearchInput value={query} onChange={setQuery} placeholder="Search learners…" className="sm:w-64" />
+        <SearchInput value={query} onChange={setQuery} placeholder={t("search")} className="sm:w-64" />
       </div>
 
       {seatsLeft != null && (
         <p className="text-sm text-muted-foreground">
-          Capacity: <span className="font-medium text-foreground tabular-nums">{counts.approved}</span> / {capacity} seats taken
-          {seatsLeft <= 0 && <span className="text-warning"> · course is full, approvals beyond capacity will be refused</span>}
+          {t.rich("capacity", {
+            taken: counts.approved,
+            capacity: capacity ?? 0,
+            b: (c) => <span className="font-medium text-foreground tabular-nums">{c}</span>,
+          })}
+          {seatsLeft <= 0 && <span className="text-warning">{t("full")}</span>}
         </p>
       )}
 
       {selectable && selectedRows.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-brand/40 bg-brand-soft/40 px-4 py-2.5 animate-slide-up">
-          <span className="text-sm font-medium">{selectedRows.length} selected</span>
+          <span className="text-sm font-medium">{t("selected", { count: selectedRows.length })}</span>
           <Button
             size="sm"
             loading={bulk.isPending && !reasonAction}
@@ -204,26 +212,26 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
                 { ids: selectedRows.map((r) => r.id), action: "APPROVE" },
                 {
                   onSuccess: (r) => {
-                    toast.success(`${pluralize(r.length, "learner")} approved`);
+                    toast.success(t("bulkApproved", { count: r.length }));
                     clearSelection();
                   },
                 },
               )
             }
           >
-            <Check /> Approve selected
+            <Check /> {t("approveSelected")}
           </Button>
           <Button
             size="sm"
             variant="outline"
             onClick={() =>
-              setReasonAction({ kind: "bulk-reject", ids: selectedRows.map((r) => r.id), names: pluralize(selectedRows.length, "application") })
+              setReasonAction({ kind: "bulk-reject", ids: selectedRows.map((r) => r.id), names: t("applicationsCount", { count: selectedRows.length }) })
             }
           >
-            <X /> Reject selected
+            <X /> {t("rejectSelected")}
           </Button>
           <Button size="sm" variant="ghost" className="ml-auto" onClick={clearSelection}>
-            Clear
+            {tc("clear")}
           </Button>
         </div>
       )}
@@ -241,8 +249,8 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
           <EmptyState
             className="m-4 border-none"
             icon={Users}
-            title={q ? "No learners match your search" : tab === "pending" ? "No pending applications" : tab === "approved" ? "No approved learners yet" : "Nothing here"}
-            description={tab === "pending" && !q ? "New applications appear here, ordered by when they were submitted." : undefined}
+            title={q ? t("noMatch") : tab === "pending" ? t("noPending") : tab === "approved" ? t("noApproved") : t("nothing")}
+            description={tab === "pending" && !q ? t("pendingHint") : undefined}
           />
         ) : (
           <Table>
@@ -253,15 +261,15 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
                     <Checkbox
                       checked={allChecked ? true : selectedRows.length > 0 ? "indeterminate" : false}
                       onCheckedChange={(c) => setSelected(c === true ? new Set(rows.map((r) => r.id)) : new Set())}
-                      aria-label="Select all"
+                      aria-label={tc("selectAll")}
                     />
                   </TableHead>
                 )}
                 {tab === "pending" && <TableHead className="w-12">#</TableHead>}
-                <TableHead>Learner</TableHead>
-                <TableHead className="hidden md:table-cell">{tab === "inactive" ? "Reason" : "Message"}</TableHead>
-                <TableHead className="hidden sm:table-cell">{tab === "pending" ? "Applied" : tab === "approved" ? "Progress" : "Status"}</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("learner")}</TableHead>
+                <TableHead className="hidden md:table-cell">{tab === "inactive" ? t("reason") : t("message")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{tab === "pending" ? t("applied") : tab === "approved" ? t("progress") : t("status")}</TableHead>
+                <TableHead className="text-right">{tc("actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -279,7 +287,7 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
                             return next;
                           })
                         }
-                        aria-label={`Select ${e.student.fullName}`}
+                        aria-label={t("selectLearner", { name: e.student.fullName })}
                       />
                     </TableCell>
                   )}
@@ -306,8 +314,8 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     {tab === "pending" && (
-                      <span className="text-[13px] text-muted-foreground" title={formatDate(e.appliedAt)}>
-                        {formatRelative(e.appliedAt)}
+                      <span className="text-[13px] text-muted-foreground" title={fmt.date(e.appliedAt)}>
+                        {fmt.relative(e.appliedAt)}
                       </span>
                     )}
                     {tab === "approved" && (
@@ -323,16 +331,16 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
                       {e.status === "PENDING" && (
                         <>
                           <Button size="xs" onClick={() => approveOne(e)} disabled={approve.isPending}>
-                            <Check /> Approve
+                            <Check /> {t("approve")}
                           </Button>
                           <Button size="xs" variant="outline" onClick={() => setReasonAction({ kind: "reject", ids: [e.id], names: e.student.fullName })}>
-                            Reject
+                            {t("reject")}
                           </Button>
                         </>
                       )}
                       {e.status === "APPROVED" && (
                         <Button size="xs" variant="destructive-ghost" onClick={() => setReasonAction({ kind: "revoke", ids: [e.id], names: e.student.fullName })}>
-                          Revoke
+                          {t("revoke")}
                         </Button>
                       )}
                     </div>

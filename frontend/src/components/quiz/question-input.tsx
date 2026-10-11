@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Check } from "lucide-react";
 import type { SessionQuestion } from "@/lib/api/types";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { AudioPlayer } from "@/components/learn/audio-player";
 import { InlineHtml } from "@/components/course/rich-content";
@@ -23,23 +24,25 @@ export function isAnswered(q: SessionQuestion, a: DraftAnswer | undefined): bool
 }
 
 export function QuestionMedia({ media }: { media: SessionQuestion["media"] }) {
+  const t = useTranslations();
   if (!media) return null;
-  if (media.kind === "AUDIO") return <AudioPlayer src={media.url} title="Listen carefully" compact />;
+  if (media.kind === "AUDIO") return <AudioPlayer src={media.url} title={t("audio.listen")} compact />;
   if (media.kind === "IMAGE")
     return (
       // eslint-disable-next-line @next/next/no-img-element -- signed media URL
-      <img src={media.url} alt="Question illustration" className="max-h-80 w-auto rounded-xl border object-contain" />
+      <img src={media.url} alt={t("quiz.illustration")} className="max-h-80 w-auto rounded-xl border object-contain" />
     );
   if (media.kind === "VIDEO") return <video src={media.url} controls className="aspect-video w-full rounded-xl border bg-black" />;
   return (
     <a href={media.url} target="_blank" rel="noopener noreferrer" className="text-sm underline">
-      Open attached file ({media.fileName})
+      {t("quiz.openAttached", { name: media.fileName })}
     </a>
   );
 }
 
 /** Renders the prompt; "___" gaps in fill-in-the-blank prompts are highlighted. */
 export function QuestionPrompt({ prompt, type }: { prompt: string; type: SessionQuestion["type"] }) {
+  const t = useTranslations("quiz");
   if (type !== "FILL_BLANK" || !prompt.includes("___")) {
     return (
       <p className="text-lg leading-relaxed font-medium">
@@ -54,7 +57,7 @@ export function QuestionPrompt({ prompt, type }: { prompt: string; type: Session
         <React.Fragment key={i}>
           {p}
           {i < parts.length - 1 && (
-            <span className="mx-1 inline-block min-w-16 border-b-2 border-dashed border-brand align-baseline" aria-label="blank" />
+            <span className="mx-1 inline-block min-w-16 border-b-2 border-dashed border-brand align-baseline" aria-label={t("blank")} />
           )}
         </React.Fragment>
       ))}
@@ -71,6 +74,7 @@ export function QuestionInput({
   value: DraftAnswer;
   onChange: (value: DraftAnswer) => void;
 }) {
+  const t = useTranslations("quiz");
   const id = `q-${question.id}`;
   switch (question.type) {
     case "SINGLE_CHOICE":
@@ -79,7 +83,7 @@ export function QuestionInput({
       const multi = question.type === "MULTIPLE_CHOICE";
       return (
         <div role={multi ? "group" : "radiogroup"} aria-labelledby={`${id}-prompt`} className="grid gap-2.5">
-          {multi && <p className="text-xs text-muted-foreground">Select all that apply.</p>}
+          {multi && <p className="text-xs text-muted-foreground">{t("selectAll")}</p>}
           {question.options.map((o, i) => {
             const selected = value.selectedOptionIds.includes(o.id);
             return (
@@ -124,7 +128,7 @@ export function QuestionInput({
           id={id}
           value={value.textAnswer}
           onChange={(e) => onChange({ ...value, textAnswer: e.target.value })}
-          placeholder={question.type === "FILL_BLANK" ? "Fill in the missing word…" : "Type your answer…"}
+          placeholder={question.type === "FILL_BLANK" ? t("fillPlaceholder") : t("answerPlaceholder")}
           autoComplete="off"
           spellCheck={false}
           lang="de"
@@ -142,11 +146,11 @@ export function QuestionInput({
             onChange={(e) => onChange({ ...value, textAnswer: e.target.value })}
             rows={10}
             lang="de"
-            placeholder="Schreiben Sie Ihre Antwort hier…"
+            placeholder={t("essayPlaceholder")}
             className="text-base leading-relaxed"
             aria-labelledby={`${id}-prompt`}
           />
-          <p className="text-right text-xs text-muted-foreground tabular-nums">{words} words · graded by your instructor</p>
+          <p className="text-right text-xs text-muted-foreground tabular-nums">{t("words", { count: words })}</p>
         </div>
       );
     }

@@ -6,10 +6,11 @@ import { CSS } from "@dnd-kit/utilities";
 import { ChevronDown, Copy, GripVertical, ImagePlus, LoaderCircle, Plus, Trash, X } from "lucide-react";
 import { toast } from "sonner";
 import type { MediaDto, QuestionDto, QuestionOptionDto, QuestionType } from "@/lib/api/types";
-import { getErrorMessage } from "@/lib/api/client";
+import { useTranslations } from "next-intl";
+import { useErrorMessage } from "@/hooks/use-error-message";
 import { mediaApi } from "@/lib/api/media";
 import { QUESTION_TYPES, QUESTION_TYPE_META } from "@/lib/constants";
-import { cn, pluralize, stripHtml } from "@/lib/utils";
+import { cn, stripHtml } from "@/lib/utils";
 import { AudioPlayer } from "@/components/learn/audio-player";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -85,19 +86,23 @@ export function convertType(q: DraftQuestion, type: QuestionType): DraftQuestion
   };
 }
 
-export function validateQuestion(q: DraftQuestion): string | null {
-  if (!q.prompt.trim()) return "Write the question prompt.";
-  if (!(q.points > 0)) return "Points must be greater than 0.";
+export type QuestionError = "errPrompt" | "errPoints" | "errTwoOptions" | "errEmptyOption" | "errCorrect" | "errAccepted";
+
+export function validateQuestion(q: DraftQuestion): QuestionError | null {
+  if (!q.prompt.trim()) return "errPrompt";
+  if (!(q.points > 0)) return "errPoints";
   if (isChoice(q.type)) {
-    if (q.options.length < 2) return "Add at least two options.";
-    if (q.options.some((o) => !o.text.trim())) return "Fill in every option or remove empty ones.";
-    if (!q.options.some((o) => o.correct)) return "Mark at least one option as correct.";
+    if (q.options.length < 2) return "errTwoOptions";
+    if (q.options.some((o) => !o.text.trim())) return "errEmptyOption";
+    if (!q.options.some((o) => o.correct)) return "errCorrect";
   }
-  if ((q.type === "SHORT_ANSWER" || q.type === "FILL_BLANK") && q.acceptedAnswers.length === 0) return "Add at least one accepted answer.";
+  if ((q.type === "SHORT_ANSWER" || q.type === "FILL_BLANK") && q.acceptedAnswers.length === 0) return "errAccepted";
   return null;
 }
 
 function MediaField({ media, onChange }: { media: MediaDto | null | undefined; onChange: (m: MediaDto | null) => void }) {
+  const t = useTranslations("question");
+  const errorMessage = useErrorMessage();
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [progress, setProgress] = React.useState<number | null>(null);
   const upload = async (file: File) => {
@@ -106,7 +111,7 @@ function MediaField({ media, onChange }: { media: MediaDto | null | undefined; o
       const m = await mediaApi.upload(file, { onProgress: setProgress });
       onChange(m);
     } catch (err) {
-      toast.error(getErrorMessage(err, "Upload failed"));
+      toast.error(errorMessage(err));
     } finally {
       setProgress(null);
     }
@@ -125,14 +130,14 @@ function MediaField({ media, onChange }: { media: MediaDto | null | undefined; o
               <p className="truncate text-sm">{media.fileName}</p>
             )}
           </div>
-          <Button type="button" variant="ghost" size="icon-xs" onClick={() => onChange(null)} aria-label="Remove question media">
+          <Button type="button" variant="ghost" size="icon-xs" onClick={() => onChange(null)} aria-label={t("removeMedia")}>
             <X />
           </Button>
         </div>
       ) : (
         <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => inputRef.current?.click()} disabled={progress !== null}>
           {progress !== null ? <LoaderCircle className="animate-spin" /> : <ImagePlus />}
-          {progress !== null ? `Uploading ${progress}%` : "Add audio or image"}
+          {progress !== null ? t("uploading", { percent: progress }) : t("addMedia")}
         </Button>
       )}
       <input
@@ -164,7 +169,7 @@ export function QuestionEditor({
   question: DraftQuestion;
   index: number;
   expanded: boolean;
-  error: string | null;
+  error: QuestionError | null;
   onToggle: () => void;
   onChange: (q: DraftQuestion) => void;
   onDuplicate: () => void;
@@ -180,6 +185,7 @@ export function QuestionEditor({
         q.type === "MULTIPLE_CHOICE" ? (o.key === key ? { ...o, correct: !o.correct } : o) : { ...o, correct: o.key === key },
       ),
     });
+  const t = useTranslations();
   const Icon = QUESTION_TYPE_META[q.type].icon;
   const id = `q-${q.key}`;
 
@@ -196,7 +202,7 @@ export function QuestionEditor({
           {...attributes}
           {...listeners}
           className="cursor-grab touch-none rounded p-0.5 text-muted-foreground/60 hover:bg-accent hover:text-foreground"
-          aria-label={`Reorder question ${index + 1}`}
+          aria-label={t("question.reorder", { n: index + 1 })}
         >
           <GripVertical className="size-4" />
         </button>
@@ -204,21 +210,21 @@ export function QuestionEditor({
           <span className="grid size-7 shrink-0 place-items-center rounded-md bg-muted text-xs font-semibold tabular-nums">{index + 1}</span>
           <Icon className="size-4 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1">
-            <span className={cn("block truncate text-sm font-medium", !q.prompt && "text-muted-foreground italic")}>{stripHtml(q.prompt) || "New question"}</span>
+            <span className={cn("block truncate text-sm font-medium", !q.prompt && "text-muted-foreground italic")}>{stripHtml(q.prompt) || t("question.newQuestion")}</span>
             <span className="block text-xs text-muted-foreground">
-              {QUESTION_TYPE_META[q.type].label} · {pluralize(q.points, "pt")}
-              {error && <span className="text-destructive"> · {error}</span>}
+              {t(`questionTypes.${q.type}.label`)} · {t("common.points", { count: Number.isFinite(q.points) ? q.points : 0 })}
+              {error && <span className="text-destructive"> · {t(`question.${error}`)}</span>}
             </span>
           </span>
           <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", !expanded && "-rotate-90")} />
         </button>
-        <Tooltip content="Duplicate">
-          <Button type="button" variant="ghost" size="icon-xs" onClick={onDuplicate} aria-label={`Duplicate question ${index + 1}`}>
+        <Tooltip content={t("question.duplicate")}>
+          <Button type="button" variant="ghost" size="icon-xs" onClick={onDuplicate} aria-label={t("question.duplicateN", { n: index + 1 })}>
             <Copy />
           </Button>
         </Tooltip>
-        <Tooltip content="Delete">
-          <Button type="button" variant="ghost" size="icon-xs" onClick={onDelete} aria-label={`Delete question ${index + 1}`} className="hover:text-destructive">
+        <Tooltip content={t("common.delete")}>
+          <Button type="button" variant="ghost" size="icon-xs" onClick={onDelete} aria-label={t("question.deleteN", { n: index + 1 })} className="hover:text-destructive">
             <Trash />
           </Button>
         </Tooltip>
@@ -228,34 +234,34 @@ export function QuestionEditor({
         <div className="grid gap-5 border-t p-4 sm:p-5">
           <div className="grid gap-4 sm:grid-cols-[1fr_200px_110px]">
             <div className="grid gap-2 sm:col-span-1">
-              <Label htmlFor={`${id}-prompt`}>Prompt</Label>
+              <Label htmlFor={`${id}-prompt`}>{t("question.prompt")}</Label>
               <Textarea
                 id={`${id}-prompt`}
                 rows={3}
                 value={q.prompt}
                 onChange={(e) => set({ prompt: e.target.value })}
                 lang="de"
-                placeholder={q.type === "FILL_BLANK" ? "Ich ___ jeden Morgen Kaffee. (Use ___ for the gap)" : "Was bedeutet „Feierabend“?"}
+                placeholder={q.type === "FILL_BLANK" ? t("question.promptFill") : t("question.promptDefault")}
                 aria-invalid={!!error && !q.prompt.trim()}
               />
             </div>
             <div className="grid content-start gap-2">
-              <Label htmlFor={`${id}-type`}>Type</Label>
+              <Label htmlFor={`${id}-type`}>{t("question.type")}</Label>
               <Select value={q.type} onValueChange={(t) => onChange(convertType(q, t as QuestionType))}>
                 <SelectTrigger id={`${id}-type`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {QUESTION_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {QUESTION_TYPE_META[t].label}
+                  {QUESTION_TYPES.map((qt) => (
+                    <SelectItem key={qt} value={qt}>
+                      {t(`questionTypes.${qt}.label`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid content-start gap-2">
-              <Label htmlFor={`${id}-points`}>Points</Label>
+              <Label htmlFor={`${id}-points`}>{t("question.points")}</Label>
               <Input
                 id={`${id}-points`}
                 type="number"
@@ -268,29 +274,29 @@ export function QuestionEditor({
           </div>
 
           <div className="grid gap-2">
-            <Label>Media (listening or reading comprehension)</Label>
+            <Label>{t("question.media")}</Label>
             <MediaField media={q.media} onChange={(m) => set({ media: m, mediaId: m?.id ?? null })} />
           </div>
 
           {isChoice(q.type) && (
             <fieldset className="grid gap-2">
               <legend className="mb-2 text-sm font-medium">
-                Options{" "}
+                {t("question.options")}{" "}
                 <span className="font-normal text-muted-foreground">
-                  ({q.type === "MULTIPLE_CHOICE" ? "check every correct answer" : "select the correct answer"})
+                  {q.type === "MULTIPLE_CHOICE" ? t("question.optionsMulti") : t("question.optionsSingle")}
                 </span>
               </legend>
               {q.options.map((o, i) => (
                 <div key={o.key} className="flex items-center gap-2">
                   {q.type === "MULTIPLE_CHOICE" ? (
-                    <Checkbox checked={o.correct} onCheckedChange={() => markCorrect(o.key)} aria-label={`Option ${i + 1} is correct`} className="size-5" />
+                    <Checkbox checked={o.correct} onCheckedChange={() => markCorrect(o.key)} aria-label={t("question.optionCorrect", { n: i + 1 })} className="size-5" />
                   ) : (
                     <button
                       type="button"
                       role="radio"
                       aria-checked={o.correct}
                       onClick={() => markCorrect(o.key)}
-                      aria-label={`Option ${i + 1} is the correct answer`}
+                      aria-label={t("question.optionTheCorrect", { n: i + 1 })}
                       className={cn(
                         "grid size-5 shrink-0 place-items-center rounded-full border-2 transition-colors",
                         o.correct ? "border-success" : "border-input hover:border-foreground/40",
@@ -302,8 +308,8 @@ export function QuestionEditor({
                   <Input
                     value={o.text}
                     onChange={(e) => setOption(o.key, { text: e.target.value })}
-                    placeholder={`Option ${String.fromCharCode(65 + i)}`}
-                    aria-label={`Option ${i + 1} text`}
+                    placeholder={t("question.option", { letter: String.fromCharCode(65 + i) })}
+                    aria-label={t("question.optionText", { n: i + 1 })}
                     lang="de"
                     className={cn(o.correct && "border-success/50 bg-success-soft/30")}
                     readOnly={q.type === "TRUE_FALSE" ? false : undefined}
@@ -315,7 +321,7 @@ export function QuestionEditor({
                       size="icon-xs"
                       onClick={() => set({ options: q.options.filter((x) => x.key !== o.key) })}
                       disabled={q.options.length <= 2}
-                      aria-label={`Remove option ${i + 1}`}
+                      aria-label={t("question.removeOption", { n: i + 1 })}
                     >
                       <X />
                     </Button>
@@ -324,7 +330,7 @@ export function QuestionEditor({
               ))}
               {q.type !== "TRUE_FALSE" && q.options.length < 10 && (
                 <Button type="button" variant="ghost" size="sm" className="w-fit text-muted-foreground" onClick={() => set({ options: [...q.options, opt("", false)] })}>
-                  <Plus /> Add option
+                  <Plus /> {t("question.addOption")}
                 </Button>
               )}
             </fieldset>
@@ -333,26 +339,26 @@ export function QuestionEditor({
           {(q.type === "SHORT_ANSWER" || q.type === "FILL_BLANK") && (
             <div className="grid gap-3">
               <div className="grid gap-2">
-                <Label htmlFor={`${id}-accepted`}>Accepted answers</Label>
-                <TagsInput id={`${id}-accepted`} value={q.acceptedAnswers} onChange={(v) => set({ acceptedAnswers: v })} placeholder="trinke, trink…" />
-                <p className="text-xs text-muted-foreground">Any of these answers counts as correct. Leading/trailing spaces are ignored.</p>
+                <Label htmlFor={`${id}-accepted`}>{t("question.accepted")}</Label>
+                <TagsInput id={`${id}-accepted`} value={q.acceptedAnswers} onChange={(v) => set({ acceptedAnswers: v })} placeholder={t("question.acceptedPlaceholder")} />
+                <p className="text-xs text-muted-foreground">{t("question.acceptedHint")}</p>
               </div>
               <label className="flex items-center gap-2 text-sm">
                 <Switch checked={q.caseSensitive} onCheckedChange={(c) => set({ caseSensitive: c })} />
-                Case-sensitive (e.g. nouns must be capitalised)
+                {t("question.caseSensitive")}
               </label>
             </div>
           )}
 
           {q.type === "ESSAY" && (
             <p className="rounded-lg border border-info/25 bg-info-soft/50 px-3 py-2 text-[13px] text-info">
-              Essay answers are graded manually in the Submissions tab. Learners see “awaiting grading” until you score them.
+              {t("question.essayNote")}
             </p>
           )}
 
           <div className="grid gap-2">
             <Label htmlFor={`${id}-explanation`}>
-              Explanation <span className="font-normal text-muted-foreground">(shown with the results, optional)</span>
+              {t("question.explanation")} <span className="font-normal text-muted-foreground">{t("question.explanationHint")}</span>
             </Label>
             <Textarea
               id={`${id}-explanation`}

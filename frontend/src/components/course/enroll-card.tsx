@@ -2,10 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, CircleCheck, Clock, Hourglass, PencilLine, RotateCcw, ShieldX, Users, CircleX } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { ArrowRight, CircleCheck, CircleX, Clock, Hourglass, PencilLine, RotateCcw, ShieldX, Users } from "lucide-react";
 import { toast } from "sonner";
 import type { CoursePublicDto } from "@/lib/api/types";
-import { formatDate } from "@/lib/dates";
+import { cn } from "@/lib/utils";
+import { useFormat } from "@/hooks/use-format";
 import { useApply, useMyEnrollment, useWithdraw } from "@/hooks/queries/student";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -15,19 +17,11 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 
 type CourseLike = Pick<CoursePublicDto, "id" | "slug" | "title" | "enrollmentMode" | "capacity" | "studentCount" | "instructor">;
 
-function ApplyDialog({
-  course,
-  open,
-  onOpenChange,
-}: {
-  course: CourseLike;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
+function ApplyDialog({ course, open, onOpenChange }: { course: CourseLike; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const t = useTranslations();
   const [message, setMessage] = React.useState("");
   const apply = useApply(course.id);
   const isOpen = course.enrollmentMode === "OPEN";
@@ -35,12 +29,8 @@ function ApplyDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isOpen ? "Join" : "Apply to"} “{course.title}”</DialogTitle>
-          <DialogDescription>
-            {isOpen
-              ? "This course has open enrollment: you'll get access immediately."
-              : "Tell the instructor a little about yourself. You'll be notified as soon as they review your application."}
-          </DialogDescription>
+          <DialogTitle>{isOpen ? t("enroll.dialogJoin", { title: course.title }) : t("enroll.dialogApply", { title: course.title })}</DialogTitle>
+          <DialogDescription>{isOpen ? t("enroll.dialogOpenText") : t("enroll.dialogApplyText")}</DialogDescription>
         </DialogHeader>
         <form
           className="grid gap-4"
@@ -50,16 +40,14 @@ function ApplyDialog({
               onSuccess: (enrollment) => {
                 onOpenChange(false);
                 setMessage("");
-                toast.success(
-                  enrollment.status === "APPROVED" ? "You're in! Viel Erfolg." : "Application sent. We'll let you know.",
-                );
+                toast.success(enrollment.status === "APPROVED" ? t("enroll.joinedToast") : t("enroll.appliedToast"));
               },
             });
           }}
         >
           <div className="grid gap-2">
             <Label htmlFor="apply-message">
-              Message to the instructor <span className="font-normal text-muted-foreground">(optional)</span>
+              {t("enroll.message")} <span className="font-normal text-muted-foreground">({t("common.optional")})</span>
             </Label>
             <Textarea
               id="apply-message"
@@ -67,16 +55,16 @@ function ApplyDialog({
               onChange={(e) => setMessage(e.target.value)}
               maxLength={1000}
               rows={5}
-              placeholder="Hallo! I'm moving to Munich in spring and would love to reach B1 by then…"
+              placeholder={t("enroll.messagePlaceholder")}
             />
             <p className="text-right text-xs text-muted-foreground tabular-nums">{message.length}/1000</p>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" loading={apply.isPending}>
-              {isOpen ? "Join course" : "Send application"}
+              {isOpen ? t("enroll.join") : t("enroll.send")}
             </Button>
           </DialogFooter>
         </form>
@@ -86,6 +74,9 @@ function ApplyDialog({
 }
 
 export function EnrollCard({ course, className }: { course: CourseLike; className?: string }) {
+  const t = useTranslations("enroll");
+  const tc = useTranslations("common");
+  const fmt = useFormat();
   const { status, user } = useAuth();
   const enrollment = useMyEnrollment(course.id, status === "authenticated");
   const withdraw = useWithdraw(course.id);
@@ -105,14 +96,14 @@ export function EnrollCard({ course, className }: { course: CourseLike; classNam
   } else if (status === "unauthenticated" || !user) {
     body = (
       <div className="grid gap-3">
-        <p className="text-sm text-muted-foreground">Create a free account or log in to apply for this course.</p>
+        <p className="text-sm text-muted-foreground">{t("loginHint")}</p>
         <Button size="lg" asChild>
           <Link href={`/login?next=${encodeURIComponent(next)}`}>
-            Log in to apply <ArrowRight />
+            {t("loginToApply")} <ArrowRight />
           </Link>
         </Button>
         <Button variant="outline" asChild>
-          <Link href={`/register?next=${encodeURIComponent(next)}`}>Create an account</Link>
+          <Link href={`/register?next=${encodeURIComponent(next)}`}>{t("createAccount")}</Link>
         </Button>
       </div>
     );
@@ -120,22 +111,22 @@ export function EnrollCard({ course, className }: { course: CourseLike; classNam
     body = (
       <div className="grid gap-3">
         <p className="flex items-center gap-2 text-sm font-medium">
-          <PencilLine className="size-4 text-brand-strong" /> You teach this course
+          <PencilLine className="size-4 text-brand-strong" /> {t("youTeach")}
         </p>
         <Button asChild>
-          <Link href={`/instructor/courses/${course.id}`}>Open course builder</Link>
+          <Link href={`/instructor/courses/${course.id}`}>{t("openBuilder")}</Link>
         </Button>
         <Button variant="outline" asChild>
-          <Link href={`/learn/${course.id}`}>Preview as student</Link>
+          <Link href={`/learn/${course.id}`}>{t("previewAsStudent")}</Link>
         </Button>
       </div>
     );
   } else if (enrollment.isError) {
     body = (
       <div className="grid gap-3">
-        <p className="text-sm text-muted-foreground">We couldn&apos;t load your enrollment status.</p>
+        <p className="text-sm text-muted-foreground">{t("statusError")}</p>
         <Button variant="outline" onClick={() => enrollment.refetch()}>
-          Try again
+          {tc("retry")}
         </Button>
       </div>
     );
@@ -146,12 +137,12 @@ export function EnrollCard({ course, className }: { course: CourseLike; classNam
         body = (
           <div className="grid gap-4">
             <p className="flex items-center gap-2 text-sm font-semibold text-success">
-              <CircleCheck className="size-4" /> You&apos;re enrolled
+              <CircleCheck className="size-4" /> {t("enrolled")}
             </p>
             {e.progressPercent != null && (
               <div className="grid gap-1.5">
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Your progress</span>
+                  <span>{t("yourProgress")}</span>
                   <span className="font-medium text-foreground tabular-nums">{Math.round(e.progressPercent)}%</span>
                 </div>
                 <Progress value={e.progressPercent} />
@@ -159,7 +150,7 @@ export function EnrollCard({ course, className }: { course: CourseLike; classNam
             )}
             <Button size="lg" asChild>
               <Link href={`/learn/${course.id}`}>
-                Continue learning <ArrowRight />
+                {t("continue")} <ArrowRight />
               </Link>
             </Button>
           </div>
@@ -170,20 +161,23 @@ export function EnrollCard({ course, className }: { course: CourseLike; classNam
           <div className="grid gap-4">
             <div className="rounded-lg border border-info/20 bg-info-soft/50 p-3.5">
               <p className="flex items-center gap-2 text-sm font-semibold text-info">
-                <Hourglass className="size-4" /> Application pending
+                <Hourglass className="size-4" /> {t("pending")}
               </p>
               <p className="mt-1 text-[13px] text-muted-foreground">
-                Sent {formatDate(e.appliedAt)}.
+                {t("sentOn", { date: fmt.date(e.appliedAt) })}
                 {e.waitlistPosition != null && (
                   <>
                     {" "}
-                    You are <strong className="text-foreground">#{e.waitlistPosition}</strong> on the waiting list.
+                    {t.rich("waitlistPosition", {
+                      position: e.waitlistPosition,
+                      b: (chunks) => <strong className="text-foreground">{chunks}</strong>,
+                    })}
                   </>
                 )}
               </p>
             </div>
             <Button variant="outline" onClick={() => setWithdrawOpen(true)}>
-              Withdraw application
+              {t("withdraw")}
             </Button>
           </div>
         );
@@ -195,12 +189,12 @@ export function EnrollCard({ course, className }: { course: CourseLike; classNam
             <div className="rounded-lg border border-destructive/20 bg-destructive-soft/50 p-3.5">
               <p className="flex items-center gap-2 text-sm font-semibold text-destructive">
                 {e.status === "REJECTED" ? <CircleX className="size-4" /> : <ShieldX className="size-4" />}
-                {e.status === "REJECTED" ? "Application not accepted" : "Access revoked"}
+                {e.status === "REJECTED" ? t("rejected") : t("revoked")}
               </p>
-              {e.decisionReason && <p className="mt-1.5 text-[13px] text-muted-foreground">“{e.decisionReason}”</p>}
+              {e.decisionReason && <p className="mt-1.5 text-[13px] text-muted-foreground">„{e.decisionReason}“</p>}
             </div>
             <Button onClick={() => setApplyOpen(true)}>
-              <RotateCcw /> Apply again
+              <RotateCcw /> {t("applyAgain")}
             </Button>
           </div>
         );
@@ -208,13 +202,11 @@ export function EnrollCard({ course, className }: { course: CourseLike; classNam
       default:
         body = (
           <div className="grid gap-3">
-            {e?.status === "WITHDRAWN" && <p className="text-[13px] text-muted-foreground">You withdrew your previous application.</p>}
+            {e?.status === "WITHDRAWN" && <p className="text-[13px] text-muted-foreground">{t("withdrawnBefore")}</p>}
             <Button size="lg" onClick={() => setApplyOpen(true)} disabled={seatsLeft === 0 && course.enrollmentMode === "OPEN"}>
-              {course.enrollmentMode === "OPEN" ? "Join course" : "Apply now"} <ArrowRight />
+              {course.enrollmentMode === "OPEN" ? t("join") : t("applyNow")} <ArrowRight />
             </Button>
-            <p className="text-center text-xs text-muted-foreground">
-              {course.enrollmentMode === "OPEN" ? "Instant access, free to join." : "The instructor reviews every application."}
-            </p>
+            <p className="text-center text-xs text-muted-foreground">{course.enrollmentMode === "OPEN" ? t("openHint") : t("approvalHint")}</p>
           </div>
         );
     }
@@ -225,13 +217,13 @@ export function EnrollCard({ course, className }: { course: CourseLike; classNam
       <div className="mb-5 grid gap-2.5 text-sm">
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-2 text-muted-foreground">
-            <Clock className="size-4" /> Enrollment
+            <Clock className="size-4" /> {t("enrollment")}
           </span>
-          <span className="font-medium">{course.enrollmentMode === "OPEN" ? "Open" : "By approval"}</span>
+          <span className="font-medium">{course.enrollmentMode === "OPEN" ? t("open") : t("byApproval")}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-2 text-muted-foreground">
-            <Users className="size-4" /> Learners
+            <Users className="size-4" /> {t("learners")}
           </span>
           <span className="font-medium tabular-nums">
             {course.studentCount}
@@ -240,7 +232,7 @@ export function EnrollCard({ course, className }: { course: CourseLike; classNam
         </div>
         {seatsLeft != null && (
           <p className={cn("text-xs", seatsLeft <= 3 ? "text-warning" : "text-muted-foreground")}>
-            {seatsLeft === 0 ? "Fully booked: new applications join the waiting list." : `${seatsLeft} seats left`}
+            {seatsLeft === 0 ? t("full") : t("seatsLeft", { count: seatsLeft })}
           </p>
         )}
       </div>
@@ -249,9 +241,9 @@ export function EnrollCard({ course, className }: { course: CourseLike; classNam
       <ConfirmDialog
         open={withdrawOpen}
         onOpenChange={setWithdrawOpen}
-        title="Withdraw your application?"
-        description="You'll lose your place on the waiting list. You can apply again later."
-        confirmLabel="Withdraw"
+        title={t("withdrawTitle")}
+        description={t("withdrawText")}
+        confirmLabel={t("withdrawConfirm")}
         destructive
         loading={withdraw.isPending}
         onConfirm={() => {
@@ -259,7 +251,7 @@ export function EnrollCard({ course, className }: { course: CourseLike; classNam
           withdraw.mutate(enrollment.data.id, {
             onSuccess: () => {
               setWithdrawOpen(false);
-              toast.success("Application withdrawn");
+              toast.success(t("withdrawnToast"));
             },
           });
         }}

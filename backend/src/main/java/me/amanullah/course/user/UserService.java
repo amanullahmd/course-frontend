@@ -58,6 +58,11 @@ public class UserService {
     }
 
     @Transactional
+    public void changeLocale(UUID id, String locale) {
+        require(id).setLocale(locale);
+    }
+
+    @Transactional
     public void changePassword(UUID id, UserController.ChangePasswordRequest request, HttpServletRequest http) {
         User user = require(id);
         if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {

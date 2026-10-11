@@ -16,7 +16,7 @@ public final class AdminDtos {
 
     /** UserDto + enabled. */
     public record AdminUserDto(UUID id, String fullName, String email, Role role, boolean emailVerified, String bio,
-                               String avatarUrl, UUID avatarMediaId, Instant createdAt, boolean enabled) {
+                               String avatarUrl, UUID avatarMediaId, String locale, Instant createdAt, boolean enabled) {
     }
 
     public record UpdateUserRequest(Role role, Boolean enabled) {

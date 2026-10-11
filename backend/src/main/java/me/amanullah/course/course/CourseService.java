@@ -3,6 +3,7 @@ package me.amanullah.course.course;
 import me.amanullah.course.common.exception.ValidationException;
 import me.amanullah.course.common.publication.PublicationRequest;
 import me.amanullah.course.common.util.HtmlSanitizer;
+import me.amanullah.course.common.util.TextLimits;
 import me.amanullah.course.common.util.SlugGenerator;
 import me.amanullah.course.course.CourseDtos.CourseDto;
 import me.amanullah.course.course.CourseDtos.CourseUpsert;
@@ -104,8 +105,7 @@ public class CourseService {
         List<CourseModule> current = modules.findByCourseIdOrderByPositionAsc(course.getId());
         Set<UUID> currentIds = new HashSet<>(current.stream().map(CourseModule::getId).toList());
         if (ids.size() != current.size() || !currentIds.equals(new HashSet<>(ids))) {
-            throw new ValidationException("ids must contain exactly the course's module ids",
-                    Map.of("ids", "must contain exactly the course's module ids"));
+            throw ValidationException.field("ids", "validation.ids.exactModules");
         }
         Map<UUID, CourseModule> byId = new java.util.HashMap<>();
         current.forEach(m -> byId.put(m.getId(), m));
@@ -128,7 +128,7 @@ public class CourseService {
     private void apply(Course course, CourseUpsert req, CurrentUser me) {
         course.setTitle(req.title().trim());
         course.setSubtitle(blankToNull(req.subtitle()));
-        course.setDescription(HtmlSanitizer.sanitize(req.description()));
+        course.setDescription(TextLimits.requireMax("description", HtmlSanitizer.sanitize(req.description()), 1_000_000));
         course.setLevel(req.level());
         course.setEnrollmentMode(req.enrollmentMode());
         course.setCapacity(req.capacity());
@@ -138,7 +138,7 @@ public class CourseService {
         } else if (course.getCoverImage() == null || !Objects.equals(course.getCoverImage().getId(), req.coverImageId())) {
             MediaAsset cover = mediaService.requireUsable(req.coverImageId(), me.id(), me.isAdmin());
             if (cover.getKind() != MediaKind.IMAGE) {
-                throw new ValidationException("The cover must be an image", Map.of("coverImageId", "must be an image"));
+                throw ValidationException.field("coverImageId", "validation.image");
             }
             course.setCoverImage(cover);
         }

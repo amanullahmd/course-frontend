@@ -5,10 +5,11 @@ import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { ClipboardList, Plus, Save } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { AssessmentDto, QuestionType } from "@/lib/api/types";
-import { getErrorMessage, isApiError } from "@/lib/api/client";
+import { isApiError } from "@/lib/api/client";
 import { QUESTION_TYPES, QUESTION_TYPE_META } from "@/lib/constants";
-import { pluralize } from "@/lib/utils";
+import { useErrorMessage } from "@/hooks/use-error-message";
 import { useAssessment, useSaveAssessment } from "@/hooks/queries/instructor";
 import { useHotkey } from "@/hooks/use-hotkey";
 import { Button } from "@/components/ui/button";
@@ -95,6 +96,8 @@ function AssessmentEditorInner({
   const [expanded, setExpanded] = React.useState<Set<string>>(() => new Set(draft.questions.length <= 3 ? draft.questions.map((q) => q.key) : []));
   const [showErrors, setShowErrors] = React.useState(false);
   const save = useSaveAssessment(itemId, courseId);
+  const t = useTranslations();
+  const errorMessage = useErrorMessage();
 
   const payload = React.useMemo(() => fromDraft(draft), [draft]);
   const dirty = JSON.stringify(payload) !== baseline;
@@ -118,13 +121,13 @@ function AssessmentEditorInner({
 
   const submit = () => {
     if (draft.availableFrom && draft.availableUntil && draft.availableUntil <= draft.availableFrom) {
-      toast.error("The availability end must be after its start.");
+      toast.error(t("assessmentEditor.windowError"));
       return;
     }
     if (errorCount > 0) {
       setShowErrors(true);
       setExpanded(new Set([...errors.entries()].filter(([, e]) => e).map(([k]) => k)));
-      toast.error(`Fix ${pluralize(errorCount, "question")} before saving.`);
+      toast.error(t("assessmentEditor.fixQuestions", { count: errorCount }));
       return;
     }
     save.mutate(payload, {
@@ -136,12 +139,12 @@ function AssessmentEditorInner({
         setDraft(next);
         setSaved(next);
         setShowErrors(false);
-        toast.success("Assessment saved");
+        toast.success(t("assessmentEditor.saved"));
       },
       onError: (err) => {
         if (isApiError(err) && Object.keys(err.fieldErrors).length > 0) {
-          toast.error(Object.entries(err.fieldErrors).map(([k, v]) => `${k}: ${v}`).join("\n"));
-        } else toast.error(getErrorMessage(err));
+          toast.error(Object.values(err.fieldErrors).join("\n"));
+        } else toast.error(errorMessage(err));
       },
     });
   };
@@ -171,19 +174,19 @@ function AssessmentEditorInner({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline">
-          <Plus /> Add question
+          <Plus /> {t("assessmentEditor.addQuestion")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
-        <DropdownMenuLabel>Question type</DropdownMenuLabel>
-        {QUESTION_TYPES.map((t) => {
-          const Icon = QUESTION_TYPE_META[t].icon;
+        <DropdownMenuLabel>{t("assessmentEditor.questionType")}</DropdownMenuLabel>
+        {QUESTION_TYPES.map((qt) => {
+          const Icon = QUESTION_TYPE_META[qt].icon;
           return (
-            <DropdownMenuItem key={t} onSelect={() => addQuestion(t)} className="items-start py-2">
+            <DropdownMenuItem key={qt} onSelect={() => addQuestion(qt)} className="items-start py-2">
               <Icon className="mt-0.5" />
               <span className="grid">
-                <span className="font-medium">{QUESTION_TYPE_META[t].label}</span>
-                <span className="text-xs text-muted-foreground">{QUESTION_TYPE_META[t].description}</span>
+                <span className="font-medium">{t(`questionTypes.${qt}.label`)}</span>
+                <span className="text-xs text-muted-foreground">{t(`questionTypes.${qt}.description`)}</span>
               </span>
             </DropdownMenuItem>
           );
@@ -196,38 +199,38 @@ function AssessmentEditorInner({
     <div className="grid gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Settings</CardTitle>
-          <CardDescription>Rules that apply to every attempt.</CardDescription>
+          <CardTitle>{t("assessmentEditor.settings")}</CardTitle>
+          <CardDescription>{t("assessmentEditor.settingsText")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-5">
           <div className="grid gap-2">
-            <Label htmlFor="instructions">Instructions</Label>
+            <Label htmlFor="instructions">{t("assessmentEditor.instructions")}</Label>
             <Textarea
               id="instructions"
               rows={3}
               value={draft.instructions ?? ""}
               onChange={(e) => set({ instructions: e.target.value })}
-              placeholder="Lesen Sie die Fragen genau. You have 20 minutes and two attempts."
+              placeholder={t("assessmentEditor.instructionsPlaceholder")}
             />
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="grid gap-2">
-              <Label htmlFor="time-limit">Time limit</Label>
+              <Label htmlFor="time-limit">{t("assessmentEditor.timeLimit")}</Label>
               <div className="relative">
                 <Input
                   id="time-limit"
                   type="number"
                   min={0}
-                  placeholder="No limit"
+                  placeholder={t("assessmentEditor.noLimit")}
                   value={draft.timeLimitMinutes ?? ""}
                   onChange={(e) => set({ timeLimitMinutes: e.target.value ? Math.max(0, Number(e.target.value)) : null })}
                   className="pr-12"
                 />
-                <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs text-muted-foreground">min</span>
+                <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs text-muted-foreground">{t("common.min")}</span>
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="max-attempts">Max attempts</Label>
+              <Label htmlFor="max-attempts">{t("assessmentEditor.maxAttempts")}</Label>
               <Input
                 id="max-attempts"
                 type="number"
@@ -235,57 +238,57 @@ function AssessmentEditorInner({
                 value={draft.maxAttempts}
                 onChange={(e) => set({ maxAttempts: Math.max(0, Number(e.target.value) || 0) })}
               />
-              <p className="text-xs text-muted-foreground">0 = unlimited</p>
+              <p className="text-xs text-muted-foreground">{t("assessmentEditor.zeroUnlimited")}</p>
             </div>
           </div>
           <div className="grid gap-3">
             <div className="flex items-center justify-between">
-              <Label>Passing score</Label>
+              <Label>{t("assessmentEditor.passingScore")}</Label>
               <span className="text-sm font-semibold tabular-nums">{draft.passingScore}%</span>
             </div>
-            <Slider value={[draft.passingScore]} min={0} max={100} step={5} onValueChange={([v]) => set({ passingScore: v })} aria-label="Passing score" />
+            <Slider value={[draft.passingScore]} min={0} max={100} step={5} onValueChange={([v]) => set({ passingScore: v })} aria-label={t("assessmentEditor.passingScore")} />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm">
               <span>
-                <span className="block font-medium">Shuffle questions</span>
-                <span className="text-xs text-muted-foreground">Random order for each attempt</span>
+                <span className="block font-medium">{t("assessmentEditor.shuffle")}</span>
+                <span className="text-xs text-muted-foreground">{t("assessmentEditor.shuffleText")}</span>
               </span>
               <Switch checked={draft.shuffleQuestions} onCheckedChange={(c) => set({ shuffleQuestions: c })} />
             </label>
             <label className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm">
               <span>
-                <span className="block font-medium">Show correct answers</span>
-                <span className="text-xs text-muted-foreground">Reveal solutions after submitting</span>
+                <span className="block font-medium">{t("assessmentEditor.showAnswers")}</span>
+                <span className="text-xs text-muted-foreground">{t("assessmentEditor.showAnswersText")}</span>
               </span>
               <Switch checked={draft.showCorrectAnswers} onCheckedChange={(c) => set({ showCorrectAnswers: c })} />
             </label>
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="grid gap-2">
-              <Label htmlFor="available-from">Available from</Label>
+              <Label htmlFor="available-from">{t("assessmentEditor.availableFrom")}</Label>
               <DateTimePicker id="available-from" value={draft.availableFrom} onChange={(v) => set({ availableFrom: v })} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="available-until">Available until</Label>
+              <Label htmlFor="available-until">{t("assessmentEditor.availableUntil")}</Label>
               <DateTimePicker id="available-until" value={draft.availableUntil} onChange={(v) => set({ availableUntil: v })} />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <section className="grid gap-3" aria-label="Questions">
+      <section className="grid gap-3" aria-label={t("assessmentEditor.questions")}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-semibold">Questions</h2>
+            <h2 className="font-semibold">{t("assessmentEditor.questions")}</h2>
             <p className="text-sm text-muted-foreground">
-              {pluralize(draft.questions.length, "question")} · {totalPoints} points
+              {t("assessmentEditor.questionsCount", { count: draft.questions.length })} · {t("common.points", { count: totalPoints })}
             </p>
           </div>
           {draft.questions.length > 0 && addMenu}
         </div>
         {draft.questions.length === 0 ? (
-          <EmptyState icon={ClipboardList} title="No questions yet" description="Mix choice, short-answer, gap-fill and essay questions. Attach audio for Hörverstehen." action={addMenu} />
+          <EmptyState icon={ClipboardList} title={t("assessmentEditor.emptyTitle")} description={t("assessmentEditor.emptyText")} action={addMenu} />
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
             <SortableContext items={draft.questions.map((q) => q.key)} strategy={verticalListSortingStrategy}>
@@ -333,10 +336,10 @@ function AssessmentEditorInner({
         <span className="mr-auto text-xs text-muted-foreground">
           {dirty ? (
             <>
-              Unsaved changes · <Kbd>⌘/Ctrl</Kbd> <Kbd>S</Kbd>
+              {t("assessmentEditor.unsaved")} <Kbd>⌘/Ctrl</Kbd> <Kbd>S</Kbd>
             </>
           ) : (
-            "All changes saved"
+            t("common.allSaved")
           )}
         </span>
         {dirty && (
@@ -347,11 +350,11 @@ function AssessmentEditorInner({
               setShowErrors(false);
             }}
           >
-            Discard
+            {t("common.discard")}
           </Button>
         )}
         <Button onClick={submit} loading={save.isPending} disabled={!dirty}>
-          <Save /> Save assessment
+          <Save /> {t("assessmentEditor.save")}
         </Button>
       </div>
     </div>

@@ -3,8 +3,9 @@
 import * as React from "react";
 import { CalendarClock, CircleCheck, ClipboardList, Clock, Lock, PlayCircle, RotateCcw, Target, Trophy } from "lucide-react";
 import type { AttemptResultDto, AttemptSessionDto, LearnItemDto } from "@/lib/api/types";
-import { formatDateTime } from "@/lib/dates";
-import { cn, pluralize } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
+import { useFormat } from "@/hooks/use-format";
 import { useMyAttempt, useMyAttempts, useStartAttempt } from "@/hooks/queries/student";
 import { useNow } from "@/hooks/use-now";
 import { RichContent } from "@/components/course/rich-content";
@@ -26,6 +27,9 @@ function ResultLoader({ attemptId, passingScore }: { attemptId: string; passingS
 }
 
 export function AssessmentPanel({ item }: { item: LearnItemDto }) {
+  const t = useTranslations("quiz");
+  const tc = useTranslations("common");
+  const fmt = useFormat();
   const info = item.assessment;
   const [view, setView] = React.useState<View>({ kind: "intro" });
   const attempts = useMyAttempts(item.id, !!info);
@@ -33,7 +37,7 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
   const now = useNow();
 
   if (!info) {
-    return <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">This assessment has no questions yet.</p>;
+    return <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">{t("noQuestions")}</p>;
   }
 
   if (view.kind === "play") {
@@ -54,7 +58,7 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
       <div className="grid gap-4">
         <ResultLoader attemptId={view.attemptId} passingScore={info.passingScore} />
         <Button variant="outline" className="w-fit" onClick={() => setView({ kind: "intro" })}>
-          Back to overview
+          {t("backToOverview")}
         </Button>
       </div>
     );
@@ -68,28 +72,28 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
   const resume = !!info.inProgressAttemptId;
 
   const stats = [
-    { icon: ClipboardList, label: "Questions", value: info.questionCount },
-    { icon: Target, label: "Points", value: info.totalPoints },
-    { icon: Clock, label: "Time limit", value: info.timeLimitMinutes ? `${info.timeLimitMinutes} min` : "None" },
+    { icon: ClipboardList, label: t("questions"), value: info.questionCount },
+    { icon: Target, label: t("points"), value: info.totalPoints },
+    { icon: Clock, label: t("timeLimit"), value: info.timeLimitMinutes ? tc("minutesShort", { count: info.timeLimitMinutes }) : tc("none") },
     {
       icon: RotateCcw,
-      label: "Attempts",
+      label: t("attempts"),
       value: info.maxAttempts > 0 ? `${info.attemptsUsed} / ${info.maxAttempts}` : `${info.attemptsUsed} / ∞`,
     },
-    { icon: CircleCheck, label: "Pass mark", value: `${info.passingScore}%` },
-    { icon: Trophy, label: "Best score", value: info.bestPercent != null ? `${Math.round(info.bestPercent)}%` : "–" },
+    { icon: CircleCheck, label: t("passMark"), value: `${info.passingScore}%` },
+    { icon: Trophy, label: t("bestScore"), value: info.bestPercent != null ? `${Math.round(info.bestPercent)}%` : "–" },
   ];
 
   return (
     <div className="grid gap-8">
       <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
         <div className={cn("border-b px-5 py-4 sm:px-6", isExam ? "bg-orange-500/5" : "bg-amber-500/5")}>
-          <Badge variant={isExam ? "warning" : "brand"}>{isExam ? "Exam" : "Quiz"}</Badge>
+          <Badge variant={isExam ? "warning" : "brand"}>{isExam ? t("exam") : t("quiz")}</Badge>
           {info.instructions ? (
             <RichContent html={info.instructions} className="mt-3 text-[15px]" />
           ) : (
             <p className="mt-3 text-sm text-muted-foreground">
-              Answer each question, then submit. {info.timeLimitMinutes ? "The timer starts when you begin and the attempt is submitted automatically when it runs out." : ""}
+              {t("defaultInstructions")} {info.timeLimitMinutes ? t("timerInstructions") : ""}
             </p>
           )}
         </div>
@@ -106,25 +110,25 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
         {(info.availableFrom || info.availableUntil) && (
           <p className="flex items-center gap-2 border-t px-5 py-3 text-sm text-muted-foreground sm:px-6">
             <CalendarClock className="size-4" />
-            Available {info.availableFrom ? `from ${formatDateTime(info.availableFrom)}` : ""}
-            {info.availableUntil ? ` until ${formatDateTime(info.availableUntil)}` : ""}
+            {t("available")} {info.availableFrom ? t("from", { date: fmt.dateTime(info.availableFrom) }) : ""}
+            {info.availableUntil ? ` ${t("until", { date: fmt.dateTime(info.availableUntil) })}` : ""}
           </p>
         )}
         <div className="flex flex-col gap-3 border-t px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p className="text-sm text-muted-foreground">
             {notYetOpen && (
               <span className="flex items-center gap-1.5">
-                <Lock className="size-4" /> Opens {formatDateTime(info.availableFrom)}
+                <Lock className="size-4" /> {t("opens", { date: fmt.dateTime(info.availableFrom) })}
               </span>
             )}
             {closed && (
               <span className="flex items-center gap-1.5">
-                <Lock className="size-4" /> This {isExam ? "exam" : "quiz"} closed on {formatDateTime(info.availableUntil)}
+                <Lock className="size-4" /> {t("closedOn", { date: fmt.dateTime(info.availableUntil) })}
               </span>
             )}
-            {noAttemptsLeft && !closed && !notYetOpen && "You've used all your attempts."}
-            {canStart && !resume && (info.maxAttempts > 0 ? `${pluralize(info.maxAttempts - info.attemptsUsed, "attempt")} remaining.` : "Unlimited attempts.")}
-            {canStart && resume && "You have an attempt in progress."}
+            {noAttemptsLeft && !closed && !notYetOpen && t("noAttemptsLeft")}
+            {canStart && !resume && (info.maxAttempts > 0 ? t("attemptsRemaining", { count: info.maxAttempts - info.attemptsUsed }) : t("unlimitedAttempts"))}
+            {canStart && resume && t("inProgressHint")}
           </p>
           <Button
             size="lg"
@@ -133,22 +137,22 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
             loading={start.isPending}
             onClick={() => start.mutate(undefined, { onSuccess: (session) => setView({ kind: "play", session }) })}
           >
-            <PlayCircle /> {resume ? "Resume attempt" : info.attemptsUsed > 0 ? "Start new attempt" : `Start ${isExam ? "exam" : "quiz"}`}
+            <PlayCircle /> {resume ? t("resume") : info.attemptsUsed > 0 ? t("startNew") : isExam ? t("startExam") : t("startQuiz")}
           </Button>
         </div>
       </div>
 
       {attempts.data && attempts.data.length > 0 && (
-        <section aria-label="Previous attempts">
-          <h3 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">Your attempts</h3>
+        <section aria-label={t("yourAttempts")}>
+          <h3 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">{t("yourAttempts")}</h3>
           <div className="overflow-hidden rounded-xl border bg-card">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>#</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Score</TableHead>
+                  <TableHead>{t("submitted")}</TableHead>
+                  <TableHead>{t("status")}</TableHead>
+                  <TableHead className="text-right">{t("score")}</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
@@ -157,17 +161,17 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
                   <TableRow key={a.id}>
                     <TableCell className="tabular-nums">{attempts.data.length - i}</TableCell>
                     <TableCell className="whitespace-nowrap text-muted-foreground">
-                      {a.submittedAt ? formatDateTime(a.submittedAt) : "In progress"}
+                      {a.submittedAt ? fmt.dateTime(a.submittedAt) : t("inProgress")}
                     </TableCell>
                     <TableCell>
                       {a.status === "IN_PROGRESS" ? (
-                        <Badge variant="info">In progress</Badge>
+                        <Badge variant="info">{t("inProgress")}</Badge>
                       ) : a.pendingManualGrading ? (
-                        <Badge variant="info">Awaiting grading</Badge>
+                        <Badge variant="info">{t("awaitingGrading")}</Badge>
                       ) : a.passed ? (
-                        <Badge variant="success">Passed</Badge>
+                        <Badge variant="success">{t("passed")}</Badge>
                       ) : (
-                        <Badge variant="destructive">Not passed</Badge>
+                        <Badge variant="destructive">{t("notPassed")}</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-right font-medium tabular-nums">
@@ -176,7 +180,7 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
                     <TableCell className="text-right">
                       {a.status !== "IN_PROGRESS" && (
                         <Button variant="ghost" size="xs" onClick={() => setView({ kind: "result", attemptId: a.id })}>
-                          Review
+                          {t("review")}
                         </Button>
                       )}
                     </TableCell>

@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PanelLeftClose, PanelLeftOpen, Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useInstructorCourses } from "@/hooks/queries/instructor";
 import { usePersistentState } from "@/hooks/use-local-storage";
 import { useAuth } from "@/providers/auth-provider";
@@ -15,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { isActive, navForRole } from "./nav-config";
 
 function SidebarInner({ collapsed }: { collapsed: boolean }) {
+  const t = useTranslations("nav");
   const pathname = usePathname();
   const { user } = useAuth();
   const courses = useInstructorCourses();
@@ -22,7 +24,7 @@ function SidebarInner({ collapsed }: { collapsed: boolean }) {
 
   return (
     <>
-      <nav aria-label="Instructor" className="grid gap-0.5">
+      <nav aria-label={t("instructorNav")} className="grid gap-0.5">
         {items.map((item) => {
           const Icon = item.icon;
           const active = isActive(pathname, item);
@@ -37,12 +39,12 @@ function SidebarInner({ collapsed }: { collapsed: boolean }) {
               )}
             >
               <Icon className="size-4 shrink-0" />
-              {!collapsed && <span className="truncate">{item.label}</span>}
-              {collapsed && <span className="sr-only">{item.label}</span>}
+              {!collapsed && <span className="truncate">{t(item.label)}</span>}
+              {collapsed && <span className="sr-only">{t(item.label)}</span>}
             </Link>
           );
           return collapsed ? (
-            <Tooltip key={item.href} content={item.label} side="right">
+            <Tooltip key={item.href} content={t(item.label)} side="right">
               {link}
             </Tooltip>
           ) : (
@@ -54,12 +56,12 @@ function SidebarInner({ collapsed }: { collapsed: boolean }) {
       {!collapsed && (
         <div className="mt-6 min-h-0 flex-1 overflow-y-auto">
           <div className="mb-2 flex items-center justify-between px-2.5">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Courses</p>
-            <Tooltip content="New course">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{t("coursesHeading")}</p>
+            <Tooltip content={t("newCourse")}>
               <Link
                 href="/instructor/courses/new"
                 className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                aria-label="New course"
+                aria-label={t("newCourse")}
               >
                 <Plus className="size-3.5" />
               </Link>
@@ -99,6 +101,7 @@ function SidebarInner({ collapsed }: { collapsed: boolean }) {
 }
 
 export function InstructorSidebar() {
+  const t = useTranslations("nav");
   const [collapsed, setCollapsed] = usePersistentState("sw.sidebar.collapsed", false);
   return (
     <aside
@@ -115,11 +118,11 @@ export function InstructorSidebar() {
           variant="ghost"
           size={collapsed ? "icon-sm" : "sm"}
           onClick={() => setCollapsed(!collapsed)}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
           className={cn(!collapsed && "w-full justify-start text-muted-foreground")}
         >
           {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
-          {!collapsed && "Collapse"}
+          {!collapsed && t("collapse")}
         </Button>
       </div>
     </aside>

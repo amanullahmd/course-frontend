@@ -5,6 +5,7 @@ import { ExternalLink, Globe } from "lucide-react";
 import type { LearnItemDto, MediaDto } from "@/lib/api/types";
 import { downloadUrl } from "@/lib/api/media";
 import { getEmbedInfo } from "@/lib/embed";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,6 +52,7 @@ export function EmbedFrame({ url, title, className }: { url: string; title: stri
 }
 
 function VideoViewer({ item, videos }: { item: LearnItemDto; videos: MediaDto[] }) {
+  const t = useTranslations("learn");
   return (
     <div className="grid gap-4">
       {item.externalUrl && <EmbedFrame url={item.externalUrl} title={item.title} />}
@@ -58,7 +60,7 @@ function VideoViewer({ item, videos }: { item: LearnItemDto; videos: MediaDto[] 
         <figure key={v.id} className="overflow-hidden rounded-xl border bg-black shadow-sm">
           <video controls preload="metadata" src={v.url} className="aspect-video w-full" playsInline>
             <track kind="captions" />
-            Your browser does not support embedded video. <a href={downloadUrl(v)}>Download the video</a>.
+            {t("videoUnsupported")} <a href={downloadUrl(v)}>{t("downloadVideo")}</a>.
           </video>
           {videos.length > 1 && <figcaption className="bg-card px-3 py-2 text-xs text-muted-foreground">{v.fileName}</figcaption>}
         </figure>
@@ -68,6 +70,7 @@ function VideoViewer({ item, videos }: { item: LearnItemDto; videos: MediaDto[] 
 }
 
 function PdfFrame({ media }: { media: MediaDto }) {
+  const t = useTranslations("common");
   return (
     <div className="overflow-hidden rounded-xl border bg-muted shadow-sm">
       <div className="flex items-center justify-between gap-2 border-b bg-card px-3 py-2">
@@ -75,11 +78,11 @@ function PdfFrame({ media }: { media: MediaDto }) {
         <div className="flex shrink-0 gap-1">
           <Button variant="ghost" size="xs" asChild>
             <a href={media.url} target="_blank" rel="noopener noreferrer">
-              <ExternalLink /> Open
+              <ExternalLink /> {t("open")}
             </a>
           </Button>
           <Button variant="outline" size="xs" asChild>
-            <a href={downloadUrl(media)}>Download</a>
+            <a href={downloadUrl(media)}>{t("download")}</a>
           </Button>
         </div>
       </div>
@@ -169,15 +172,16 @@ export function viewerHandledIds(item: LearnItemDto): Set<string> {
 
 /** Renders attachments not shown by the primary viewer: media inline, other files as cards. */
 export function ExtraAttachments({ attachments }: { attachments: MediaDto[] }) {
+  const t = useTranslations("learn");
   if (attachments.length === 0) return null;
   const images = attachments.filter((a) => a.kind === "IMAGE");
   const audios = attachments.filter((a) => a.kind === "AUDIO");
   const videos = attachments.filter((a) => a.kind === "VIDEO");
   const files = attachments.filter((a) => !["IMAGE", "AUDIO", "VIDEO"].includes(a.kind));
   return (
-    <section aria-label="Materials" className="grid gap-4">
+    <section aria-label={t("materials")} className="grid gap-4">
       <h2 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-        Materials <span className="font-normal">({attachments.length})</span>
+        {t("materials")} <span className="font-normal">({attachments.length})</span>
       </h2>
       {audios.map((a) => (
         <AudioPlayer key={a.id} src={a.url} title={a.fileName} downloadHref={downloadUrl(a)} compact />

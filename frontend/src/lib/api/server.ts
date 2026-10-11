@@ -1,4 +1,5 @@
 import "server-only";
+import { getLocale } from "next-intl/server";
 import type { CatalogQuery, CoursePublicDto, CourseSummaryDto, Page } from "./types";
 
 /** Base URL for server-side rendering (may differ from the browser URL inside Docker). */
@@ -15,13 +16,15 @@ async function serverGet<T>(path: string, query: Record<string, string | number 
     if (v !== undefined && v !== "") url.searchParams.set(k, String(v));
   }
   try {
+    const locale = await getLocale().catch(() => "en");
     const res = await fetch(url, {
       cache: "no-store",
-      headers: { Accept: "application/json" },
+      headers: { Accept: "application/json", "Accept-Language": locale },
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return { ok: false, status: res.status };
     return { ok: true, data: (await res.json()) as T };
+    // Any failure (network, timeout, invalid JSON) degrades to a fallback UI.
   } catch {
     return { ok: false, status: 0 };
   }

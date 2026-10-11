@@ -4,9 +4,11 @@ import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Check, ChevronDown, Eye, ListTree, Lock, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { isApiError } from "@/lib/api/client";
 import type { LearnCourseDto } from "@/lib/api/types";
-import { formatMinutes, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useMinutes } from "@/hooks/use-minutes";
 import { useLearnCourse } from "@/hooks/queries/student";
 import { usePersistentState } from "@/hooks/use-local-storage";
 import { useAuth } from "@/providers/auth-provider";
@@ -21,8 +23,10 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import { Skeleton } from "@/components/ui/skeleton";
 
 function Outline({ data, activeItemId, onNavigate }: { data: LearnCourseDto; activeItemId?: string; onNavigate?: () => void }) {
+  const t = useTranslations("learn");
+  const minutes = useMinutes();
   return (
-    <nav aria-label="Course outline" className="grid gap-1">
+    <nav aria-label={t("outline")} className="grid gap-1">
       {data.modules.map((m, mi) => {
         const done = m.items.filter((i) => i.completed).length;
         const containsActive = m.items.some((i) => i.id === activeItemId);
@@ -32,7 +36,7 @@ function Outline({ data, activeItemId, onNavigate }: { data: LearnCourseDto; act
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[13px] font-semibold">{m.title}</span>
                 <span className="block text-[11px] text-muted-foreground tabular-nums">
-                  {done}/{m.items.length} completed
+                  {t("completedOf", { done, total: m.items.length })}
                 </span>
               </span>
               <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
@@ -55,14 +59,14 @@ function Outline({ data, activeItemId, onNavigate }: { data: LearnCourseDto; act
                         <ItemTypeIcon type={item.type} className="size-6 rounded-md [&_svg]:size-3.5" />
                         <span className="min-w-0 flex-1 truncate">{item.title}</span>
                         {item.durationMinutes ? (
-                          <span className="shrink-0 text-[11px] tabular-nums">{formatMinutes(item.durationMinutes)}</span>
+                          <span className="shrink-0 text-[11px] tabular-nums">{minutes(item.durationMinutes)}</span>
                         ) : null}
                         <span
                           className={cn(
                             "grid size-4 shrink-0 place-items-center rounded-full border",
                             item.completed ? "border-success bg-success text-white" : "border-input",
                           )}
-                          aria-label={item.completed ? "Completed" : "Not completed"}
+                          aria-label={item.completed ? t("completed") : t("notCompleted")}
                         >
                           {item.completed && <Check className="size-2.5" strokeWidth={3} />}
                         </span>
@@ -80,10 +84,11 @@ function Outline({ data, activeItemId, onNavigate }: { data: LearnCourseDto; act
 }
 
 function SidebarHeader({ data }: { data: LearnCourseDto }) {
+  const t = useTranslations("learn");
   return (
     <div className="grid gap-3 border-b p-4">
       <Link href="/dashboard" className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="size-3" /> My learning
+        <ArrowLeft className="size-3" /> {t("myLearning")}
       </Link>
       <div className="flex items-start gap-2">
         <LevelBadge level={data.course.level} />
@@ -91,7 +96,7 @@ function SidebarHeader({ data }: { data: LearnCourseDto }) {
       </div>
       <div className="grid gap-1.5">
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Progress</span>
+          <span>{t("progress")}</span>
           <span className="font-medium text-foreground tabular-nums">{Math.round(data.progressPercent)}%</span>
         </div>
         <Progress value={data.progressPercent} indicatorClassName={data.progressPercent >= 100 ? "bg-success" : undefined} />
@@ -114,6 +119,8 @@ export function useLearnContext() {
 export function LearnShell({ children }: { children: React.ReactNode }) {
   const params = useParams<{ courseId: string; itemId?: string }>();
   const courseId = params.courseId;
+  const t = useTranslations("learn");
+  const tn = useTranslations("nav");
   const { user } = useAuth();
   const course = useLearnCourse(courseId);
   const [collapsed, setCollapsed] = usePersistentState("sw.learn.sidebar.collapsed", false);
@@ -150,15 +157,15 @@ export function LearnShell({ children }: { children: React.ReactNode }) {
         {status === 403 || status === 404 ? (
           <EmptyState
             icon={Lock}
-            title="This course isn't available to you yet"
-            description="You can access the course once the instructor has approved your application and the content is published."
+            title={t("noAccessTitle")}
+            description={t("noAccessText")}
             action={
               <>
                 <Button asChild>
-                  <Link href="/dashboard">My learning</Link>
+                  <Link href="/dashboard">{t("myLearning")}</Link>
                 </Button>
                 <Button variant="outline" asChild>
-                  <Link href="/courses">Browse courses</Link>
+                  <Link href="/courses">{tn("browseCourses")}</Link>
                 </Button>
               </>
             }
@@ -176,9 +183,9 @@ export function LearnShell({ children }: { children: React.ReactNode }) {
     <LearnContext.Provider value={ctx}>
       {isOwner && (
         <div className="flex items-center justify-center gap-2 border-b bg-info-soft px-4 py-2 text-[13px] text-info">
-          <Eye className="size-4" /> Student preview: you see only content that is live right now.
+          <Eye className="size-4" /> {t("preview")}
           <Link href={`/instructor/courses/${courseId}`} className="font-medium underline underline-offset-2">
-            Back to builder
+            {t("backToBuilder")}
           </Link>
         </div>
       )}
@@ -198,7 +205,7 @@ export function LearnShell({ children }: { children: React.ReactNode }) {
         <div className="relative min-w-0 flex-1">
           <div className="sticky top-14 z-20 flex items-center gap-2 border-b bg-background/85 px-3 py-2 backdrop-blur lg:hidden">
             <Button variant="outline" size="sm" onClick={() => setMobileOpen(true)}>
-              <ListTree /> Outline
+              <ListTree /> {t("outlineButton")}
             </Button>
             <div className="min-w-0 flex-1">
               <Progress value={ctx.data.progressPercent} className="h-1.5" />
@@ -210,7 +217,7 @@ export function LearnShell({ children }: { children: React.ReactNode }) {
             size="icon-sm"
             className="absolute top-3 left-3 z-10 hidden lg:inline-flex"
             onClick={() => setCollapsed(!collapsed)}
-            aria-label={collapsed ? "Show outline" : "Hide outline"}
+            aria-label={collapsed ? t("showOutline") : t("hideOutline")}
           >
             {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
           </Button>
@@ -219,8 +226,8 @@ export function LearnShell({ children }: { children: React.ReactNode }) {
       </div>
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="w-[min(100vw-2.5rem,22rem)] gap-0 p-0">
-          <SheetTitle className="sr-only">Course outline</SheetTitle>
-          <SheetDescription className="sr-only">Modules and lessons of this course</SheetDescription>
+          <SheetTitle className="sr-only">{t("outline")}</SheetTitle>
+          <SheetDescription className="sr-only">{t("outlineDesc")}</SheetDescription>
           <SidebarHeader data={ctx.data} />
           <div className="min-h-0 flex-1 overflow-y-auto p-2">
             <Outline data={ctx.data} activeItemId={params.itemId} onNavigate={() => setMobileOpen(false)} />

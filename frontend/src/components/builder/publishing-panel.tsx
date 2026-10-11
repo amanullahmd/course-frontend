@@ -3,8 +3,8 @@
 import { CircleCheck, CircleDashed, Info } from "lucide-react";
 import { toast } from "sonner";
 import type { CourseDto } from "@/lib/api/types";
-import { VISIBILITY_META } from "@/lib/constants";
-import { formatDateTime } from "@/lib/dates";
+import { useTranslations } from "next-intl";
+import { useFormat } from "@/hooks/use-format";
 import { cn } from "@/lib/utils";
 import { usePublishCourse } from "@/hooks/queries/instructor";
 import { VisibilityBadge } from "@/components/course/badges";
@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PublicationForm } from "./publication-control";
 
 function Check({ ok, label, hint, optional }: { ok: boolean; label: string; hint?: string; optional?: boolean }) {
+  const t = useTranslations("common");
   return (
     <li className="flex items-start gap-3">
       {ok ? (
@@ -22,7 +23,7 @@ function Check({ ok, label, hint, optional }: { ok: boolean; label: string; hint
       <div>
         <p className={cn("text-sm", ok ? "text-foreground" : "font-medium")}>
           {label}
-          {optional && <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>}
+          {optional && <span className="ml-1 text-xs font-normal text-muted-foreground">({t("optional")})</span>}
         </p>
         {hint && !ok && <p className="text-xs text-muted-foreground">{hint}</p>}
       </div>
@@ -31,13 +32,15 @@ function Check({ ok, label, hint, optional }: { ok: boolean; label: string; hint
 }
 
 export function PublishingPanel({ course }: { course: CourseDto }) {
+  const t = useTranslations();
+  const fmt = useFormat();
   const publish = usePublishCourse(course.id);
   const items = course.modules.flatMap((m) => m.items);
   const liveModules = course.modules.filter((m) => m.visibility === "LIVE");
   const liveItems = course.modules.filter((m) => m.visibility === "LIVE").flatMap((m) => m.items.filter((i) => i.visibility === "LIVE"));
   const scheduled = [
-    ...course.modules.filter((m) => m.visibility === "SCHEDULED").map((m) => ({ id: m.id, title: m.title, kind: "Module", at: m.publishAt })),
-    ...items.filter((i) => i.visibility === "SCHEDULED").map((i) => ({ id: i.id, title: i.title, kind: "Lesson", at: i.publishAt })),
+    ...course.modules.filter((m) => m.visibility === "SCHEDULED").map((m) => ({ id: m.id, title: m.title, kind: t("publishing.module"), at: m.publishAt })),
+    ...items.filter((i) => i.visibility === "SCHEDULED").map((i) => ({ id: i.id, title: i.title, kind: t("publishing.lesson"), at: i.publishAt })),
   ].sort((a, b) => (a.at ?? "").localeCompare(b.at ?? ""));
 
   return (
@@ -46,10 +49,10 @@ export function PublishingPanel({ course }: { course: CourseDto }) {
         <Card>
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle>Course visibility</CardTitle>
+              <CardTitle>{t("publishing.visibility")}</CardTitle>
               <VisibilityBadge visibility={course.visibility} publishAt={course.publishAt} unpublishAt={course.unpublishAt} />
             </div>
-            <CardDescription>{VISIBILITY_META[course.visibility].description}</CardDescription>
+            <CardDescription>{t(`visibility.${course.visibility}.description`)}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="max-w-md">
@@ -60,7 +63,7 @@ export function PublishingPanel({ course }: { course: CourseDto }) {
                 pending={publish.isPending}
                 onSubmit={(body) =>
                   publish.mutateAsync(body).then((c) => {
-                    toast.success(`Course is now ${VISIBILITY_META[c.visibility].label.toLowerCase()}`);
+                    toast.success(t("publishing.nowIs", { status: t(`visibility.${c.visibility}.label`) }));
                     return c;
                   })
                 }
@@ -72,35 +75,30 @@ export function PublishingPanel({ course }: { course: CourseDto }) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Info className="size-4 text-info" /> How visibility works
+              <Info className="size-4 text-info" /> {t("publishing.howTitle")}
             </CardTitle>
-            <CardDescription>
-              Visibility is evaluated at request time, so scheduled content appears and disappears exactly on time.
-            </CardDescription>
+            <CardDescription>{t("publishing.howText")}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-5">
             <div className="flex flex-wrap items-center gap-2 text-sm">
-              {["Course is live", "Module is live", "Lesson is live"].map((t, i) => (
-                <span key={t} className="flex items-center gap-2">
-                  <span className="rounded-lg border bg-success-soft/50 px-3 py-1.5 font-medium text-success">{t}</span>
+              {[t("publishing.courseLive"), t("publishing.moduleLive"), t("publishing.lessonLive")].map((label, i) => (
+                <span key={label} className="flex items-center gap-2">
+                  <span className="rounded-lg border bg-success-soft/50 px-3 py-1.5 font-medium text-success">{label}</span>
                   {i < 2 && <span className="font-mono text-muted-foreground">&amp;&amp;</span>}
                 </span>
               ))}
               <span className="font-mono text-muted-foreground">⇒</span>
-              <span className="rounded-lg bg-primary px-3 py-1.5 font-medium text-primary-foreground">Learners can see it</span>
+              <span className="rounded-lg bg-primary px-3 py-1.5 font-medium text-primary-foreground">{t("publishing.learnersSee")}</span>
             </div>
             <ul className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
               {(["DRAFT", "SCHEDULED", "LIVE", "EXPIRED"] as const).map((v) => (
                 <li key={v} className="flex items-start gap-2">
                   <VisibilityBadge visibility={v} />
-                  <span className="text-[13px]">{VISIBILITY_META[v].description}</span>
+                  <span className="text-[13px]">{t(`visibility.${v}.description`)}</span>
                 </li>
               ))}
             </ul>
-            <p className="text-[13px] text-muted-foreground">
-              Only approved learners can open content, and only while all three levels are live. Draft, scheduled and expired
-              content is invisible and returns 404 on direct links.
-            </p>
+            <p className="text-[13px] text-muted-foreground">{t("publishing.rule")}</p>
           </CardContent>
         </Card>
       </div>
@@ -108,29 +106,29 @@ export function PublishingPanel({ course }: { course: CourseDto }) {
       <div className="grid content-start gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Launch checklist</CardTitle>
+            <CardTitle>{t("publishing.checklist")}</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="grid gap-3">
-              <Check ok={!!course.title && !!course.description} label="Title and description" hint="Add a description in the Details tab." />
-              <Check ok={!!course.coverImage} label="Cover image" optional />
-              <Check ok={course.modules.length > 0} label="At least one module" hint="Add a module in the Curriculum tab." />
-              <Check ok={items.length > 0} label="At least one lesson" />
-              <Check ok={liveModules.length > 0} label="A live module" hint="Publish a module so learners can see its lessons." />
-              <Check ok={liveItems.length > 0} label="A live lesson inside a live module" />
-              <Check ok={course.visibility === "LIVE"} label="Course published" hint="Publish the course to list it in the catalog." />
+              <Check ok={!!course.title && !!course.description} label={t("publishing.c1")} hint={t("publishing.c1Hint")} />
+              <Check ok={!!course.coverImage} label={t("publishing.c2")} optional />
+              <Check ok={course.modules.length > 0} label={t("publishing.c3")} hint={t("publishing.c3Hint")} />
+              <Check ok={items.length > 0} label={t("publishing.c4")} />
+              <Check ok={liveModules.length > 0} label={t("publishing.c5")} hint={t("publishing.c5Hint")} />
+              <Check ok={liveItems.length > 0} label={t("publishing.c6")} />
+              <Check ok={course.visibility === "LIVE"} label={t("publishing.c7")} hint={t("publishing.c7Hint")} />
             </ul>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Upcoming releases</CardTitle>
-            <CardDescription>Modules and lessons scheduled to go live.</CardDescription>
+            <CardTitle>{t("publishing.upcoming")}</CardTitle>
+            <CardDescription>{t("publishing.upcomingText")}</CardDescription>
           </CardHeader>
           <CardContent>
             {scheduled.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nothing scheduled. Use the calendar icon on any module or lesson.</p>
+              <p className="text-sm text-muted-foreground">{t("publishing.nothing")}</p>
             ) : (
               <ul className="grid gap-2.5">
                 {scheduled.slice(0, 8).map((s) => (
@@ -139,7 +137,7 @@ export function PublishingPanel({ course }: { course: CourseDto }) {
                       <span className="block truncate font-medium">{s.title}</span>
                       <span className="text-xs text-muted-foreground">{s.kind}</span>
                     </span>
-                    <span className="shrink-0 text-xs text-info tabular-nums">{formatDateTime(s.at)}</span>
+                    <span className="shrink-0 text-xs text-info tabular-nums">{fmt.dateTime(s.at)}</span>
                   </li>
                 ))}
               </ul>

@@ -6,7 +6,9 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import { ChevronDown, Ellipsis, GripVertical, Inbox, Pencil, Trash } from "lucide-react";
 import type { ModuleDto, PublicationRequest } from "@/lib/api/types";
-import { cn, formatMinutes, pluralize } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
+import { useMinutes } from "@/hooks/use-minutes";
 import { VisibilityBadge } from "@/components/course/badges";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,6 +56,8 @@ export function ModuleCardBody({
   handle?: React.ReactNode;
   dragging?: boolean;
 }) {
+  const t = useTranslations();
+  const minutesLabel = useMinutes();
   const minutes = module.items.reduce((s, i) => s + (i.durationMinutes ?? 0), 0);
   return (
     <div className={cn("rounded-xl border bg-sidebar shadow-xs", dragging && "shadow-xl ring-2 ring-brand")}>
@@ -64,7 +68,7 @@ export function ModuleCardBody({
           onClick={onToggle}
           className="flex min-w-0 flex-1 items-center gap-3 text-left"
           aria-expanded={!collapsed}
-          aria-label={`${collapsed ? "Expand" : "Collapse"} module ${module.title}`}
+          aria-label={t("builder.toggleModule", { title: module.title })}
         >
           <span className="grid size-8 shrink-0 place-items-center rounded-lg border bg-card text-sm font-semibold tabular-nums">
             {index + 1}
@@ -72,8 +76,8 @@ export function ModuleCardBody({
           <span className="min-w-0">
             <span className="block truncate font-semibold">{module.title}</span>
             <span className="block text-xs text-muted-foreground">
-              {pluralize(module.items.length, "item")}
-              {minutes > 0 && ` · ${formatMinutes(minutes)}`}
+              {t("course.itemsCount", { count: module.items.length })}
+              {minutes > 0 && ` · ${minutesLabel(minutes)}`}
             </span>
           </span>
           <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", collapsed && "-rotate-90")} />
@@ -81,21 +85,21 @@ export function ModuleCardBody({
         {moduleActions && (
           <div className="flex shrink-0 items-center gap-1.5">
             <VisibilityBadge visibility={module.visibility} publishAt={module.publishAt} unpublishAt={module.unpublishAt} compact className="hidden md:inline-flex" />
-            <PublishSwitch entity={module} entityLabel={`module ${module.title}`} onSubmit={(b) => void moduleActions.onPublish(module.id, b).catch(() => undefined)} />
+            <PublishSwitch entity={module} entityLabel={module.title} onSubmit={(b) => void moduleActions.onPublish(module.id, b).catch(() => undefined)} />
             <PublicationPopover entity={module} entityLabel="module" trigger="icon" onSubmit={(b) => moduleActions.onPublish(module.id, b)} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon-xs" aria-label={`Actions for module ${module.title}`}>
+                <Button variant="ghost" size="icon-xs" aria-label={t("builder.moduleActions", { title: module.title })}>
                   <Ellipsis />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onSelect={() => moduleActions.onEdit(module)}>
-                  <Pencil /> Rename & describe
+                  <Pencil /> {t("builder.renameDescribe")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem destructive onSelect={() => moduleActions.onDelete(module)}>
-                  <Trash /> Delete module
+                  <Trash /> {t("builder.deleteModule")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -108,13 +112,13 @@ export function ModuleCardBody({
           {itemActions ? (
             <ItemsDropArea module={module}>
               <SortableContext items={module.items.map((i) => `item:${i.id}`)} strategy={verticalListSortingStrategy}>
-                <ul className="grid min-h-12 gap-1.5" aria-label={`Items in ${module.title}`}>
+                <ul className="grid min-h-12 gap-1.5" aria-label={t("builder.itemsIn", { title: module.title })}>
                   {module.items.map((item) => (
                     <SortableItemRow key={item.id} item={item} actions={itemActions} />
                   ))}
                   {module.items.length === 0 && (
                     <li className="flex items-center justify-center gap-2 rounded-lg border border-dashed py-5 text-[13px] text-muted-foreground">
-                      <Inbox className="size-4" /> Drop lessons here or add new content
+                      <Inbox className="size-4" /> {t("builder.dropHere")}
                     </li>
                   )}
                 </ul>
@@ -135,6 +139,7 @@ export function ModuleCardBody({
 }
 
 export function SortableModuleCard(props: Omit<React.ComponentProps<typeof ModuleCardBody>, "handle" | "dragging">) {
+  const t = useTranslations("builder");
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: `module:${props.module.id}`,
     data: { type: "module", moduleId: props.module.id },
@@ -150,7 +155,7 @@ export function SortableModuleCard(props: Omit<React.ComponentProps<typeof Modul
             {...attributes}
             {...listeners}
             className="cursor-grab touch-none rounded p-0.5 text-muted-foreground/60 hover:bg-accent hover:text-foreground active:cursor-grabbing"
-            aria-label={`Drag to reorder module ${props.module.title}`}
+            aria-label={t("dragModule", { title: props.module.title })}
           >
             <GripVertical className="size-4" />
           </button>

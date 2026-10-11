@@ -8,7 +8,9 @@ import me.amanullah.course.assessment.AssessmentDtos.QuestionDto;
 import me.amanullah.course.assessment.AssessmentDtos.QuestionUpsert;
 import me.amanullah.course.common.exception.NotFoundException;
 import me.amanullah.course.common.exception.ValidationException;
+import me.amanullah.course.common.i18n.MessageRef;
 import me.amanullah.course.common.util.HtmlSanitizer;
+import me.amanullah.course.common.util.TextLimits;
 import me.amanullah.course.course.ContentItem;
 import me.amanullah.course.course.CourseAccess;
 import me.amanullah.course.course.ItemType;
@@ -77,7 +79,7 @@ public class AssessmentService {
         }
         Assessment a = ensureFor(item);
         validate(req);
-        a.setInstructions(HtmlSanitizer.sanitize(req.instructions()));
+        a.setInstructions(TextLimits.requireMax("instructions", HtmlSanitizer.sanitize(req.instructions()), 20_000));
         a.setTimeLimitMinutes(req.timeLimitMinutes());
         a.setMaxAttempts(req.maxAttempts() == null ? 0 : req.maxAttempts());
         a.setPassingScore(req.passingScore() == null ? 60 : req.passingScore());
@@ -97,13 +99,13 @@ public class AssessmentService {
             if (qr.id() != null) {
                 q = existing.remove(qr.id());
                 if (q == null) {
-                    throw new ValidationException("Unknown question id", Map.of("questions[" + i + "].id", "unknown question"));
+                    throw ValidationException.field("questions[" + i + "].id", "validation.unknownQuestion");
                 }
             } else {
                 q = new Question(a);
                 a.getQuestions().add(q);
             }
-            applyQuestion(q, qr, i, me);
+            applyQuestion(q, qr, i, me, "questions[" + i + "]");
             kept.add(q);
         }
         a.getQuestions().removeIf(q -> !kept.contains(q));
@@ -112,10 +114,10 @@ public class AssessmentService {
         return toDto(a);
     }
 
-    private void applyQuestion(Question q, QuestionUpsert qr, int position, CurrentUser me) {
+    private void applyQuestion(Question q, QuestionUpsert qr, int position, CurrentUser me, String path) {
         q.setType(qr.type());
-        q.setPrompt(HtmlSanitizer.sanitize(qr.prompt()));
-        q.setExplanation(HtmlSanitizer.sanitize(qr.explanation()));
+        q.setPrompt(TextLimits.requireMax(path + ".prompt", HtmlSanitizer.sanitize(qr.prompt()), 20_000));
+        q.setExplanation(TextLimits.requireMax(path + ".explanation", HtmlSanitizer.sanitize(qr.explanation()), 20_000));
         q.setPoints(qr.points() == null ? 1 : qr.points());
         q.setPosition(position);
         q.setCaseSensitive(Boolean.TRUE.equals(qr.caseSensitive()));
@@ -156,10 +158,10 @@ public class AssessmentService {
     }
 
     static void validate(AssessmentUpsert req) {
-        Map<String, String> errors = new LinkedHashMap<>();
+        Map<String, MessageRef> errors = new LinkedHashMap<>();
         if (req.availableFrom() != null && req.availableUntil() != null
                 && !req.availableUntil().isAfter(req.availableFrom())) {
-            errors.put("availableUntil", "must be after availableFrom");
+            errors.put("availableUntil", new MessageRef("validation.availableUntilAfterFrom"));
         }
         List<QuestionUpsert> qs = req.questions() == null ? List.of() : req.questions();
         for (int i = 0; i < qs.size(); i++) {
@@ -169,24 +171,24 @@ public class AssessmentService {
                 List<OptionUpsert> opts = q.options() == null ? List.of() : q.options();
                 long correct = opts.stream().filter(o -> Boolean.TRUE.equals(o.correct())).count();
                 if (opts.size() < 2) {
-                    errors.put(p + ".options", "needs at least two options");
+                    errors.put(p + ".options", new MessageRef("validation.options.min2"));
                 } else if (correct == 0) {
-                    errors.put(p + ".options", "needs at least one correct option");
+                    errors.put(p + ".options", new MessageRef("validation.options.oneCorrect"));
                 } else if (q.type() != QuestionType.MULTIPLE_CHOICE && correct != 1) {
-                    errors.put(p + ".options", "needs exactly one correct option");
+                    errors.put(p + ".options", new MessageRef("validation.options.exactlyOne"));
                 }
                 if (q.type() == QuestionType.TRUE_FALSE && opts.size() != 2) {
-                    errors.put(p + ".options", "a true/false question has exactly two options");
+                    errors.put(p + ".options", new MessageRef("validation.options.trueFalse"));
                 }
             } else if (q.type().isText()) {
                 boolean any = q.acceptedAnswers() != null && q.acceptedAnswers().stream().anyMatch(s -> !s.isBlank());
                 if (!any) {
-                    errors.put(p + ".acceptedAnswers", "needs at least one accepted answer");
+                    errors.put(p + ".acceptedAnswers", new MessageRef("validation.acceptedAnswers.required"));
                 }
             }
         }
         if (!errors.isEmpty()) {
-            throw new ValidationException("The assessment is invalid", errors);
+            throw new ValidationException(errors);
         }
     }
 

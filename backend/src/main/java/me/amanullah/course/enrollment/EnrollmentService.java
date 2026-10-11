@@ -81,8 +81,10 @@ public class EnrollmentService {
         User student = users.findById(me.id()).orElseThrow(() -> NotFoundException.of("User"));
         Enrollment enrollment = enrollments.findByCourseIdAndStudentId(courseId, me.id()).orElse(null);
         if (enrollment != null && enrollment.getStatus().isActive()) {
-            throw new ConflictException("ALREADY_ENROLLED", enrollment.getStatus() == EnrollmentStatus.APPROVED
-                    ? "You are already enrolled in this course" : "Your application is already pending");
+            boolean approved = enrollment.getStatus() == EnrollmentStatus.APPROVED;
+            throw new ConflictException("ALREADY_ENROLLED", approved
+                    ? "You are already enrolled in this course" : "Your application is already pending")
+                    .key(approved ? "error.ALREADY_ENROLLED.approved" : "error.ALREADY_ENROLLED.pending");
         }
         if (enrollment == null) {
             enrollment = new Enrollment(course, student);
@@ -96,13 +98,13 @@ public class EnrollmentService {
         if (course.getEnrollmentMode() == EnrollmentMode.OPEN && hasCapacity(course, 1)) {
             enrollment.decide(EnrollmentStatus.APPROVED, null, now);
             notifyDecision(enrollment);
-            notifications.notify(instructor, NotificationType.ENROLLMENT_REQUESTED, "Neue Einschreibung",
-                    student.getFullName() + " hat sich in „" + course.getTitle() + "“ eingeschrieben.", link);
+            notifications.notify(instructor, NotificationType.ENROLLMENT_REQUESTED, "notification.enrollmentJoined",
+                    link, null, student.getFullName(), course.getTitle());
         } else {
-            notifications.notifyWithEmail(instructor, NotificationType.ENROLLMENT_REQUESTED, "Neue Bewerbung",
-                    student.getFullName() + " möchte am Kurs „" + course.getTitle() + "“ teilnehmen.", link,
-                    templates.newApplication(instructor.getFullName(), student.getFullName(), course.getTitle(),
-                            templates.link(link)));
+            notifications.notifyWithEmail(instructor, NotificationType.ENROLLMENT_REQUESTED,
+                    "notification.enrollmentRequested", link, null,
+                    templates.newApplication(instructor, student.getFullName(), course.getTitle(), templates.link(link)),
+                    student.getFullName(), course.getTitle());
         }
         return toDto(enrollment);
     }
@@ -135,13 +137,13 @@ public class EnrollmentService {
                 .filter(x -> x.getStudent().getId().equals(me.id()))
                 .orElseThrow(() -> NotFoundException.of("Enrollment"));
         if (!e.getStatus().isActive()) {
-            throw new ConflictException("INVALID_STATUS", "Only pending or approved enrollments can be withdrawn");
+            throw new ConflictException("INVALID_STATUS", "Only pending or approved enrollments can be withdrawn")
+                    .key("error.INVALID_STATUS.withdraw");
         }
         e.decide(EnrollmentStatus.WITHDRAWN, null, Instant.now(clock));
         Course c = e.getCourse();
-        notifications.notify(c.getInstructor(), NotificationType.ENROLLMENT_WITHDRAWN, "Bewerbung zurückgezogen",
-                e.getStudent().getFullName() + " hat sich von „" + c.getTitle() + "“ abgemeldet.",
-                Links.instructorEnrollments(c.getId()));
+        notifications.notify(c.getInstructor(), NotificationType.ENROLLMENT_WITHDRAWN, "notification.enrollmentWithdrawn",
+                Links.instructorEnrollments(c.getId()), null, e.getStudent().getFullName(), c.getTitle());
         return toDto(e);
     }
 
@@ -178,7 +180,7 @@ public class EnrollmentService {
     public EnrollmentDto revoke(CurrentUser me, UUID id, String reason) {
         Enrollment e = requireManageable(me, id);
         if (e.getStatus() != EnrollmentStatus.APPROVED) {
-            throw new ConflictException("INVALID_STATUS", "Only approved enrollments can be revoked");
+            throw new ConflictException("INVALID_STATUS", "Only approved enrollments can be revoked").key("error.INVALID_STATUS.revoke");
         }
         e.decide(EnrollmentStatus.REVOKED, normalize(reason), Instant.now(clock));
         notifyDecision(e);
@@ -219,7 +221,8 @@ public class EnrollmentService {
             return;
         }
         if (e.getStatus() != EnrollmentStatus.PENDING && e.getStatus() != EnrollmentStatus.REJECTED) {
-            throw new ConflictException("INVALID_STATUS", "Only pending or rejected applications can be approved");
+            throw new ConflictException("INVALID_STATUS", "Only pending or rejected applications can be approved")
+                    .key("error.INVALID_STATUS.approve");
         }
         if (!hasCapacity(e.getCourse(), 1)) {
             throw new ConflictException("CAPACITY_REACHED", "The course has reached its capacity");
@@ -231,7 +234,7 @@ public class EnrollmentService {
 
     private void rejectOne(Enrollment e, String reason, Instant now) {
         if (e.getStatus() != EnrollmentStatus.PENDING) {
-            throw new ConflictException("INVALID_STATUS", "Only pending applications can be rejected");
+            throw new ConflictException("INVALID_STATUS", "Only pending applications can be rejected").key("error.INVALID_STATUS.reject");
         }
         e.decide(EnrollmentStatus.REJECTED, normalize(reason), now);
         notifyDecision(e);
@@ -255,25 +258,22 @@ public class EnrollmentService {
         switch (e.getStatus()) {
             case APPROVED -> {
                 String link = Links.learnCourse(c.getId());
-                notifications.notifyWithEmail(s, NotificationType.ENROLLMENT_APPROVED, "Bewerbung angenommen",
-                        "Du hast jetzt Zugang zu „" + c.getTitle() + "“.", link,
-                        templates.enrollmentApproved(s.getFullName(), c.getTitle(), templates.link(link)));
+                notifications.notifyWithEmail(s, NotificationType.ENROLLMENT_APPROVED, "notification.enrollmentApproved",
+                        link, null, templates.enrollmentApproved(s, c.getTitle(), templates.link(link)), c.getTitle());
             }
             case REJECTED -> {
                 String link = Links.publicCourse(c.getSlug());
-                notifications.notifyWithEmail(s, NotificationType.ENROLLMENT_REJECTED, "Bewerbung abgelehnt",
-                        "Deine Bewerbung für „" + c.getTitle() + "“ wurde abgelehnt."
-                                + (e.getDecisionReason() == null ? "" : " Begründung: " + e.getDecisionReason()), link,
-                        templates.enrollmentRejected(s.getFullName(), c.getTitle(), e.getDecisionReason(),
-                                templates.link("/courses")));
+                notifications.notifyWithEmail(s, NotificationType.ENROLLMENT_REJECTED, "notification.enrollmentRejected",
+                        link, e.getDecisionReason(),
+                        templates.enrollmentRejected(s, c.getTitle(), e.getDecisionReason(), templates.link("/courses")),
+                        c.getTitle());
             }
             case REVOKED -> {
                 String link = Links.studentDashboard();
-                notifications.notifyWithEmail(s, NotificationType.ENROLLMENT_REVOKED, "Zugang beendet",
-                        "Dein Zugang zu „" + c.getTitle() + "“ wurde beendet."
-                                + (e.getDecisionReason() == null ? "" : " Begründung: " + e.getDecisionReason()), link,
-                        templates.enrollmentRevoked(s.getFullName(), c.getTitle(), e.getDecisionReason(),
-                                templates.link(link)));
+                notifications.notifyWithEmail(s, NotificationType.ENROLLMENT_REVOKED, "notification.enrollmentRevoked",
+                        link, e.getDecisionReason(),
+                        templates.enrollmentRevoked(s, c.getTitle(), e.getDecisionReason(), templates.link(link)),
+                        c.getTitle());
             }
             default -> {
             }

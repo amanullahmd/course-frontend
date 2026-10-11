@@ -17,23 +17,25 @@ public final class AuthDtos {
     public record RegisterRequest(
             @NotBlank @Size(max = 120) String fullName,
             @NotBlank @Email @Size(max = 255) String email,
-            @NotBlank @Size(min = 8, max = 128) @Pattern(regexp = PasswordPolicy.REGEX, message = PasswordPolicy.MESSAGE)
+            @NotBlank @Pattern(regexp = PasswordPolicy.REGEX, message = PasswordPolicy.MESSAGE)
             String password,
-            @NotNull Role role) {
+            @NotNull Role role,
+            /** Optional "en" or "de"; defaults to the request locale (Accept-Language), else English. */
+            @Pattern(regexp = PasswordPolicy.LOCALE_REGEX, message = PasswordPolicy.LOCALE_MESSAGE) String locale) {
     }
 
-    public record TokenRequest(@NotBlank String token) {
+    public record TokenRequest(@NotBlank @Size(max = 200) String token) {
     }
 
-    public record EmailRequest(@NotBlank @Email String email) {
+    public record EmailRequest(@NotBlank @Email @Size(max = 255) String email) {
     }
 
-    public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) {
+    public record LoginRequest(@NotBlank @Email @Size(max = 255) String email, @NotBlank @Size(max = 200) String password) {
     }
 
     public record ResetPasswordRequest(
             @NotBlank String token,
-            @NotBlank @Size(min = 8, max = 128) @Pattern(regexp = PasswordPolicy.REGEX, message = PasswordPolicy.MESSAGE)
+            @NotBlank @Pattern(regexp = PasswordPolicy.REGEX, message = PasswordPolicy.MESSAGE)
             String password) {
     }
 

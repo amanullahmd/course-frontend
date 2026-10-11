@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 export function LogoMark({ className }: { className?: string }) {
@@ -17,11 +18,12 @@ export function LogoMark({ className }: { className?: string }) {
 }
 
 export function Logo({ href = "/", className, compact = false }: { href?: string; className?: string; compact?: boolean }) {
+  const t = useTranslations("nav");
   return (
     <Link
       href={href}
       className={cn("group inline-flex items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring", className)}
-      aria-label="Sprachweg home"
+      aria-label={t("home")}
     >
       <LogoMark className="transition-transform duration-300 group-hover:-rotate-6" />
       {!compact && <span className="text-[17px] font-semibold tracking-tight">Sprachweg</span>}

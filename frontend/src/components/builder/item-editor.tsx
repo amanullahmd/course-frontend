@@ -8,10 +8,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ChevronRight, ClipboardList, Eye, FileText, Inbox, Save, Trash } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { ContentItemDto, ItemType, ItemUpsert, MediaDto } from "@/lib/api/types";
-import { getErrorMessage, isApiError } from "@/lib/api/client";
-import { ITEM_TYPES, ITEM_TYPE_META, VISIBILITY_META, isAssessmentType } from "@/lib/constants";
-import { formatDateTime, formatRelative } from "@/lib/dates";
+import { isApiError } from "@/lib/api/client";
+import { ITEM_TYPES, ITEM_TYPE_META, isAssessmentType } from "@/lib/constants";
+import { useErrorMessage } from "@/hooks/use-error-message";
+import { useFormat } from "@/hooks/use-format";
 import { getEmbedInfo } from "@/lib/embed";
 import { applyServerErrors } from "@/lib/form-errors";
 import { useDeleteItem, useInstructorCourse, useInstructorItem, usePublishItem, useUpdateItem } from "@/hooks/queries/instructor";
@@ -39,19 +41,22 @@ import { PublicationForm } from "./publication-control";
 import { RichTextEditor } from "./rich-text-editor";
 import { SubmissionsPanel } from "./submissions-panel";
 
-const schema = z.object({
-  title: z.string().trim().min(1, "Give this item a title").max(200),
-  type: z.enum(["TEXT", "DOCUMENT", "VIDEO", "AUDIO", "IMAGE", "EMBED", "QUIZ", "EXAM"]),
-  summary: z.string().max(1000),
-  body: z.string(),
-  externalUrl: z
-    .string()
-    .trim()
-    .refine((v) => !v || /^https?:\/\/\S+$/i.test(v), "Enter a full URL starting with https://"),
-  durationMinutes: z.string().regex(/^\d*$/, "Minutes as a whole number"),
-  attachments: z.array(z.custom<MediaDto>()),
-});
-type Values = z.infer<typeof schema>;
+type SchemaT = (key: "validation.titleRequired" | "validation.tooLong" | "validation.url" | "validation.wholeNumber") => string;
+
+const makeSchema = (t: SchemaT) =>
+  z.object({
+    title: z.string().trim().min(1, t("validation.titleRequired")).max(200, t("validation.tooLong")),
+    type: z.enum(["TEXT", "DOCUMENT", "VIDEO", "AUDIO", "IMAGE", "EMBED", "QUIZ", "EXAM"]),
+    summary: z.string().max(1000, t("validation.tooLong")),
+    body: z.string(),
+    externalUrl: z
+      .string()
+      .trim()
+      .refine((v) => !v || /^https?:\/\/\S+$/i.test(v), t("validation.url")),
+    durationMinutes: z.string().regex(/^\d*$/, t("validation.wholeNumber")),
+    attachments: z.array(z.custom<MediaDto>()),
+  });
+type Values = z.infer<ReturnType<typeof makeSchema>>;
 
 const toValues = (item: ContentItemDto): Values => ({
   title: item.title,
@@ -73,12 +78,9 @@ const toUpsert = (v: Values): ItemUpsert => ({
   attachmentIds: v.attachments.map((a) => a.id),
 });
 
-const UPLOAD_HINTS: Partial<Record<ItemType, { accept?: string; hint: string }>> = {
-  VIDEO: { accept: "video/*", hint: "MP4, WebM or MOV. Or paste a YouTube/Vimeo link above." },
-  AUDIO: { accept: "audio/*", hint: "MP3, M4A, WAV or OGG for listening practice." },
-  IMAGE: { accept: "image/*", hint: "JPG, PNG, WebP or SVG. Shown as a gallery with lightbox." },
-  DOCUMENT: { hint: "PDF is shown inline; Word, PowerPoint, Excel and other files can be downloaded." },
-};
+const HINT_TYPES = ["VIDEO", "AUDIO", "IMAGE", "DOCUMENT"] as const;
+type HintType = (typeof HINT_TYPES)[number];
+const hasHint = (type: ItemType): type is HintType => (HINT_TYPES as readonly string[]).includes(type);
 
 function EditorSkeleton() {
   return (
@@ -112,6 +114,10 @@ function ItemEditorLoaded({
   initialAttemptId: string | null;
 }) {
   const router = useRouter();
+  const t = useTranslations();
+  const fmt = useFormat();
+  const errorMessage = useErrorMessage();
+  const schema = React.useMemo(() => makeSchema((k) => t(k)), [t]);
   const update = useUpdateItem(item.courseId);
   const publish = usePublishItem(item.courseId);
   const del = useDeleteItem(item.courseId);
@@ -130,10 +136,10 @@ function ItemEditorLoaded({
   const save = form.handleSubmit(async (v) => {
     try {
       await update.mutateAsync({ id: item.id, body: toUpsert(v) });
-      toast.success("Saved");
+      toast.success(t("common.saved"));
     } catch (err) {
       if (!applyServerErrors(err, form.setError, ["title", "type", "summary", "body", "externalUrl", "durationMinutes"])) {
-        toast.error(getErrorMessage(err));
+        toast.error(errorMessage(err));
       }
     }
   });
@@ -152,13 +158,13 @@ function ItemEditorLoaded({
 
   return (
     <PageContainer wide>
-      <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1 text-sm text-muted-foreground">
+      <nav aria-label={t("builder.breadcrumb")} className="flex min-w-0 items-center gap-1 text-sm text-muted-foreground">
         <Link href="/instructor/courses" className="shrink-0 hover:text-foreground">
-          Courses
+          {t("builder.courses")}
         </Link>
         <ChevronRight className="size-3.5 shrink-0" />
         <Link href={`/instructor/courses/${item.courseId}`} className="truncate hover:text-foreground">
-          {courseTitle ?? "Course"}
+          {courseTitle ?? t("itemEditor.course")}
         </Link>
         {moduleTitle && (
           <>
@@ -172,10 +178,10 @@ function ItemEditorLoaded({
         <div className="flex min-w-0 items-center gap-3">
           <ItemTypeIcon type={type} className="size-10" />
           <div className="min-w-0">
-            <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">{title || "Untitled"}</h1>
+            <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">{title || t("itemEditor.untitled")}</h1>
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <VisibilityBadge visibility={item.visibility} publishAt={item.publishAt} unpublishAt={item.unpublishAt} compact />
-              <span>Saved {formatRelative(item.updatedAt)}</span>
+              <span>{t("itemEditor.savedAgo", { when: fmt.relative(item.updatedAt) })}</span>
             </p>
           </div>
         </div>
@@ -183,13 +189,13 @@ function ItemEditorLoaded({
           {item.visibility === "LIVE" && (
             <Button variant="outline" size="sm" asChild>
               <Link href={`/learn/${item.courseId}/${item.id}`}>
-                <Eye /> Preview
+                <Eye /> {t("common.preview")}
               </Link>
             </Button>
           )}
           {tab === "content" && (
             <Button onClick={() => void save()} loading={isSubmitting} disabled={!isDirty}>
-              <Save /> Save
+              <Save /> {t("common.save")}
               <Kbd className="ml-1 hidden border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground/80 sm:inline-flex">⌘S</Kbd>
             </Button>
           )}
@@ -200,15 +206,15 @@ function ItemEditorLoaded({
         <Tabs value={tab} onValueChange={(v) => setTab(v as EditorTab)} className="min-w-0">
           <TabsList variant="underline">
             <TabsTrigger value="content">
-              <FileText /> Content {isDirty && <span className="size-1.5 rounded-full bg-brand" aria-label="unsaved" />}
+              <FileText /> {t("itemEditor.content")} {isDirty && <span className="size-1.5 rounded-full bg-brand" aria-label={t("itemEditor.unsaved")} />}
             </TabsTrigger>
             {isAssessmentType(type) && (
               <>
                 <TabsTrigger value="assessment">
-                  <ClipboardList /> Assessment {assessmentDirty && <span className="size-1.5 rounded-full bg-brand" aria-label="unsaved" />}
+                  <ClipboardList /> {t("itemEditor.assessment")} {assessmentDirty && <span className="size-1.5 rounded-full bg-brand" aria-label={t("itemEditor.unsaved")} />}
                 </TabsTrigger>
                 <TabsTrigger value="submissions">
-                  <Inbox /> Submissions
+                  <Inbox /> {t("itemEditor.submissions")}
                 </TabsTrigger>
               </>
             )}
@@ -219,10 +225,10 @@ function ItemEditorLoaded({
               <Card>
                 <CardContent className="grid gap-5 pt-5 sm:pt-6">
                   <div className="grid gap-5 sm:grid-cols-[1fr_220px]">
-                    <Field label="Title" htmlFor="title" error={errors.title?.message} required>
+                    <Field label={t("itemEditor.title")} htmlFor="title" error={errors.title?.message} required>
                       <Input {...fieldA11y("title", errors.title?.message)} {...form.register("title")} />
                     </Field>
-                    <Field label="Type" htmlFor="type">
+                    <Field label={t("itemEditor.type")} htmlFor="type">
                       <Controller
                         control={form.control}
                         name="type"
@@ -232,12 +238,12 @@ function ItemEditorLoaded({
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {ITEM_TYPES.map((t) => {
-                                const Icon = ITEM_TYPE_META[t].icon;
+                              {ITEM_TYPES.map((it) => {
+                                const Icon = ITEM_TYPE_META[it].icon;
                                 return (
-                                  <SelectItem key={t} value={t}>
+                                  <SelectItem key={it} value={it}>
                                     <span className="flex items-center gap-2">
-                                      <Icon className="size-4 text-muted-foreground" /> {ITEM_TYPE_META[t].label}
+                                      <Icon className="size-4 text-muted-foreground" /> {t(`itemTypes.${it}.label`)}
                                     </span>
                                   </SelectItem>
                                 );
@@ -250,42 +256,42 @@ function ItemEditorLoaded({
                   </div>
                   {isAssessmentType(type) && !assessmentSaved && (
                     <p className="rounded-lg border border-info/25 bg-info-soft/50 px-3 py-2 text-[13px] text-info">
-                      Save to turn this item into a {type === "EXAM" ? "exam" : "quiz"}, then add questions in the Assessment tab.
+                      {t("itemEditor.becomeAssessment", { kind: type === "EXAM" ? t("itemEditor.examWord") : t("itemEditor.quizWord") })}
                     </p>
                   )}
-                  <Field label="Summary" htmlFor="summary" error={errors.summary?.message} hint="Short intro shown above the content.">
+                  <Field label={t("itemEditor.summary")} htmlFor="summary" error={errors.summary?.message} hint={t("itemEditor.summaryHint")}>
                     <Textarea rows={2} {...fieldA11y("summary", errors.summary?.message)} {...form.register("summary")} />
                   </Field>
                   {showUrl && (
                     <Field
-                      label={type === "VIDEO" ? "Video link (YouTube or Vimeo)" : "External URL"}
+                      label={type === "VIDEO" ? t("itemEditor.videoUrl") : t("itemEditor.externalUrl")}
                       htmlFor="externalUrl"
                       error={errors.externalUrl?.message}
-                      hint={embed ? (embed.embedUrl ? `${embed.label} embed detected` : "This link will be shown as a link card.") : undefined}
+                      hint={embed ? (embed.embedUrl ? t("itemEditor.embedDetected", { provider: embed.label }) : t("itemEditor.linkCard")) : undefined}
                     >
                       <Input type="url" placeholder="https://" {...fieldA11y("externalUrl", errors.externalUrl?.message)} {...form.register("externalUrl")} />
                     </Field>
                   )}
                   {showUrl && embed && !errors.externalUrl && <EmbedFrame url={externalUrl} title={title} className="max-w-2xl" />}
-                  <Field label="Estimated duration" htmlFor="durationMinutes" error={errors.durationMinutes?.message} className="max-w-48">
+                  <Field label={t("itemEditor.duration")} htmlFor="durationMinutes" error={errors.durationMinutes?.message} className="max-w-48">
                     <div className="relative">
                       <Input type="number" min={0} inputMode="numeric" className="pr-12" {...fieldA11y("durationMinutes", errors.durationMinutes?.message)} {...form.register("durationMinutes")} />
-                      <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs text-muted-foreground">min</span>
+                      <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs text-muted-foreground">{t("common.min")}</span>
                     </div>
                   </Field>
                 </CardContent>
               </Card>
 
-              <section className="grid gap-2" aria-label="Lesson body">
-                <h2 className="text-sm font-semibold">{isAssessmentType(type) ? "Introduction" : "Lesson content"}</h2>
+              <section className="grid gap-2" aria-label={t("itemEditor.bodyAria")}>
+                <h2 className="text-sm font-semibold">{isAssessmentType(type) ? t("itemEditor.introduction") : t("itemEditor.lessonContent")}</h2>
                 <Controller control={form.control} name="body" render={({ field }) => <RichTextEditor value={field.value} onChange={field.onChange} />} />
               </section>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Attachments</CardTitle>
+                  <CardTitle>{t("itemEditor.attachments")}</CardTitle>
                   <CardDescription>
-                    Upload any file type with drag & drop. Drag rows to reorder. {UPLOAD_HINTS[type]?.hint ?? ""}
+                    {t("itemEditor.attachmentsText")} {hasHint(type) ? t(`itemEditor.hints.${type}`) : ""}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -299,7 +305,7 @@ function ItemEditorLoaded({
                         onAppend={(media) =>
                           form.setValue("attachments", [...form.getValues("attachments"), media], { shouldDirty: true })
                         }
-                        hint={UPLOAD_HINTS[type]?.hint}
+                        hint={hasHint(type) ? t(`itemEditor.hints.${type}`) : undefined}
                       />
                     )}
                   />
@@ -307,12 +313,12 @@ function ItemEditorLoaded({
               </Card>
               {isDirty && (
                 <div className="sticky bottom-0 z-10 flex items-center justify-end gap-3 border-t bg-background/85 py-3 backdrop-blur">
-                  <span className="mr-auto text-xs text-muted-foreground">Unsaved changes</span>
+                  <span className="mr-auto text-xs text-muted-foreground">{t("common.unsavedChanges")}</span>
                   <Button type="button" variant="ghost" onClick={() => form.reset(values)}>
-                    Discard
+                    {t("common.discard")}
                   </Button>
                   <Button type="submit" loading={isSubmitting}>
-                    Save changes
+                    {t("common.saveChanges")}
                   </Button>
                 </div>
               )}
@@ -325,7 +331,7 @@ function ItemEditorLoaded({
                 {assessmentSaved ? (
                   <AssessmentEditor itemId={item.id} courseId={item.courseId} active={tab === "assessment"} onDirtyChange={setAssessmentDirty} />
                 ) : (
-                  <EmptyState icon={ClipboardList} title="Save the item first" description="Save the type change on the Content tab to start adding questions." />
+                  <EmptyState icon={ClipboardList} title={t("itemEditor.saveFirst")} description={t("itemEditor.saveFirstText")} />
                 )}
               </TabsContent>
               <TabsContent value="submissions" className="mt-6">
@@ -339,10 +345,10 @@ function ItemEditorLoaded({
           <Card>
             <CardHeader className="pb-3 sm:pb-4">
               <div className="flex items-center justify-between gap-2">
-                <CardTitle>Publication</CardTitle>
+                <CardTitle>{t("itemEditor.publication")}</CardTitle>
                 <VisibilityBadge visibility={item.visibility} publishAt={item.publishAt} unpublishAt={item.unpublishAt} compact />
               </div>
-              <CardDescription>{VISIBILITY_META[item.visibility].description}</CardDescription>
+              <CardDescription>{t(`visibility.${item.visibility}.description`)}</CardDescription>
             </CardHeader>
             <CardContent>
               <PublicationForm
@@ -352,30 +358,30 @@ function ItemEditorLoaded({
                 pending={publish.isPending}
                 onSubmit={(body) =>
                   publish.mutateAsync({ id: item.id, body }).then((i) => {
-                    toast.success(`Item is now ${VISIBILITY_META[i.visibility].label.toLowerCase()}`);
+                    toast.success(t("itemEditor.nowIs", { status: t(`visibility.${i.visibility}.label`) }));
                     return i;
                   })
                 }
               />
-              <p className="mt-3 text-[11px] text-muted-foreground">Learners see it only when the course and module are live too.</p>
+              <p className="mt-3 text-[11px] text-muted-foreground">{t("itemEditor.learnersNote")}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="grid gap-2 pt-5 text-sm sm:pt-6">
               <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground">Created</span>
-                <span>{formatDateTime(item.createdAt)}</span>
+                <span className="text-muted-foreground">{t("itemEditor.created")}</span>
+                <span>{fmt.dateTime(item.createdAt)}</span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground">Last saved</span>
-                <span>{formatDateTime(item.updatedAt)}</span>
+                <span className="text-muted-foreground">{t("itemEditor.lastSaved")}</span>
+                <span>{fmt.dateTime(item.updatedAt)}</span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground">Attachments</span>
+                <span className="text-muted-foreground">{t("itemEditor.attachmentCount")}</span>
                 <span className="tabular-nums">{item.attachments.length}</span>
               </div>
               <Button variant="destructive-ghost" size="sm" className="mt-2 justify-start" onClick={() => setDeleteOpen(true)}>
-                <Trash /> Delete item
+                <Trash /> {t("itemEditor.deleteItem")}
               </Button>
             </CardContent>
           </Card>
@@ -385,15 +391,15 @@ function ItemEditorLoaded({
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title={`Delete “${item.title}”?`}
-        description="This removes the item and all learner progress and attempts for it. This cannot be undone."
-        confirmLabel="Delete"
+        title={t("builder.deleteTitle", { title: item.title })}
+        description={t("itemEditor.deleteText")}
+        confirmLabel={t("common.delete")}
         destructive
         loading={del.isPending}
         onConfirm={() =>
           del.mutate(item.id, {
             onSuccess: () => {
-              toast.success("Item deleted");
+              toast.success(t("builder.itemDeleted"));
               form.reset(values);
               router.push(`/instructor/courses/${item.courseId}`);
             },
@@ -408,6 +414,7 @@ export function ItemEditor() {
   const { courseId, itemId } = useParams<{ courseId: string; itemId: string }>();
   const item = useInstructorItem(itemId);
   const course = useInstructorCourse(courseId);
+  const t = useTranslations("itemEditor");
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const initialTab: EditorTab = tabParam === "assessment" || tabParam === "submissions" ? tabParam : "content";
@@ -421,11 +428,11 @@ export function ItemEditor() {
         {missing ? (
           <EmptyState
             icon={FileText}
-            title="Item not found"
-            description="It may have been deleted."
+            title={t("notFound")}
+            description={t("notFoundText")}
             action={
               <Button asChild>
-                <Link href={`/instructor/courses/${courseId}`}>Back to course</Link>
+                <Link href={`/instructor/courses/${courseId}`}>{t("backToCourse")}</Link>
               </Button>
             }
           />

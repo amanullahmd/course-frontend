@@ -1,7 +1,8 @@
 import { Download, ExternalLink } from "lucide-react";
 import type { MediaDto } from "@/lib/api/types";
 import { downloadUrl } from "@/lib/api/media";
-import { fileStyle, FileTypeIcon } from "@/components/course/file-type-icon";
+import { useTranslations } from "next-intl";
+import { fileStyle, FileTypeIcon, useFileLabel } from "@/components/course/file-type-icon";
 import { Button } from "@/components/ui/button";
 import { cn, fileExtension, formatBytes } from "@/lib/utils";
 
@@ -10,7 +11,10 @@ export const isText = (m: MediaDto) =>
   m.contentType.startsWith("text/") || ["txt", "md", "csv", "srt", "vtt"].includes(fileExtension(m.fileName));
 
 export function FileCard({ media, className }: { media: MediaDto; className?: string }) {
+  const t = useTranslations("learn");
+  const tc = useTranslations("common");
   const style = fileStyle(media.fileName, media.contentType, media.kind);
+  const label = useFileLabel()(style);
   return (
     <div className={cn("flex items-center gap-3 rounded-xl border bg-card p-3 shadow-xs", className)}>
       <FileTypeIcon name={media.fileName} contentType={media.contentType} kind={media.kind} className="size-11" />
@@ -19,18 +23,18 @@ export function FileCard({ media, className }: { media: MediaDto; className?: st
           {media.fileName}
         </p>
         <p className="text-xs text-muted-foreground">
-          {style.label} · {formatBytes(media.sizeBytes)}
+          {label} · {formatBytes(media.sizeBytes)}
         </p>
       </div>
       <div className="flex shrink-0 gap-1">
         <Button variant="ghost" size="icon-sm" asChild>
-          <a href={media.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${media.fileName} in a new tab`}>
+          <a href={media.url} target="_blank" rel="noopener noreferrer" aria-label={t("openInTab", { name: media.fileName })}>
             <ExternalLink />
           </a>
         </Button>
         <Button variant="outline" size="sm" asChild>
-          <a href={downloadUrl(media)} aria-label={`Download ${media.fileName}`}>
-            <Download /> <span className="hidden sm:inline">Download</span>
+          <a href={downloadUrl(media)} aria-label={t("downloadFile", { name: media.fileName })}>
+            <Download /> <span className="hidden sm:inline">{tc("download")}</span>
           </a>
         </Button>
       </div>
@@ -38,7 +42,7 @@ export function FileCard({ media, className }: { media: MediaDto; className?: st
   );
 }
 
-export function AttachmentList({ attachments, title = "Files" }: { attachments: MediaDto[]; title?: string }) {
+export function AttachmentList({ attachments, title }: { attachments: MediaDto[]; title: string }) {
   if (attachments.length === 0) return null;
   return (
     <section aria-label={title} className="grid gap-3">

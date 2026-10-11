@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight, Ellipsis, ExternalLink, Eye, FileCog, Layers, Rocket, Trash, Users } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { isApiError } from "@/lib/api/client";
-import { formatRelative } from "@/lib/dates";
+import { useFormat } from "@/hooks/use-format";
 import { useDeleteCourse, useInstructorCourse, usePublishCourse, useUpdateCourse } from "@/hooks/queries/instructor";
 import { PageContainer } from "@/components/layout/page-header";
 import { LevelBadge } from "@/components/course/badges";
@@ -50,6 +51,8 @@ function BuilderSkeleton() {
 
 export function CourseBuilder() {
   const { courseId } = useParams<{ courseId: string }>();
+  const t = useTranslations();
+  const fmt = useFormat();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -77,11 +80,11 @@ export function CourseBuilder() {
         {notFound ? (
           <EmptyState
             icon={Layers}
-            title="Course not found"
-            description="It may have been deleted, or it belongs to another instructor."
+            title={t("builder.courseNotFound")}
+            description={t("builder.courseNotFoundText")}
             action={
               <Button asChild>
-                <Link href="/instructor/courses">Back to my courses</Link>
+                <Link href="/instructor/courses">{t("builder.backToCourses")}</Link>
               </Button>
             }
           />
@@ -97,9 +100,9 @@ export function CourseBuilder() {
 
   return (
     <PageContainer wide>
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-sm text-muted-foreground">
+      <nav aria-label={t("builder.breadcrumb")} className="flex items-center gap-1 text-sm text-muted-foreground">
         <Link href="/instructor/courses" className="hover:text-foreground">
-          My courses
+          {t("builder.myCourses")}
         </Link>
         <ChevronRight className="size-3.5" />
         <span className="truncate text-foreground">{c.title}</span>
@@ -121,40 +124,41 @@ export function CourseBuilder() {
             />
             <span>·</span>
             <span>
-              {c.modules.length} modules · {itemCount} items · {c.studentCount} learners
+              {t("course.modulesCount", { count: c.modules.length })} · {t("course.itemsCount", { count: itemCount })} ·{" "}
+              {t("course.learnersCount", { count: c.studentCount })}
             </span>
-            <span className="hidden sm:inline">· updated {formatRelative(c.updatedAt)}</span>
+            <span className="hidden sm:inline">· {t("builder.updated", { when: fmt.relative(c.updatedAt) })}</span>
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link href={`/learn/${c.id}`}>
-              <Eye /> Preview as student
+              <Eye /> {t("builder.preview")}
             </Link>
           </Button>
           {c.visibility === "LIVE" && (
             <Button variant="outline" size="sm" asChild>
               <Link href={`/courses/${c.slug}`} target="_blank">
-                <ExternalLink /> Public page
+                <ExternalLink /> {t("builder.publicPage")}
               </Link>
             </Button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon-sm" aria-label="More course actions">
+              <Button variant="outline" size="icon-sm" aria-label={t("builder.more")}>
                 <Ellipsis />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onSelect={() => setTab("details")}>
-                <FileCog /> Edit details
+                <FileCog /> {t("builder.editDetails")}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => setTab("publishing")}>
-                <Rocket /> Publishing
+                <Rocket /> {t("builder.publishing")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem destructive onSelect={() => setDeleteOpen(true)}>
-                <Trash /> Delete course
+                <Trash /> {t("builder.deleteCourse")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -164,16 +168,16 @@ export function CourseBuilder() {
       <Tabs value={tab} onValueChange={setTab} className="mt-6">
         <TabsList variant="underline">
           <TabsTrigger value="curriculum">
-            <Layers /> Curriculum
+            <Layers /> {t("builder.tabs.curriculum")}
           </TabsTrigger>
           <TabsTrigger value="details">
-            <FileCog /> Details
+            <FileCog /> {t("builder.tabs.details")}
           </TabsTrigger>
           <TabsTrigger value="publishing">
-            <Rocket /> Publishing
+            <Rocket /> {t("builder.tabs.publishing")}
           </TabsTrigger>
           <TabsTrigger value="students">
-            <Users /> Students
+            <Users /> {t("builder.tabs.students")}
             {c.pendingCount > 0 && (
               <Badge variant="info" className="px-1.5">
                 {c.pendingCount}
@@ -187,8 +191,8 @@ export function CourseBuilder() {
         <TabsContent value="details" className="mt-6 max-w-3xl">
           <CourseForm
             course={c}
-            submitLabel="Save changes"
-            onSubmit={(body) => update.mutateAsync(body).then(() => toast.success("Course details saved"))}
+            submitLabel={t("common.saveChanges")}
+            onSubmit={(body) => update.mutateAsync(body).then(() => toast.success(t("builder.detailsSaved")))}
           />
         </TabsContent>
         <TabsContent value="publishing" className="mt-6">
@@ -202,15 +206,15 @@ export function CourseBuilder() {
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title={`Delete “${c.title}”?`}
-        description="The course, all modules, lessons, enrollments and quiz attempts will be permanently deleted."
-        confirmLabel="Delete course"
+        title={t("builder.deleteTitle", { title: c.title })}
+        description={t("builder.deleteText")}
+        confirmLabel={t("builder.deleteCourse")}
         destructive
         loading={del.isPending}
         onConfirm={() =>
           del.mutate(c.id, {
             onSuccess: () => {
-              toast.success("Course deleted");
+              toast.success(t("builder.deleted"));
               router.push("/instructor/courses");
             },
           })

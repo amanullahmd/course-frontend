@@ -11,7 +11,8 @@ import type { Role } from "@/lib/api/types";
 
 export interface NavItem {
   href: string;
-  label: string;
+  /** Key in the "nav" messages namespace. */
+  label: "admin" | "teaching" | "myCourses" | "schedule" | "catalog" | "overview" | "myLearning" | "browseCourses";
   icon: LucideIcon;
   /** Match nested routes too (default true). */
   prefix?: boolean;
@@ -22,23 +23,23 @@ export function navForRole(role: Role): NavItem[] {
   switch (role) {
     case "ADMIN":
       return [
-        { href: "/admin", label: "Admin", icon: ShieldCheck },
-        { href: "/instructor", label: "Teaching", icon: LayoutDashboard, exact: true },
-        { href: "/instructor/courses", label: "My courses", icon: Library },
-        { href: "/instructor/schedule", label: "Schedule", icon: CalendarDays },
-        { href: "/courses", label: "Catalog", icon: Compass },
+        { href: "/admin", label: "admin", icon: ShieldCheck },
+        { href: "/instructor", label: "teaching", icon: LayoutDashboard, exact: true },
+        { href: "/instructor/courses", label: "myCourses", icon: Library },
+        { href: "/instructor/schedule", label: "schedule", icon: CalendarDays },
+        { href: "/courses", label: "catalog", icon: Compass },
       ];
     case "INSTRUCTOR":
       return [
-        { href: "/instructor", label: "Overview", icon: LayoutDashboard, exact: true },
-        { href: "/instructor/courses", label: "My courses", icon: Library },
-        { href: "/instructor/schedule", label: "Schedule", icon: CalendarDays },
-        { href: "/courses", label: "Catalog", icon: Compass },
+        { href: "/instructor", label: "overview", icon: LayoutDashboard, exact: true },
+        { href: "/instructor/courses", label: "myCourses", icon: Library },
+        { href: "/instructor/schedule", label: "schedule", icon: CalendarDays },
+        { href: "/courses", label: "catalog", icon: Compass },
       ];
     default:
       return [
-        { href: "/dashboard", label: "My learning", icon: BookOpen },
-        { href: "/courses", label: "Browse courses", icon: Compass },
+        { href: "/dashboard", label: "myLearning", icon: BookOpen },
+        { href: "/courses", label: "browseCourses", icon: Compass },
       ];
   }
 }

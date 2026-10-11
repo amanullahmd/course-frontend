@@ -73,7 +73,10 @@ public class MediaService {
     static String resolveContentType(String declared, String fileName) {
         if (declared != null && !declared.isBlank() && !declared.equalsIgnoreCase(MediaType.APPLICATION_OCTET_STREAM_VALUE)) {
             try {
-                return MediaType.parseMediaType(declared).toString();
+                String parsed = MediaType.parseMediaType(declared).toString();
+                if (parsed.length() <= 150) {
+                    return parsed;
+                }
             } catch (Exception ignored) {
                 // fall through to extension based detection
             }

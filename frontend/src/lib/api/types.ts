@@ -85,6 +85,8 @@ export interface RegisterRequest {
   email: string;
   password: string;
   role: RegisterRole;
+  /** UI locale for e-mails (backend extension). */
+  locale?: string;
 }
 
 export interface LoginRequest {

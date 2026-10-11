@@ -1,13 +1,14 @@
 "use client";
 
 import { RotateCw, TriangleAlert } from "lucide-react";
-import { getErrorMessage } from "@/lib/api/client";
+import { useTranslations } from "next-intl";
+import { useErrorMessage } from "@/hooks/use-error-message";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 
 export function ErrorState({
   error,
-  title = "Couldn't load this",
+  title,
   onRetry,
   className,
 }: {
@@ -16,6 +17,8 @@ export function ErrorState({
   onRetry?: () => void;
   className?: string;
 }) {
+  const t = useTranslations();
+  const message = useErrorMessage();
   return (
     <div
       role="alert"
@@ -28,12 +31,12 @@ export function ErrorState({
         <TriangleAlert className="size-5" />
       </span>
       <div className="grid gap-1">
-        <h3 className="font-semibold">{title}</h3>
-        <p className="max-w-md text-sm text-muted-foreground">{getErrorMessage(error)}</p>
+        <h3 className="font-semibold">{title ?? t("errors.loadTitle")}</h3>
+        <p className="max-w-md text-sm text-muted-foreground">{message(error)}</p>
       </div>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry}>
-          <RotateCw /> Try again
+          <RotateCw /> {t("common.retry")}
         </Button>
       )}
     </div>

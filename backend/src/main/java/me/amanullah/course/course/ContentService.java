@@ -4,6 +4,7 @@ import me.amanullah.course.assessment.AssessmentService;
 import me.amanullah.course.common.exception.ValidationException;
 import me.amanullah.course.common.publication.PublicationRequest;
 import me.amanullah.course.common.util.HtmlSanitizer;
+import me.amanullah.course.common.util.TextLimits;
 import me.amanullah.course.course.CourseDtos.ContentItemDto;
 import me.amanullah.course.course.CourseDtos.ItemUpsert;
 import me.amanullah.course.course.CourseDtos.ModuleDto;
@@ -154,13 +155,12 @@ public class ContentService {
         CourseModule target = access.module(moduleId, me);
         UUID courseId = target.getCourse().getId();
         if (new HashSet<>(ids).size() != ids.size()) {
-            throw new ValidationException("ids must not contain duplicates", Map.of("ids", "must not contain duplicates"));
+            throw ValidationException.field("ids", "validation.ids.duplicates");
         }
         List<ContentItem> current = items.findByModuleIdOrderByPositionAsc(target.getId());
         Set<UUID> requested = new HashSet<>(ids);
         if (!current.stream().allMatch(i -> requested.contains(i.getId()))) {
-            throw new ValidationException("ids must include all items of the module",
-                    Map.of("ids", "must include all items of the module"));
+            throw ValidationException.field("ids", "validation.ids.allItems");
         }
         Map<UUID, ContentItem> byId = new HashMap<>();
         current.forEach(i -> byId.put(i.getId(), i));
@@ -171,7 +171,7 @@ public class ContentService {
             if (item == null) {
                 item = items.findWithCourse(id).orElse(null);
                 if (item == null || !item.getModule().getCourse().getId().equals(courseId)) {
-                    throw new ValidationException("Unknown item id " + id, Map.of("ids", "unknown item " + id));
+                    throw ValidationException.field("ids", "validation.ids.unknownItem", id);
                 }
                 sourceModules.add(item.getModule().getId());
                 item.setModule(target);
@@ -197,15 +197,14 @@ public class ContentService {
         item.setType(req.type());
         item.setTitle(req.title().trim());
         item.setSummary(CourseService.blankToNull(req.summary()));
-        item.setBody(HtmlSanitizer.sanitize(req.body()));
+        item.setBody(TextLimits.requireMax("body", HtmlSanitizer.sanitize(req.body()), 1_000_000));
         item.setDurationMinutes(req.durationMinutes());
         String url = CourseService.blankToNull(req.externalUrl());
         if (url != null && !isHttpUrl(url)) {
-            throw new ValidationException("externalUrl must be an http(s) URL",
-                    Map.of("externalUrl", "must be an http(s) URL"));
+            throw ValidationException.field("externalUrl", "validation.httpUrl");
         }
         if (req.type() == ItemType.EMBED && url == null) {
-            throw new ValidationException("An embed needs an external URL", Map.of("externalUrl", "is required for EMBED"));
+            throw ValidationException.field("externalUrl", "validation.embedUrlRequired");
         }
         item.setExternalUrl(url);
         List<UUID> ids = req.attachmentIds() == null ? List.of() : List.copyOf(new LinkedHashSet<>(req.attachmentIds()));

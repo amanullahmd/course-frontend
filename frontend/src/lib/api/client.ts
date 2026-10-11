@@ -5,24 +5,16 @@ export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:808
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
-/** Friendly copy for the backend's machine-readable error codes. */
-export const ERROR_MESSAGES: Record<string, string> = {
-  EMAIL_TAKEN: "An account with this e-mail already exists.",
-  INVALID_TOKEN: "This link is invalid. Please request a new one.",
-  TOKEN_USED: "This link has already been used.",
-  TOKEN_EXPIRED: "This link has expired. Please request a new one.",
-  INVALID_CREDENTIALS: "The e-mail or password is incorrect.",
-  ACCOUNT_DISABLED: "This account has been disabled. Please contact support.",
-  EMAIL_NOT_VERIFIED: "Please verify your e-mail address before logging in.",
-  NOT_ENROLLED: "You need an approved enrollment to open this course.",
-  OWN_COURSE: "You can't apply to your own course.",
-  ALREADY_ENROLLED: "You already have an active application or enrollment for this course.",
-  CAPACITY_REACHED: "This course has reached its capacity.",
-  MAX_ATTEMPTS_REACHED: "You've used all your attempts for this assessment.",
-  ASSESSMENT_NOT_AVAILABLE: "This assessment is not available right now.",
-  NO_QUESTIONS: "This assessment doesn't have any questions yet.",
-  FILE_TOO_LARGE: "This file is larger than the allowed maximum.",
-};
+let apiLocale = "en";
+
+/** Active UI locale, sent as Accept-Language so the backend localises errors and e-mails. */
+export function setApiLocale(locale: string): void {
+  apiLocale = locale;
+}
+
+export function getApiLocale(): string {
+  return apiLocale;
+}
 
 export class ApiError extends Error {
   readonly status: number;
@@ -32,8 +24,7 @@ export class ApiError extends Error {
   readonly fieldErrors: Record<string, string>;
 
   constructor(status: number, problem: ProblemDetail = {}, fallbackMessage?: string) {
-    const friendly = problem.code && problem.code !== "VALIDATION_FAILED" ? ERROR_MESSAGES[problem.code] : undefined;
-    super(friendly || problem.detail || problem.title || fallbackMessage || `Request failed (${status})`);
+    super(problem.detail || fallbackMessage || problem.title || `Request failed (${status})`);
     this.name = "ApiError";
     this.status = status;
     this.code = problem.code;
@@ -113,7 +104,7 @@ export function refreshSession(): Promise<AuthResponse | null> {
         const res = await fetch(`${API_URL}/api/auth/refresh`, {
           method: "POST",
           credentials: "include",
-          headers: { Accept: "application/json" },
+          headers: { Accept: "application/json", "Accept-Language": apiLocale },
         });
         if (!res.ok) {
           setSession(null);
@@ -176,7 +167,7 @@ async function parseProblem(res: Response): Promise<ProblemDetail> {
 
 async function send(path: string, options: RequestOptions): Promise<Response> {
   const { method = "GET", body, query, auth = true, signal, headers = {} } = options;
-  const finalHeaders: Record<string, string> = { Accept: "application/json", ...headers };
+  const finalHeaders: Record<string, string> = { Accept: "application/json", "Accept-Language": apiLocale, ...headers };
   let payload: BodyInit | undefined;
   if (body instanceof FormData) {
     payload = body;
@@ -195,7 +186,7 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") throw error;
-    throw new ApiError(0, {}, "Cannot reach the Sprachweg server. Check your connection and try again.");
+    throw new ApiError(0, { code: "NETWORK_ERROR" }, "Server unreachable");
   }
 }
 
@@ -243,13 +234,14 @@ function xhrUpload(file: File, options: UploadOptions): Promise<{ status: number
     xhr.open("POST", `${API_URL}/api/media`);
     xhr.withCredentials = true;
     xhr.setRequestHeader("Accept", "application/json");
+    xhr.setRequestHeader("Accept-Language", apiLocale);
     if (accessToken) xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`);
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) options.onProgress?.(Math.round((event.loaded / event.total) * 100));
     };
     xhr.onload = () =>
       resolve({ status: xhr.status, body: xhr.responseText, type: xhr.getResponseHeader("content-type") ?? "" });
-    xhr.onerror = () => reject(new ApiError(0, {}, "Upload failed: the server could not be reached."));
+    xhr.onerror = () => reject(new ApiError(0, { code: "NETWORK_ERROR" }, "Server unreachable"));
     xhr.onabort = () => reject(new DOMException("Upload cancelled", "AbortError"));
     options.signal?.addEventListener("abort", () => xhr.abort(), { once: true });
     const form = new FormData();
@@ -275,7 +267,7 @@ export async function uploadMedia(file: File, options: UploadOptions = {}): Prom
     } catch {
       problem = {};
     }
-    if (result.status === 413 && !problem.detail) problem.detail = "This file is larger than the allowed maximum.";
+    if (result.status === 413 && !problem.code) problem.code = "FILE_TOO_LARGE";
     throw new ApiError(result.status, problem);
   }
   return JSON.parse(result.body) as MediaDto;

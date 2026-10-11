@@ -6,6 +6,7 @@ import me.amanullah.course.assessment.Question;
 import me.amanullah.course.assessment.QuestionOption;
 import me.amanullah.course.assessment.QuestionType;
 import me.amanullah.course.common.publication.PublishStatus;
+import me.amanullah.course.common.web.Links;
 import me.amanullah.course.common.util.SlugGenerator;
 import me.amanullah.course.course.CefrLevel;
 import me.amanullah.course.course.ContentItem;
@@ -99,15 +100,15 @@ public class DevDataSeeder implements CommandLineRunner {
     private void seed() {
         Instant now = Instant.now(clock);
         String hash = passwordEncoder.encode(PASSWORD);
-        user("Admin Sprachweg", "admin@sprachweg.de", hash, Role.ADMIN, null);
+        user("Admin Sprachweg", "admin@sprachweg.de", hash, Role.ADMIN, null, "en");
         User anna = user("Anna Schneider", "lehrer@sprachweg.de", hash, Role.INSTRUCTOR,
                 "DaF-Lehrerin aus Berlin mit über zehn Jahren Erfahrung. Ich unterrichte Deutsch von A1 bis C1 und "
-                        + "bereite auf Goethe- und telc-Prüfungen vor.");
+                        + "bereite auf Goethe- und telc-Prüfungen vor.", "en");
         User luca = user("Luca Rossi", "student@sprachweg.de", hash, Role.STUDENT,
-                "Ich komme aus Mailand und ziehe bald nach Berlin.");
-        User sofia = user("Sofia Martins", "sofia@sprachweg.de", hash, Role.STUDENT, null);
-        User mehmet = user("Mehmet Yılmaz", "mehmet@sprachweg.de", hash, Role.STUDENT, null);
-        User emma = user("Emma Johansson", "emma@sprachweg.de", hash, Role.STUDENT, null);
+                "Ich komme aus Mailand und ziehe bald nach Berlin.", "de");
+        User sofia = user("Sofia Martins", "sofia@sprachweg.de", hash, Role.STUDENT, null, "en");
+        User mehmet = user("Mehmet Yılmaz", "mehmet@sprachweg.de", hash, Role.STUDENT, null, "en");
+        User emma = user("Emma Johansson", "emma@sprachweg.de", hash, Role.STUDENT, null, "en");
 
         MediaAsset vocab = storeText(anna, "Vokabelliste_Begrüßungen.txt", SeedContent.VOCAB_FILE);
 
@@ -197,15 +198,16 @@ public class DevDataSeeder implements CommandLineRunner {
         progress.save(new ItemProgress(luca, greet, now.minus(Duration.ofDays(8))));
         progress.save(new ItemProgress(luca, intro, now.minus(Duration.ofDays(7))));
 
-        notifications.notify(luca, NotificationType.ENROLLMENT_APPROVED, "Bewerbung angenommen",
-                "Du hast jetzt Zugang zu „" + a1.getTitle() + "“.", "/learn/" + a1.getId());
-        notifications.notify(anna, NotificationType.ENROLLMENT_REQUESTED, "Neue Bewerbung",
-                "Sofia Martins möchte am Kurs „" + b1.getTitle() + "“ teilnehmen.",
-                "/instructor/courses/" + b1.getId() + "/enrollments");
+        // rendered in each recipient's language (Luca: German, Anna: English)
+        notifications.notify(luca, NotificationType.ENROLLMENT_APPROVED, "notification.enrollmentApproved",
+                Links.learnCourse(a1.getId()), null, a1.getTitle());
+        notifications.notify(anna, NotificationType.ENROLLMENT_REQUESTED, "notification.enrollmentRequested",
+                Links.instructorEnrollments(b1.getId()), null, sofia.getFullName(), b1.getTitle());
     }
 
-    private User user(String name, String email, String hash, Role role, String bio) {
+    private User user(String name, String email, String hash, Role role, String bio, String locale) {
         User u = new User(name, email, hash, role);
+        u.setLocale(locale);
         u.setEmailVerified(true);
         u.setBio(bio);
         return users.save(u);

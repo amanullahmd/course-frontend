@@ -6,6 +6,8 @@ import me.amanullah.course.common.web.Paging;
 import me.amanullah.course.user.User;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Locale;
+import me.amanullah.course.common.i18n.Messages;
 import java.util.UUID;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -16,25 +18,36 @@ public class NotificationService {
 
     private final NotificationRepository repository;
     private final MailService mail;
+    private final Messages messages;
     private final Clock clock;
 
-    public NotificationService(NotificationRepository repository, MailService mail, Clock clock) {
+    public NotificationService(NotificationRepository repository, MailService mail, Messages messages, Clock clock) {
         this.repository = repository;
         this.mail = mail;
+        this.messages = messages;
         this.clock = clock;
     }
 
-    /** Creates an in-app notification. */
+    /**
+     * Creates an in-app notification in the recipient's language. Title and body come from
+     * {@code <key>.title} / {@code <key>.body}; {@code reason} (optional) is appended to the body.
+     */
     @Transactional
-    public void notify(User user, NotificationType type, String title, String body, String link) {
-        repository.save(new Notification(user, type, title, body, link, Instant.now(clock)));
+    public void notify(User user, NotificationType type, String key, String link, String reason, Object... args) {
+        Locale locale = user.preferredLocale();
+        String body = messages.get(locale, key + ".body", args);
+        if (reason != null && !reason.isBlank()) {
+            body = body + " " + messages.get(locale, "notification.reason", reason);
+        }
+        repository.save(new Notification(user, type, messages.get(locale, key + ".title", args), body, link,
+                Instant.now(clock)));
     }
 
     /** Creates an in-app notification and sends an e-mail (after commit). */
     @Transactional
-    public void notifyWithEmail(User user, NotificationType type, String title, String body, String link,
-                                EmailTemplates.Email email) {
-        notify(user, type, title, body, link);
+    public void notifyWithEmail(User user, NotificationType type, String key, String link, String reason,
+                                EmailTemplates.Email email, Object... args) {
+        notify(user, type, key, link, reason, args);
         mail.send(user.getEmail(), email);
     }
 

@@ -40,6 +40,10 @@ public class User extends AuditedEntity {
     @Column(length = 2000)
     private String bio;
 
+    /** Preferred language ("en" or "de") for e-mails and notifications. */
+    @Column(nullable = false, length = 5)
+    private String locale = "en";
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "avatar_id")
     private MediaAsset avatar;
@@ -67,6 +71,9 @@ public class User extends AuditedEntity {
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
+    public String getLocale() { return locale; }
+    public void setLocale(String locale) { this.locale = locale; }
+    public java.util.Locale preferredLocale() { return me.amanullah.course.common.i18n.I18nConfig.toLocale(locale); }
     public MediaAsset getAvatar() { return avatar; }
     public void setAvatar(MediaAsset avatar) { this.avatar = avatar; }
 }

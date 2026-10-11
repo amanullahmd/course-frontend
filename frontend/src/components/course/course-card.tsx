@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Layers, Users } from "lucide-react";
 import type { CourseSummaryDto } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -7,6 +8,7 @@ import { CourseCover } from "./course-cover";
 import { LevelBadge } from "./badges";
 
 export function CourseCard({ course, className }: { course: CourseSummaryDto; className?: string }) {
+  const t = useTranslations("course");
   return (
     <Link
       href={`/courses/${course.slug}`}
@@ -23,7 +25,7 @@ export function CourseCard({ course, className }: { course: CourseSummaryDto; cl
           <LevelBadge level={course.level} className="bg-white/90 backdrop-blur dark:bg-black/60" />
           {course.enrollmentMode === "OPEN" && (
             <span className="rounded-md bg-white/90 px-2 py-0.5 text-xs font-medium text-slate-800 backdrop-blur dark:bg-black/60 dark:text-white">
-              Open
+              {t("open")}
             </span>
           )}
         </div>
@@ -48,10 +50,10 @@ export function CourseCard({ course, className }: { course: CourseSummaryDto; cl
             <span className="truncate">{course.instructor.fullName}</span>
           </span>
           <span className="flex shrink-0 items-center gap-3 tabular-nums">
-            <span className="flex items-center gap-1" title="Modules">
+            <span className="flex items-center gap-1" title={t("modules")}>
               <Layers className="size-3.5" /> {course.moduleCount}
             </span>
-            <span className="flex items-center gap-1" title="Learners">
+            <span className="flex items-center gap-1" title={t("learners")}>
               <Users className="size-3.5" /> {course.studentCount}
             </span>
           </span>

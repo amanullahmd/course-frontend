@@ -6,12 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslations } from "next-intl";
 import { MailWarning, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { isApiError, getErrorMessage } from "@/lib/api/client";
+import { isApiError } from "@/lib/api/client";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/lib/constants";
-import { emailSchema } from "@/lib/validation";
+import { makeEmailSchema } from "@/lib/validation";
 import { safeNextPath } from "@/lib/utils";
+import { useErrorMessage } from "@/hooks/use-error-message";
 import { useAuth } from "@/providers/auth-provider";
 import { homeForRole } from "@/components/layout/nav-config";
 import { AuthHeading, FormAlert } from "@/components/auth/auth-card";
@@ -21,20 +23,22 @@ import { Button } from "@/components/ui/button";
 import { Field, fieldA11y } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-const schema = z.object({
-  email: emailSchema,
-  password: z.string().min(1, "Enter your password"),
-});
-type Values = z.infer<typeof schema>;
-
 export function LoginForm() {
+  const t = useTranslations();
+  const errorMessage = useErrorMessage();
   const { login, status, user } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next");
   const [error, setError] = React.useState<{ message: string; unverified: boolean } | null>(null);
+  const schema = React.useMemo(
+    () => z.object({ email: makeEmailSchema((k) => t(`validation.${k}`)), password: z.string().min(1, t("validation.passwordRequired")) }),
+    [t],
+  );
+  type Values = z.infer<typeof schema>;
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { email: "", password: "" } });
   const { errors, isSubmitting } = form.formState;
+  const email = useWatch({ control: form.control, name: "email" });
 
   React.useEffect(() => {
     if (status === "authenticated" && user) router.replace(safeNextPath(next, homeForRole(user.role)));
@@ -44,26 +48,18 @@ export function LoginForm() {
     setError(null);
     try {
       const u = await login(values.email, values.password);
-      toast.success(`Willkommen zurück, ${u.fullName.split(" ")[0]}!`);
+      toast.success(t("auth.login.welcome", { name: u.fullName.split(" ")[0] }));
       router.replace(safeNextPath(next, homeForRole(u.role)));
     } catch (err) {
-      if (isApiError(err) && err.code === "EMAIL_NOT_VERIFIED") {
-        setError({ message: "Please verify your e-mail address before logging in.", unverified: true });
-      } else if (isApiError(err) && err.status === 401) {
-        setError({ message: "The e-mail or password is incorrect.", unverified: false });
-      } else if (isApiError(err) && err.status === 403) {
-        setError({ message: err.detail || "This account has been disabled. Contact support.", unverified: false });
-      } else {
-        setError({ message: getErrorMessage(err), unverified: false });
-      }
+      const unverified = isApiError(err) && err.code === "EMAIL_NOT_VERIFIED";
+      const invalid = isApiError(err) && err.status === 401 && !err.code;
+      setError({ message: invalid ? t("errors.codes.INVALID_CREDENTIALS") : errorMessage(err), unverified });
     }
   });
 
-  const email = useWatch({ control: form.control, name: "email" });
-
   return (
     <>
-      <AuthHeading title="Welcome back" description="Log in to continue your learning path." />
+      <AuthHeading title={t("auth.login.title")} description={t("auth.login.subtitle")} />
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
         {error && (
           <FormAlert
@@ -71,7 +67,7 @@ export function LoginForm() {
             action={
               error.unverified && (
                 <ResendVerificationButton email={email} size="sm" className="w-fit">
-                  <MailWarning /> Resend verification e-mail
+                  <MailWarning /> {t("auth.resend")}
                 </ResendVerificationButton>
               )
             }
@@ -79,36 +75,36 @@ export function LoginForm() {
             {error.message}
           </FormAlert>
         )}
-        <Field label="E-mail" htmlFor="email" error={errors.email?.message}>
-          <Input type="email" autoComplete="email" placeholder="you@example.com" {...fieldA11y("email", errors.email?.message)} {...form.register("email")} />
+        <Field label={t("auth.email")} htmlFor="email" error={errors.email?.message}>
+          <Input type="email" autoComplete="email" placeholder={t("auth.emailPlaceholder")} {...fieldA11y("email", errors.email?.message)} {...form.register("email")} />
         </Field>
         <Field
-          label="Password"
+          label={t("auth.password")}
           htmlFor="password"
           error={errors.password?.message}
           labelAside={
             <Link href="/forgot-password" className="text-xs font-medium text-muted-foreground hover:text-foreground">
-              Forgot password?
+              {t("auth.login.forgot")}
             </Link>
           }
         >
           <PasswordInput autoComplete="current-password" {...fieldA11y("password", errors.password?.message)} {...form.register("password")} />
         </Field>
         <Button type="submit" size="lg" loading={isSubmitting} className="w-full">
-          Log in
+          {t("auth.login.submit")}
         </Button>
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        New to Sprachweg?{" "}
+        {t("auth.login.newHere")}{" "}
         <Link href={next ? `/register?next=${encodeURIComponent(next)}` : "/register"} className="font-medium text-foreground underline-offset-4 hover:underline">
-          Create an account
+          {t("auth.login.createAccount")}
         </Link>
       </p>
 
       {process.env.NODE_ENV !== "production" && (
         <div className="mt-8 rounded-xl border border-dashed p-4">
           <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Sparkles className="size-3.5 text-brand" /> Demo accounts (development only)
+            <Sparkles className="size-3.5 text-brand" /> {t("auth.login.demo")}
           </p>
           <div className="mt-3 grid grid-cols-3 gap-2">
             {DEMO_ACCOUNTS.map((a) => (
@@ -123,11 +119,11 @@ export function LoginForm() {
                   form.setValue("password", DEMO_PASSWORD, { shouldValidate: true });
                 }}
               >
-                {a.label}
+                {t(`roles.${a.role}`)}
               </Button>
             ))}
           </div>
-          <p className="mt-2 text-[11px] text-muted-foreground">Fills the form with the seeded credentials.</p>
+          <p className="mt-2 text-[11px] text-muted-foreground">{t("auth.login.demoHint")}</p>
         </div>
       )}
     </>

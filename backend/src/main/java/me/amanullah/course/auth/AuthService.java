@@ -4,7 +4,9 @@ import me.amanullah.course.common.exception.BadRequestException;
 import me.amanullah.course.common.exception.ConflictException;
 import me.amanullah.course.common.exception.ForbiddenException;
 import me.amanullah.course.common.exception.UnauthorizedException;
+import me.amanullah.course.common.i18n.I18nConfig;
 import me.amanullah.course.common.util.Tokens;
+import org.springframework.context.i18n.LocaleContextHolder;
 import me.amanullah.course.config.AppProperties;
 import me.amanullah.course.notification.EmailTemplates;
 import me.amanullah.course.notification.MailService;
@@ -70,7 +72,9 @@ public class AuthService {
         if (users.existsByEmailIgnoreCase(email)) {
             throw new ConflictException("EMAIL_TAKEN", "An account with this e-mail address already exists");
         }
-        User user = users.save(new User(req.fullName().trim(), email, passwordEncoder.encode(req.password()), req.role()));
+        User newUser = new User(req.fullName().trim(), email, passwordEncoder.encode(req.password()), req.role());
+        newUser.setLocale(req.locale() != null ? req.locale() : I18nConfig.toTag(LocaleContextHolder.getLocale()));
+        User user = users.save(newUser);
         sendVerification(user);
     }
 
@@ -122,7 +126,7 @@ public class AuthService {
         users.findByEmailIgnoreCase(normalizeEmail(email)).filter(User::isEnabled).ifPresent(user -> {
             String raw = createToken(user, TokenType.PASSWORD_RESET, props.auth().passwordResetTtl());
             String link = props.frontendUrl() + "/reset-password?token=" + raw;
-            mail.send(user.getEmail(), templates.passwordReset(user.getFullName(), link));
+            mail.send(user.getEmail(), templates.passwordReset(user, link));
         });
     }
 
@@ -145,7 +149,7 @@ public class AuthService {
     private void sendVerification(User user) {
         String raw = createToken(user, TokenType.EMAIL_VERIFY, props.auth().emailVerificationTtl());
         String link = props.frontendUrl() + "/verify-email?token=" + raw;
-        mail.send(user.getEmail(), templates.verifyEmail(user.getFullName(), link));
+        mail.send(user.getEmail(), templates.verifyEmail(user, link));
     }
 
     private String createToken(User user, TokenType type, Duration ttl) {

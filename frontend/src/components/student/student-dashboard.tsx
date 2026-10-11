@@ -4,8 +4,9 @@ import * as React from "react";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Compass, GraduationCap, Hourglass, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import type { StudentEnrollmentDto } from "@/lib/api/types";
-import { formatDate, formatRelative } from "@/lib/dates";
+import { useFormat } from "@/hooks/use-format";
 import { useMyEnrollments, useWithdraw } from "@/hooks/queries/student";
 import { useAuth } from "@/providers/auth-provider";
 import { PageContainer, PageHeader } from "@/components/layout/page-header";
@@ -20,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/ui/stat-card";
 
 function ContinueCard({ enrollment }: { enrollment: StudentEnrollmentDto }) {
+  const t = useTranslations("student");
   const { course } = enrollment;
   const progress = Math.round(enrollment.progressPercent ?? 0);
   return (
@@ -31,18 +33,18 @@ function ContinueCard({ enrollment }: { enrollment: StudentEnrollmentDto }) {
       <div className="flex flex-1 flex-col gap-4 p-4">
         <div>
           <h3 className="line-clamp-1 font-semibold">{course.title}</h3>
-          <p className="text-xs text-muted-foreground">with {course.instructor.fullName}</p>
+          <p className="text-xs text-muted-foreground">{t("withInstructor", { name: course.instructor.fullName })}</p>
         </div>
         <div className="mt-auto grid gap-1.5">
           <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">{progress === 100 ? "Completed" : progress === 0 ? "Not started" : "In progress"}</span>
+            <span className="text-muted-foreground">{progress === 100 ? t("completed") : progress === 0 ? t("notStarted") : t("inProgress")}</span>
             <span className="font-medium tabular-nums">{progress}%</span>
           </div>
           <Progress value={progress} indicatorClassName={progress === 100 ? "bg-success" : undefined} />
         </div>
         <Button asChild size="sm" variant={progress === 0 ? "default" : "outline"}>
           <Link href={`/learn/${course.id}`}>
-            {progress === 0 ? "Start course" : progress === 100 ? "Review course" : "Continue learning"} <ArrowRight />
+            {progress === 0 ? t("start") : progress === 100 ? t("review") : t("continue")} <ArrowRight />
           </Link>
         </Button>
       </div>
@@ -51,6 +53,8 @@ function ContinueCard({ enrollment }: { enrollment: StudentEnrollmentDto }) {
 }
 
 function ApplicationRow({ enrollment, onWithdraw }: { enrollment: StudentEnrollmentDto; onWithdraw: (e: StudentEnrollmentDto) => void }) {
+  const t = useTranslations("student");
+  const fmt = useFormat();
   const { course } = enrollment;
   return (
     <li className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
@@ -65,28 +69,28 @@ function ApplicationRow({ enrollment, onWithdraw }: { enrollment: StudentEnrollm
           <EnrollmentStatusBadge status={enrollment.status} />
         </div>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Applied {formatDate(enrollment.appliedAt)}
-          {enrollment.decidedAt && ` · decided ${formatRelative(enrollment.decidedAt)}`}
+          {t("appliedOn", { date: fmt.date(enrollment.appliedAt) })}
+          {enrollment.decidedAt && ` · ${t("decided", { when: fmt.relative(enrollment.decidedAt) })}`}
           {enrollment.status === "PENDING" && enrollment.waitlistPosition != null && (
             <>
               {" "}
-              · <span className="font-medium text-foreground">#{enrollment.waitlistPosition} on the waiting list</span>
+              · <span className="font-medium text-foreground">{t("waitlist", { position: enrollment.waitlistPosition })}</span>
             </>
           )}
         </p>
         {enrollment.decisionReason && (enrollment.status === "REJECTED" || enrollment.status === "REVOKED") && (
-          <p className="mt-1.5 text-[13px] text-muted-foreground italic">“{enrollment.decisionReason}”</p>
+          <p className="mt-1.5 text-[13px] text-muted-foreground italic">„{enrollment.decisionReason}“</p>
         )}
       </div>
       <div className="flex shrink-0 gap-2">
         {enrollment.status === "PENDING" && (
           <Button variant="ghost" size="sm" onClick={() => onWithdraw(enrollment)}>
-            Withdraw
+            {t("withdraw")}
           </Button>
         )}
         {(enrollment.status === "REJECTED" || enrollment.status === "WITHDRAWN" || enrollment.status === "REVOKED") && (
           <Button variant="outline" size="sm" asChild>
-            <Link href={`/courses/${course.slug}`}>Apply again</Link>
+            <Link href={`/courses/${course.slug}`}>{t("applyAgain")}</Link>
           </Button>
         )}
       </div>
@@ -95,6 +99,7 @@ function ApplicationRow({ enrollment, onWithdraw }: { enrollment: StudentEnrollm
 }
 
 export function StudentDashboard() {
+  const t = useTranslations("student");
   const { user } = useAuth();
   const enrollments = useMyEnrollments();
   const withdraw = useWithdraw();
@@ -110,22 +115,22 @@ export function StudentDashboard() {
   return (
     <PageContainer>
       <PageHeader
-        eyebrow="My learning"
-        title={`Hallo, ${firstName}!`}
-        description="Pick up where you left off, or find a new course for your level."
+        eyebrow={t("eyebrow")}
+        title={t("hello", { name: firstName })}
+        description={t("intro")}
         actions={
           <Button variant="outline" asChild>
             <Link href="/courses">
-              <Compass /> Browse courses
+              <Compass /> {t("browse")}
             </Link>
           </Button>
         }
       />
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
-        <StatCard label="Active courses" value={active.length} icon={BookOpen} loading={enrollments.isPending} accent="brand" />
-        <StatCard label="Pending applications" value={pending} icon={Hourglass} loading={enrollments.isPending} accent="info" />
-        <StatCard label="Average progress" value={`${avg}%`} icon={TrendingUp} loading={enrollments.isPending} accent="success" />
+        <StatCard label={t("activeCourses")} value={active.length} icon={BookOpen} loading={enrollments.isPending} accent="brand" />
+        <StatCard label={t("pendingApplications")} value={pending} icon={Hourglass} loading={enrollments.isPending} accent="info" />
+        <StatCard label={t("avgProgress")} value={`${avg}%`} icon={TrendingUp} loading={enrollments.isPending} accent="success" />
       </div>
 
       {enrollments.isError ? (
@@ -134,7 +139,7 @@ export function StudentDashboard() {
         <>
           <section className="mt-10" aria-labelledby="continue">
             <h2 id="continue" className="text-lg font-semibold tracking-tight">
-              Continue learning
+              {t("continueLearning")}
             </h2>
             <div className="mt-4">
               {enrollments.isPending ? (
@@ -146,15 +151,11 @@ export function StudentDashboard() {
               ) : active.length === 0 ? (
                 <EmptyState
                   icon={GraduationCap}
-                  title="No active courses yet"
-                  description={
-                    pending > 0
-                      ? "Your applications are being reviewed. You'll get a notification as soon as you're accepted."
-                      : "Find a course that matches your level and apply. Most instructors respond within a few days."
-                  }
+                  title={t("noActiveTitle")}
+                  description={pending > 0 ? t("noActivePending") : t("noActiveText")}
                   action={
                     <Button asChild>
-                      <Link href="/courses">Find a course</Link>
+                      <Link href="/courses">{t("findCourse")}</Link>
                     </Button>
                   }
                 />
@@ -171,7 +172,7 @@ export function StudentDashboard() {
           {applications.length > 0 && (
             <section className="mt-12" aria-labelledby="applications">
               <h2 id="applications" className="text-lg font-semibold tracking-tight">
-                Applications
+                {t("applications")}
               </h2>
               <ul className="mt-4 divide-y rounded-xl border bg-card">
                 {applications.map((e) => (
@@ -186,16 +187,16 @@ export function StudentDashboard() {
       <ConfirmDialog
         open={!!toWithdraw}
         onOpenChange={(o) => !o && setToWithdraw(null)}
-        title="Withdraw application?"
-        description={toWithdraw ? `You'll leave the waiting list for “${toWithdraw.course.title}”.` : undefined}
-        confirmLabel="Withdraw"
+        title={t("withdrawTitle")}
+        description={toWithdraw ? t("withdrawText", { title: toWithdraw.course.title }) : undefined}
+        confirmLabel={t("withdraw")}
         destructive
         loading={withdraw.isPending}
         onConfirm={() => {
           if (!toWithdraw) return;
           withdraw.mutate(toWithdraw.id, {
             onSuccess: () => {
-              toast.success("Application withdrawn");
+              toast.success(t("withdrawn"));
               setToWithdraw(null);
             },
           });

@@ -4,11 +4,11 @@ import * as React from "react";
 import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider, useTheme } from "next-themes";
-import { Toaster } from "sonner";
-import { getErrorMessage, isApiError } from "@/lib/api/client";
+import { Toaster, toast } from "sonner";
+import { isApiError, setApiLocale } from "@/lib/api/client";
+import { useErrorMessage } from "@/hooks/use-error-message";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "./auth-provider";
-import { toast } from "sonner";
 
 declare module "@tanstack/react-query" {
   interface Register {
@@ -16,22 +16,24 @@ declare module "@tanstack/react-query" {
   }
 }
 
-function makeQueryClient() {
+function makeQueryClient(onMutationError: (error: unknown) => void) {
   return new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 30_000,
         refetchOnWindowFocus: false,
+        throwOnError: false,
         retry: (failureCount, error) => {
           if (isApiError(error) && error.status >= 400 && error.status < 500) return false;
           return failureCount < 2;
         },
       },
+      mutations: { throwOnError: false },
     },
     mutationCache: new MutationCache({
       onError: (error, _variables, _context, mutation) => {
         if (mutation.meta?.suppressErrorToast) return;
-        toast.error(getErrorMessage(error));
+        onMutationError(error);
       },
     }),
   });
@@ -50,8 +52,20 @@ function ThemedToaster() {
   );
 }
 
-export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = React.useState(makeQueryClient);
+export function Providers({ children, locale }: { children: React.ReactNode; locale: string }) {
+  const errorMessage = useErrorMessage();
+  const errorRef = React.useRef(errorMessage);
+  React.useEffect(() => {
+    errorRef.current = errorMessage;
+  });
+  const [queryClient] = React.useState(() => {
+    setApiLocale(locale);
+    return makeQueryClient((error) => toast.error(errorRef.current(error)));
+  });
+  React.useEffect(() => {
+    setApiLocale(locale);
+  }, [locale]);
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <QueryClientProvider client={queryClient}>

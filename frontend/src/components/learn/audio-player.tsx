@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Download, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 const SPEEDS = [0.75, 1, 1.25, 1.5] as const;
@@ -27,6 +28,7 @@ export function AudioPlayer({
   compact?: boolean;
   className?: string;
 }) {
+  const t = useTranslations("audio");
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = React.useState(false);
   const [current, setCurrent] = React.useState(0);
@@ -84,7 +86,7 @@ export function AudioPlayer({
           onClick={toggle}
           disabled={error}
           className="grid size-11 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition-transform hover:scale-105 active:scale-95 disabled:opacity-50"
-          aria-label={playing ? "Pause" : "Play"}
+          aria-label={playing ? t("pause") : t("play")}
         >
           {playing ? <Pause className="size-5" /> : <Play className="ml-0.5 size-5" />}
         </button>
@@ -106,8 +108,8 @@ export function AudioPlayer({
                 if (audioRef.current) audioRef.current.currentTime = t;
               }}
               className="relative h-5 w-full cursor-pointer appearance-none bg-transparent [&::-moz-range-thumb]:size-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-foreground [&::-webkit-slider-thumb]:size-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-foreground [&::-webkit-slider-thumb]:shadow"
-              aria-label="Seek"
-              aria-valuetext={`${fmt(current)} of ${fmt(duration)}`}
+              aria-label={t("seek")}
+              aria-valuetext={t("of", { current: fmt(current), total: fmt(duration) })}
             />
           </div>
           <div className="mt-0.5 flex justify-between text-[11px] text-muted-foreground tabular-nums">
@@ -118,10 +120,10 @@ export function AudioPlayer({
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1">
-          <button type="button" onClick={() => skip(-5)} className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Back 5 seconds">
+          <button type="button" onClick={() => skip(-5)} className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground" aria-label={t("back5")}>
             <RotateCcw className="size-3.5" /> 5s
           </button>
-          <button type="button" onClick={() => skip(5)} className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Forward 5 seconds">
+          <button type="button" onClick={() => skip(5)} className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground" aria-label={t("forward5")}>
             5s <RotateCw className="size-3.5" />
           </button>
           <button
@@ -131,12 +133,12 @@ export function AudioPlayer({
               if (audioRef.current) audioRef.current.muted = !muted;
             }}
             className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-            aria-label={muted ? "Unmute" : "Mute"}
+            aria-label={muted ? t("unmute") : t("mute")}
           >
             {muted ? <VolumeX className="size-3.5" /> : <Volume2 className="size-3.5" />}
           </button>
         </div>
-        <div className="flex items-center gap-1" role="radiogroup" aria-label="Playback speed">
+        <div className="flex items-center gap-1" role="radiogroup" aria-label={t("speed")}>
           {SPEEDS.map((s) => (
             <button
               key={s}
@@ -153,13 +155,13 @@ export function AudioPlayer({
             </button>
           ))}
           {downloadHref && (
-            <a href={downloadHref} className="ml-1 rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Download audio">
+            <a href={downloadHref} className="ml-1 rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label={t("download")}>
               <Download className="size-3.5" />
             </a>
           )}
         </div>
       </div>
-      {error && <p className="mt-2 text-xs text-destructive">This audio file could not be loaded.</p>}
+      {error && <p className="mt-2 text-xs text-destructive">{t("error")}</p>}
     </div>
   );
 }

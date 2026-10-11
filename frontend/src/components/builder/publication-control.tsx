@@ -3,8 +3,9 @@
 import * as React from "react";
 import { CalendarClock, ChevronDown, EyeOff, Rocket } from "lucide-react";
 import type { PublicationRequest, Publishable } from "@/lib/api/types";
-import { VISIBILITY_META } from "@/lib/constants";
-import { formatDateTime, timeZoneName } from "@/lib/dates";
+import { useTranslations } from "next-intl";
+import { timeZoneName } from "@/lib/dates";
+import { useFormat } from "@/hooks/use-format";
 import { cn } from "@/lib/utils";
 import { VisibilityBadge } from "@/components/course/badges";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip } from "@/components/ui/tooltip";
 
 type Mode = "DRAFT" | "NOW" | "SCHEDULE";
+export type EntityKind = "course" | "module" | "lesson" | "item";
 
 function initialMode(entity: Publishable): Mode {
   if (entity.publishStatus === "DRAFT") return "DRAFT";
@@ -30,11 +32,12 @@ export function PublicationForm({
   onDone,
 }: {
   entity: Publishable;
-  entityLabel: string;
+  entityLabel: EntityKind;
   onSubmit: (body: PublicationRequest) => Promise<unknown>;
   pending?: boolean;
   onDone?: () => void;
 }) {
+  const t = useTranslations("publication");
   const [mode, setMode] = React.useState<Mode>(() => initialMode(entity));
   const [publishAt, setPublishAt] = React.useState<string | null>(entity.publishAt);
   const [unpublishAt, setUnpublishAt] = React.useState<string | null>(entity.unpublishAt);
@@ -43,10 +46,10 @@ export function PublicationForm({
 
   const submit = async () => {
     setError(null);
-    if (mode === "SCHEDULE" && !publishAt) return setError("Choose when this should go live.");
-    if (mode !== "DRAFT" && withEnd && !unpublishAt) return setError("Choose when this should be unpublished, or turn the end date off.");
+    if (mode === "SCHEDULE" && !publishAt) return setError(t("errPublishAt"));
+    if (mode !== "DRAFT" && withEnd && !unpublishAt) return setError(t("errUnpublishAt"));
     if (mode === "SCHEDULE" && withEnd && publishAt && unpublishAt && unpublishAt <= publishAt) {
-      return setError("The unpublish date must be after the publish date.");
+      return setError(t("errOrder"));
     }
     const body: PublicationRequest =
       mode === "DRAFT"
@@ -65,14 +68,14 @@ export function PublicationForm({
   };
 
   const options: { value: Mode; label: string; icon: React.ReactNode; hint: string }[] = [
-    { value: "DRAFT", label: "Draft", icon: <EyeOff />, hint: "Hidden from learners" },
-    { value: "NOW", label: "Publish now", icon: <Rocket />, hint: "Visible immediately" },
-    { value: "SCHEDULE", label: "Schedule", icon: <CalendarClock />, hint: "Goes live at a set time" },
+    { value: "DRAFT", label: t("draft"), icon: <EyeOff />, hint: t("draftHint") },
+    { value: "NOW", label: t("now"), icon: <Rocket />, hint: t("nowHint") },
+    { value: "SCHEDULE", label: t("schedule"), icon: <CalendarClock />, hint: t("scheduleHint") },
   ];
 
   return (
     <div className="grid gap-4">
-      <div role="radiogroup" aria-label={`${entityLabel} visibility`} className="grid grid-cols-3 gap-1.5">
+      <div role="radiogroup" aria-label={t("visibilityGroup", { entity: t(`entity.${entityLabel}`) })} className="grid grid-cols-3 gap-1.5">
         {options.map((o) => (
           <button
             key={o.value}
@@ -94,7 +97,7 @@ export function PublicationForm({
 
       {mode === "SCHEDULE" && (
         <div className="grid gap-1.5">
-          <Label htmlFor="publish-at">Publish at</Label>
+          <Label htmlFor="publish-at">{t("publishAt")}</Label>
           <DateTimePicker id="publish-at" value={publishAt} onChange={setPublishAt} clearable={false} />
         </div>
       )}
@@ -103,22 +106,22 @@ export function PublicationForm({
         <div className="grid gap-2 rounded-lg border bg-muted/30 p-3">
           <div className="flex items-center justify-between gap-2">
             <Label htmlFor="with-end" className="text-[13px]">
-              Unpublish automatically
+              {t("autoUnpublish")}
             </Label>
             <Switch id="with-end" checked={withEnd} onCheckedChange={setWithEnd} />
           </div>
-          {withEnd && <DateTimePicker id="unpublish-at" value={unpublishAt} onChange={setUnpublishAt} aria-label="Unpublish at" />}
+          {withEnd && <DateTimePicker id="unpublish-at" value={unpublishAt} onChange={setUnpublishAt} aria-label={t("unpublishAt")} />}
         </div>
       )}
 
-      <p className="text-[11px] text-muted-foreground">Times are in your time zone ({timeZoneName()}).</p>
+      <p className="text-[11px] text-muted-foreground">{t("timezone", { tz: timeZoneName() })}</p>
       {error && (
         <p role="alert" className="text-xs text-destructive">
           {error}
         </p>
       )}
       <Button onClick={submit} loading={pending}>
-        {mode === "DRAFT" ? "Save as draft" : mode === "NOW" ? "Publish" : "Schedule"}
+        {mode === "DRAFT" ? t("saveDraft") : mode === "NOW" ? t("publish") : t("doSchedule")}
       </Button>
     </div>
   );
@@ -134,19 +137,23 @@ export function PublicationPopover({
   align = "end",
 }: {
   entity: Publishable;
-  entityLabel: string;
+  entityLabel: EntityKind;
   onSubmit: (body: PublicationRequest) => Promise<unknown>;
   pending?: boolean;
   trigger?: "badge" | "icon" | "button";
   align?: "start" | "center" | "end";
 }) {
+  const t = useTranslations();
+  const fmt = useFormat();
   const [open, setOpen] = React.useState(false);
+  const entityName = t(`publication.entity.${entityLabel}`);
+  const status = t(`visibility.${entity.visibility}.label`);
   return (
     <Popover open={open} onOpenChange={setOpen}>
       {trigger === "icon" ? (
-        <Tooltip content="Publish / schedule">
+        <Tooltip content={t("publication.popoverTrigger")}>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon-xs" aria-label={`Schedule ${entityLabel}`}>
+            <Button variant="ghost" size="icon-xs" aria-label={t("publication.scheduleEntity", { entity: entityName })}>
               <CalendarClock />
             </Button>
           </PopoverTrigger>
@@ -154,24 +161,24 @@ export function PublicationPopover({
       ) : trigger === "button" ? (
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm">
-            <CalendarClock /> Publish settings <ChevronDown className="opacity-60" />
+            <CalendarClock /> {t("publication.settings")} <ChevronDown className="opacity-60" />
           </Button>
         </PopoverTrigger>
       ) : (
         <PopoverTrigger
           className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label={`${entityLabel} status: ${VISIBILITY_META[entity.visibility].label}. Change publication`}
+          aria-label={t("publication.statusLabel", { entity: entityName, status })}
         >
           <VisibilityBadge visibility={entity.visibility} publishAt={entity.publishAt} unpublishAt={entity.unpublishAt} compact className="cursor-pointer hover:brightness-95" />
         </PopoverTrigger>
       )}
       <PopoverContent align={align} className="w-80">
         <div className="mb-4 grid gap-1">
-          <p className="text-sm font-semibold">Publish {entityLabel}</p>
+          <p className="text-sm font-semibold">{t("publication.title", { entity: entityName })}</p>
           <p className="text-xs text-muted-foreground">
-            Currently <span className="font-medium text-foreground">{VISIBILITY_META[entity.visibility].label}</span>
-            {entity.publishAt && ` · live from ${formatDateTime(entity.publishAt)}`}
-            {entity.unpublishAt && ` · until ${formatDateTime(entity.unpublishAt)}`}
+            {t.rich("publication.currently", { status, b: (c) => <span className="font-medium text-foreground">{c}</span> })}
+            {entity.publishAt && t("publication.liveFrom", { date: fmt.dateTime(entity.publishAt) })}
+            {entity.unpublishAt && t("publication.liveUntil", { date: fmt.dateTime(entity.unpublishAt) })}
           </p>
         </div>
         {open && <PublicationForm entity={entity} entityLabel={entityLabel} onSubmit={onSubmit} pending={pending} onDone={() => setOpen(false)} />}
@@ -192,14 +199,15 @@ export function PublishSwitch({
   onSubmit: (body: PublicationRequest) => void;
   disabled?: boolean;
 }) {
+  const t = useTranslations("publication");
   const published = entity.publishStatus === "PUBLISHED";
   return (
-    <Tooltip content={published ? "Published: click to move back to draft" : "Draft: click to publish"}>
+    <Tooltip content={published ? t("switchPublished") : t("switchDraft")}>
       <span className="inline-flex">
         <Switch
           checked={published}
           disabled={disabled}
-          aria-label={`${published ? "Unpublish" : "Publish"} ${entityLabel}`}
+          aria-label={published ? t("switchLabelOn", { name: entityLabel }) : t("switchLabelOff", { name: entityLabel })}
           onCheckedChange={(checked) =>
             onSubmit({
               publishStatus: checked ? "PUBLISHED" : "DRAFT",
