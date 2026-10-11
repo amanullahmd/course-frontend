@@ -45,11 +45,11 @@ export function Hero() {
         <div className="animate-slide-up">
           <Link
             href="/courses"
-            className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-xs transition-colors hover:text-foreground"
+            className="inline-flex max-w-full items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-xs transition-colors hover:text-foreground"
           >
-            <span className="rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-brand-strong">NEU</span>
-            Courses from A1 to C2 are open for applications
-            <ArrowRight className="size-3" />
+            <span className="shrink-0 rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-brand-strong">NEU</span>
+            <span className="truncate">Courses from A1 to C2 are open for applications</span>
+            <ArrowRight className="size-3 shrink-0" />
           </Link>
           <h1 className="mt-6 text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
             Teach German your way.

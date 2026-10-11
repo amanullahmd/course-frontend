@@ -9,7 +9,7 @@ import type { MediaDto, QuestionDto, QuestionOptionDto, QuestionType } from "@/l
 import { getErrorMessage } from "@/lib/api/client";
 import { mediaApi } from "@/lib/api/media";
 import { QUESTION_TYPES, QUESTION_TYPE_META } from "@/lib/constants";
-import { cn, pluralize } from "@/lib/utils";
+import { cn, pluralize, stripHtml } from "@/lib/utils";
 import { AudioPlayer } from "@/components/learn/audio-player";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -204,7 +204,7 @@ export function QuestionEditor({
           <span className="grid size-7 shrink-0 place-items-center rounded-md bg-muted text-xs font-semibold tabular-nums">{index + 1}</span>
           <Icon className="size-4 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1">
-            <span className={cn("block truncate text-sm font-medium", !q.prompt && "text-muted-foreground italic")}>{q.prompt || "New question"}</span>
+            <span className={cn("block truncate text-sm font-medium", !q.prompt && "text-muted-foreground italic")}>{stripHtml(q.prompt) || "New question"}</span>
             <span className="block text-xs text-muted-foreground">
               {QUESTION_TYPE_META[q.type].label} · {pluralize(q.points, "pt")}
               {error && <span className="text-destructive"> · {error}</span>}

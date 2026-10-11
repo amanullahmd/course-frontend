@@ -36,6 +36,10 @@ import { Tooltip } from "@/components/ui/tooltip";
 const EMPTY = "<p></p>";
 const normalize = (html: string) => (html === EMPTY ? "" : html);
 
+function Sep() {
+  return <span className="mx-1 h-5 w-px bg-border" aria-hidden />;
+}
+
 function ToolButton({
   label,
   active,
@@ -145,7 +149,6 @@ function Toolbar({ editor }: { editor: Editor }) {
     }),
   });
   const chain = () => editor.chain().focus();
-  const Sep = () => <span className="mx-1 h-5 w-px bg-border" aria-hidden />;
 
   return (
     <div role="toolbar" aria-label="Formatting" className="sticky top-14 z-10 flex flex-wrap items-center gap-0.5 rounded-t-xl border-b bg-card/95 p-1.5 backdrop-blur">

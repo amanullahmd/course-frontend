@@ -64,6 +64,15 @@ asynchronously through Spring Mail.
 | Docker Compose (local) | Mailpit catch-all SMTP, UI at http://localhost:8025 | `MAIL_HOST=mailpit`, `MAIL_PORT=1025` |
 | `prod` | **Resend SMTP** | host `smtp.resend.com`, port `587` (STARTTLS) or `465` (SSL), username `resend`, password = `RESEND_API_KEY`, sender `MAIL_FROM` on a domain verified in Resend |
 
+### 5.2 Domains & naming
+
+| Item | Value |
+|---|---|
+| Frontend (Next.js) | `https://course.amanullah.me` |
+| Backend API (Spring Boot) | `https://api.course.amanullah.me` (same site as the frontend, so the `SameSite=Lax` refresh cookie works) |
+| Java base package / Maven groupId | `me.amanullah.course` (reverse domain of `course.amanullah.me`) |
+| E-mail sender | `no-reply@course.amanullah.me` (domain verified in Resend) |
+
 ## 6. REST API contract (base `/api`)
 
 Conventions: JSON, UUID ids, ISO-8601 UTC instants, errors as `ProblemDetail`

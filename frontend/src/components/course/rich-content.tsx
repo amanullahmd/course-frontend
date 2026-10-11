@@ -21,3 +21,10 @@ export function RichContent({ html, className }: { html: string | null | undefin
   }
   return <div className={cn("prose-sw", className)} dangerouslySetInnerHTML={{ __html: html }} />;
 }
+
+/** Short server-sanitised HTML (e.g. question prompts) rendered inline; plain text keeps line breaks. */
+export function InlineHtml({ html, className }: { html: string | null | undefined; className?: string }) {
+  if (!html) return null;
+  if (!looksLikeHtml(html)) return <span className={cn("whitespace-pre-line", className)}>{html}</span>;
+  return <span className={cn("[&_p]:inline [&_strong]:font-semibold", className)} dangerouslySetInnerHTML={{ __html: html }} />;
+}

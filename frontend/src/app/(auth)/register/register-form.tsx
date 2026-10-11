@@ -50,7 +50,7 @@ export function RegisterForm() {
       router.push(`/check-email?email=${encodeURIComponent(values.email)}`);
     } catch (err) {
       const mapped = applyServerErrors(err, form.setError, ["fullName", "email", "password", "role"]);
-      if (isApiError(err) && err.status === 409) {
+      if (isApiError(err) && (err.status === 409 || err.code === "EMAIL_TAKEN")) {
         form.setError("email", { message: "An account with this e-mail already exists." });
       } else if (!mapped) {
         setError(getErrorMessage(err));

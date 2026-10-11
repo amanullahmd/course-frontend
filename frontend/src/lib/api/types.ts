@@ -65,6 +65,7 @@ export interface UserDto {
   emailVerified: boolean;
   bio: string | null;
   avatarUrl: string | null;
+  avatarMediaId?: Uuid | null;
   createdAt: Instant;
 }
 
@@ -113,6 +114,8 @@ export interface MediaDto {
   kind: MediaKind;
   /** Absolute, signed, time-limited URL. */
   url: string;
+  /** Same as `url` but forces a download (backend extension). */
+  downloadUrl?: string;
   createdAt: Instant;
 }
 
@@ -372,6 +375,8 @@ export interface AttemptSummaryDto {
   percent: number | null;
   passed: boolean | null;
   pendingManualGrading: boolean;
+  /** Submitted after the deadline (backend extension). */
+  late?: boolean;
 }
 
 export interface AttemptAnswerOption {
@@ -392,6 +397,8 @@ export interface AttemptAnswerResult {
   feedback: string | null;
   options?: AttemptAnswerOption[] | null;
   acceptedAnswers?: string[] | null;
+  explanation?: string | null;
+  media?: MediaDto | null;
 }
 
 export interface AttemptResultDto extends AttemptSummaryDto {

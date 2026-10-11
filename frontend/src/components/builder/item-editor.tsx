@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -96,12 +96,26 @@ function EditorSkeleton() {
   );
 }
 
-function ItemEditorLoaded({ item, courseTitle, moduleTitle }: { item: ContentItemDto; courseTitle?: string; moduleTitle?: string }) {
+type EditorTab = "content" | "assessment" | "submissions";
+
+function ItemEditorLoaded({
+  item,
+  courseTitle,
+  moduleTitle,
+  initialTab,
+  initialAttemptId,
+}: {
+  item: ContentItemDto;
+  courseTitle?: string;
+  moduleTitle?: string;
+  initialTab: EditorTab;
+  initialAttemptId: string | null;
+}) {
   const router = useRouter();
   const update = useUpdateItem(item.courseId);
   const publish = usePublishItem(item.courseId);
   const del = useDeleteItem(item.courseId);
-  const [tab, setTab] = React.useState<"content" | "assessment" | "submissions">("content");
+  const [tab, setTab] = React.useState<EditorTab>(isAssessmentType(item.type) ? initialTab : "content");
   const [assessmentDirty, setAssessmentDirty] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
 
@@ -183,7 +197,7 @@ function ItemEditorLoaded({ item, courseTitle, moduleTitle }: { item: ContentIte
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="min-w-0">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as EditorTab)} className="min-w-0">
           <TabsList variant="underline">
             <TabsTrigger value="content">
               <FileText /> Content {isDirty && <span className="size-1.5 rounded-full bg-brand" aria-label="unsaved" />}
@@ -315,7 +329,7 @@ function ItemEditorLoaded({ item, courseTitle, moduleTitle }: { item: ContentIte
                 )}
               </TabsContent>
               <TabsContent value="submissions" className="mt-6">
-                {assessmentSaved ? <SubmissionsPanel itemId={item.id} /> : null}
+                {assessmentSaved ? <SubmissionsPanel itemId={item.id} initialAttemptId={initialAttemptId} /> : null}
               </TabsContent>
             </>
           )}
@@ -394,6 +408,10 @@ export function ItemEditor() {
   const { courseId, itemId } = useParams<{ courseId: string; itemId: string }>();
   const item = useInstructorItem(itemId);
   const course = useInstructorCourse(courseId);
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const initialTab: EditorTab = tabParam === "assessment" || tabParam === "submissions" ? tabParam : "content";
+  const initialAttemptId = searchParams.get("attempt");
 
   if (item.isPending) return <EditorSkeleton />;
   if (item.isError) {
@@ -418,5 +436,13 @@ export function ItemEditor() {
     );
   }
   const moduleTitle = course.data?.modules.find((m) => m.id === item.data.moduleId)?.title;
-  return <ItemEditorLoaded item={item.data} courseTitle={course.data?.title} moduleTitle={moduleTitle} />;
+  return (
+    <ItemEditorLoaded
+      item={item.data}
+      courseTitle={course.data?.title}
+      moduleTitle={moduleTitle}
+      initialTab={initialTab}
+      initialAttemptId={initialAttemptId}
+    />
+  );
 }

@@ -10,7 +10,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>de.sprachweg</groupId>
+    <groupId>me.amanullah.course</groupId>
     <artifactId>sprachweg-backend</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>

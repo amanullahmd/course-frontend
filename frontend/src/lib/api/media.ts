@@ -8,7 +8,8 @@ export const mediaApi = {
 };
 
 /** Signed media URL that forces a download (Content-Disposition: attachment). */
-export function downloadUrl(media: Pick<MediaDto, "url">): string {
+export function downloadUrl(media: Pick<MediaDto, "url" | "downloadUrl">): string {
+  if (media.downloadUrl) return media.downloadUrl;
   try {
     const url = new URL(media.url);
     url.searchParams.set("download", "true");

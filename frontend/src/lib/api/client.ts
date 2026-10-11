@@ -5,6 +5,25 @@ export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:808
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
+/** Friendly copy for the backend's machine-readable error codes. */
+export const ERROR_MESSAGES: Record<string, string> = {
+  EMAIL_TAKEN: "An account with this e-mail already exists.",
+  INVALID_TOKEN: "This link is invalid. Please request a new one.",
+  TOKEN_USED: "This link has already been used.",
+  TOKEN_EXPIRED: "This link has expired. Please request a new one.",
+  INVALID_CREDENTIALS: "The e-mail or password is incorrect.",
+  ACCOUNT_DISABLED: "This account has been disabled. Please contact support.",
+  EMAIL_NOT_VERIFIED: "Please verify your e-mail address before logging in.",
+  NOT_ENROLLED: "You need an approved enrollment to open this course.",
+  OWN_COURSE: "You can't apply to your own course.",
+  ALREADY_ENROLLED: "You already have an active application or enrollment for this course.",
+  CAPACITY_REACHED: "This course has reached its capacity.",
+  MAX_ATTEMPTS_REACHED: "You've used all your attempts for this assessment.",
+  ASSESSMENT_NOT_AVAILABLE: "This assessment is not available right now.",
+  NO_QUESTIONS: "This assessment doesn't have any questions yet.",
+  FILE_TOO_LARGE: "This file is larger than the allowed maximum.",
+};
+
 export class ApiError extends Error {
   readonly status: number;
   readonly code?: string;
@@ -13,7 +32,8 @@ export class ApiError extends Error {
   readonly fieldErrors: Record<string, string>;
 
   constructor(status: number, problem: ProblemDetail = {}, fallbackMessage?: string) {
-    super(problem.detail || problem.title || fallbackMessage || `Request failed (${status})`);
+    const friendly = problem.code && problem.code !== "VALIDATION_FAILED" ? ERROR_MESSAGES[problem.code] : undefined;
+    super(friendly || problem.detail || problem.title || fallbackMessage || `Request failed (${status})`);
     this.name = "ApiError";
     this.status = status;
     this.code = problem.code;
@@ -47,7 +67,24 @@ let accessTokenExpiresAt = 0;
 let refreshInFlight: Promise<AuthResponse | null> | null = null;
 const listeners = new Set<SessionListener>();
 
+const SESSION_HINT = "sw.hasSession";
+
+/** Non-sensitive hint that a refresh cookie probably exists (avoids a 401 for anonymous visitors). */
+export function hasSessionHint(): boolean {
+  try {
+    return window.localStorage.getItem(SESSION_HINT) === "1";
+  } catch {
+    return true;
+  }
+}
+
 export function setSession(session: AuthResponse | null): void {
+  try {
+    if (session) window.localStorage.setItem(SESSION_HINT, "1");
+    else window.localStorage.removeItem(SESSION_HINT);
+  } catch {
+    /* storage unavailable */
+  }
   accessToken = session?.accessToken ?? null;
   accessTokenExpiresAt = session ? Date.now() + Math.max(0, session.expiresIn) * 1000 : 0;
   listeners.forEach((listener) => listener(session));

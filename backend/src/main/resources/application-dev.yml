@@ -15,4 +15,4 @@ app:
 
 logging:
   level:
-    de.sprachweg: DEBUG
+    me.amanullah.course: DEBUG

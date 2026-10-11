@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { authApi } from "@/lib/api/auth";
-import { onSessionChange, refreshSession, setSession } from "@/lib/api/client";
+import { hasSessionHint, onSessionChange, refreshSession, setSession } from "@/lib/api/client";
 import { meApi } from "@/lib/api/me";
 import type { AuthResponse, RegisterRequest, UserDto } from "@/lib/api/types";
 
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserState(session?.user ?? null);
       setStatus(session ? "authenticated" : "unauthenticated");
     });
-    bootstrap ??= refreshSession();
+    bootstrap ??= hasSessionHint() ? refreshSession() : Promise.resolve(null);
     let active = true;
     bootstrap.then((session) => {
       if (!active) return;

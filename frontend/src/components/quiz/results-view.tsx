@@ -6,6 +6,7 @@ import { QUESTION_TYPE_META } from "@/lib/constants";
 import { formatDateTime } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { InlineHtml } from "@/components/course/rich-content";
 import { ScoreRing } from "./score-ring";
 
 function AnswerReview({ answer, index }: { answer: AttemptAnswerResult; index: number }) {
@@ -20,7 +21,9 @@ function AnswerReview({ answer, index }: { answer: AttemptAnswerResult; index: n
           <p className="text-xs text-muted-foreground">
             Question {index + 1} · {QUESTION_TYPE_META[answer.type].label}
           </p>
-          <p className="mt-1 font-medium whitespace-pre-line">{answer.prompt}</p>
+          <p className="mt-1 font-medium">
+            <InlineHtml html={answer.prompt} />
+          </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           {status === "correct" && (
@@ -88,6 +91,13 @@ function AnswerReview({ answer, index }: { answer: AttemptAnswerResult; index: n
             </div>
           )}
         </div>
+      )}
+
+      {answer.explanation && (
+        <p className="mt-3 rounded-lg bg-muted/50 px-3 py-2 text-[13px] text-muted-foreground">
+          <span className="font-medium text-foreground">Erklärung: </span>
+          {answer.explanation}
+        </p>
       )}
 
       {answer.feedback && (

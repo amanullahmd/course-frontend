@@ -83,10 +83,10 @@ Mailpit, backend and frontend.
 | `DB_USERNAME` / `DB_PASSWORD` | yes | | Database credentials |
 | `JWT_SECRET` | yes | | HMAC secret for access tokens, **≥ 32 characters** |
 | `MEDIA_SECRET` | yes | | HMAC secret for signed media URLs, **≥ 32 characters** |
-| `FRONTEND_URL` | yes | | Public URL of the frontend (used in e-mail links) |
-| `PUBLIC_BASE_URL` | yes | | Public URL of this API (used for absolute media URLs) |
-| `CORS_ORIGINS` | yes | | Comma-separated allowed origins, e.g. `https://sprachweg.de` |
-| `MAIL_FROM` | yes | | Sender, e.g. `Sprachweg <no-reply@yourdomain.com>` (domain must be verified in Resend) |
+| `FRONTEND_URL` | no | `https://course.amanullah.me` | Public URL of the frontend (used in e-mail links) |
+| `PUBLIC_BASE_URL` | no | `https://api.course.amanullah.me` | Public URL of this API (used for absolute media URLs) |
+| `CORS_ORIGINS` | no | `https://course.amanullah.me` | Comma-separated allowed origins |
+| `MAIL_FROM` | no | `Sprachweg <no-reply@course.amanullah.me>` | Sender; the domain (`course.amanullah.me`) must be verified in Resend |
 | `RESEND_API_KEY` | yes* | | Resend API key, used as SMTP password |
 | `MAIL_HOST` | no | `smtp.resend.com` | SMTP host |
 | `MAIL_PORT` | no | `587` | SMTP port (587 = STARTTLS) |
@@ -116,7 +116,7 @@ no auth / TLS); open http://localhost:8025 to read the mails.
 
 ## Configuration reference (`app.*`)
 
-All application settings are bound to `de.sprachweg.config.AppProperties` and validated at startup:
+All application settings are bound to `me.amanullah.course.config.AppProperties` and validated at startup:
 `app.frontend-url`, `app.public-base-url`, `app.jwt.{secret,issuer,access-token-ttl (15m),refresh-token-ttl (14d)}`,
 `app.auth.{email-verification-ttl (24h),password-reset-ttl (1h),refresh-cookie-name,secure-cookie,cookie-same-site}`,
 `app.media.{secret,url-ttl (6h)}`, `app.storage.location`, `app.mail.{enabled,from}`, `app.cors.allowed-origins`,
@@ -125,7 +125,7 @@ All application settings are bound to `de.sprachweg.config.AppProperties` and va
 ## Architecture
 
 ```
-de.sprachweg
+me.amanullah.course
 ├── common        exceptions + RFC 7807 handler, PageResponse, visibility rule, slugs, HTML sanitizer, base entities
 ├── config        AppProperties, clock/async/scheduling, OpenAPI
 ├── security      SecurityFilterChain, JWT (HS256 via Nimbus), CurrentUser

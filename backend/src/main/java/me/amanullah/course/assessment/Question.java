@@ -1,0 +1,91 @@
+package me.amanullah.course.assessment;
+
+import me.amanullah.course.common.persistence.BaseEntity;
+import me.amanullah.course.media.MediaAsset;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.OrderColumn;
+import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+@Entity
+@Table(name = "questions")
+public class Question extends BaseEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "assessment_id", nullable = false)
+    private Assessment assessment;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(name = "question_type", nullable = false, length = 20)
+    private QuestionType type;
+
+    @Column(nullable = false, length = 20000)
+    private String prompt;
+
+    @Column(length = 20000)
+    private String explanation;
+
+    @Column(nullable = false)
+    private int points = 1;
+
+    @Column(name = "sort_order", nullable = false)
+    private int position;
+
+    @Column(name = "case_sensitive", nullable = false)
+    private boolean caseSensitive;
+
+    @ElementCollection
+    @CollectionTable(name = "question_accepted_answers", joinColumns = @JoinColumn(name = "question_id"))
+    @OrderColumn(name = "sort_order")
+    @Column(name = "answer", nullable = false, length = 500)
+    private List<String> acceptedAnswers = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "media_id")
+    private MediaAsset media;
+
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("position ASC")
+    private List<QuestionOption> options = new ArrayList<>();
+
+    protected Question() {
+    }
+
+    public Question(Assessment assessment) {
+        this.assessment = assessment;
+    }
+
+    public Assessment getAssessment() { return assessment; }
+    public QuestionType getType() { return type; }
+    public void setType(QuestionType type) { this.type = type; }
+    public String getPrompt() { return prompt; }
+    public void setPrompt(String prompt) { this.prompt = prompt; }
+    public String getExplanation() { return explanation; }
+    public void setExplanation(String explanation) { this.explanation = explanation; }
+    public int getPoints() { return points; }
+    public void setPoints(int points) { this.points = points; }
+    public int getPosition() { return position; }
+    public void setPosition(int position) { this.position = position; }
+    public boolean isCaseSensitive() { return caseSensitive; }
+    public void setCaseSensitive(boolean caseSensitive) { this.caseSensitive = caseSensitive; }
+    public List<String> getAcceptedAnswers() { return acceptedAnswers; }
+    public void setAcceptedAnswers(List<String> answers) { acceptedAnswers.clear(); acceptedAnswers.addAll(answers); }
+    public MediaAsset getMedia() { return media; }
+    public void setMedia(MediaAsset media) { this.media = media; }
+    public List<QuestionOption> getOptions() { return options; }
+}

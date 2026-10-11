@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 import type { SessionQuestion } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { AudioPlayer } from "@/components/learn/audio-player";
+import { InlineHtml } from "@/components/course/rich-content";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -40,7 +41,11 @@ export function QuestionMedia({ media }: { media: SessionQuestion["media"] }) {
 /** Renders the prompt; "___" gaps in fill-in-the-blank prompts are highlighted. */
 export function QuestionPrompt({ prompt, type }: { prompt: string; type: SessionQuestion["type"] }) {
   if (type !== "FILL_BLANK" || !prompt.includes("___")) {
-    return <p className="text-lg leading-relaxed font-medium whitespace-pre-line">{prompt}</p>;
+    return (
+      <p className="text-lg leading-relaxed font-medium">
+        <InlineHtml html={prompt} />
+      </p>
+    );
   }
   const parts = prompt.split(/_{3,}/);
   return (

@@ -1,0 +1,11 @@
+package me.amanullah.course.notification;
+
+public enum NotificationType {
+    ENROLLMENT_REQUESTED,
+    ENROLLMENT_APPROVED,
+    ENROLLMENT_REJECTED,
+    ENROLLMENT_REVOKED,
+    ENROLLMENT_WITHDRAWN,
+    ATTEMPT_SUBMITTED,
+    ATTEMPT_GRADED
+}

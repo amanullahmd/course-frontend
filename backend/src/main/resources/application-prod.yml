@@ -26,8 +26,8 @@ spring:
           writetimeout: 10000
 
 app:
-  frontend-url: ${FRONTEND_URL}
-  public-base-url: ${PUBLIC_BASE_URL}
+  frontend-url: ${FRONTEND_URL:https://course.amanullah.me}
+  public-base-url: ${PUBLIC_BASE_URL:https://api.course.amanullah.me}
   jwt:
     secret: ${JWT_SECRET}
   media:
@@ -38,12 +38,12 @@ app:
     secure-cookie: ${COOKIE_SECURE:true}
   mail:
     enabled: ${MAIL_ENABLED:true}
-    from: ${MAIL_FROM}
+    from: "${MAIL_FROM:Sprachweg <no-reply@course.amanullah.me>}"
   cors:
-    allowed-origins: ${CORS_ORIGINS}
+    allowed-origins: ${CORS_ORIGINS:https://course.amanullah.me}
   seed:
     enabled: ${SEED_ENABLED:false}
 
 logging:
   level:
-    de.sprachweg: INFO
+    me.amanullah.course: INFO
