@@ -1,0 +1,1357 @@
+{
+  "info": {
+    "_postman_id": "ebf20bc3-53cb-5295-83bd-31ff8d8feba5",
+    "name": "Sprachweg API smoke tests",
+    "description": "Smoke suite for the Sprachweg backend (run against the `dev` profile with seeded demo data).\n\n`npx newman run backend/postman/sprachweg.postman_collection.json -e backend/postman/sprachweg.postman_environment.json --env-var baseUrl=http://localhost:8080`\n\nRequests are read-only apart from logging in; folders depend on each other (tokens and ids are stored as collection variables), so run the collection in order.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "id": "a4e087f2-316c-53e0-a41d-2b0acf42e302",
+      "name": "Health",
+      "description": "Actuator health endpoints.",
+      "item": [
+        {
+          "id": "35edf8eb-06ab-5857-bfde-a6fbdff37c4f",
+          "name": "Health is UP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('status UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "id": "6c975d01-47dd-5c85-b039-a4e06a03937c",
+          "name": "Readiness probe is UP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('status UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health/readiness",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health",
+                "readiness"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "bf40a9e1-fd2b-584b-b891-4146c4e1f0c1",
+      "name": "Public catalog",
+      "description": "Anonymous catalog endpoints.",
+      "item": [
+        {
+          "id": "54c32f28-79bc-5d8d-98dd-e210f2ebce66",
+          "name": "List live courses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json();",
+                  "pm.test('page shape', () => {",
+                  "  pm.expect(page.content).to.be.an('array');",
+                  "  ['page', 'size', 'totalElements', 'totalPages'].forEach((k) => pm.expect(page[k], k).to.be.a('number'));",
+                  "  pm.expect(page.page).to.eql(0);",
+                  "});",
+                  "const a1 = page.content.find((c) => c.slug === pm.collectionVariables.get('courseSlug'));",
+                  "pm.test('seeded A1 course is listed', () => pm.expect(a1, 'course ' + pm.collectionVariables.get('courseSlug')).to.be.an('object'));",
+                  "pm.test('draft course is not listed', () => pm.expect(page.content.map((c) => c.slug)).to.not.include('pruefungsvorbereitung-goethe-b2'));",
+                  "pm.test('summary DTO fields', () => {",
+                  "  ['id', 'slug', 'title', 'level', 'tags', 'instructor', 'studentCount', 'moduleCount', 'itemCount', 'enrollmentMode'].forEach((k) => pm.expect(a1).to.have.property(k));",
+                  "  pm.expect(a1.instructor.fullName).to.be.a('string').and.not.empty;",
+                  "});",
+                  "if (a1) pm.collectionVariables.set('courseId', a1.id);",
+                  "const b1 = page.content.find((c) => c.slug === 'deutsch-b1-alltag-und-beruf');",
+                  "if (b1) pm.collectionVariables.set('pendingCourseId', b1.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/courses?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "courses"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "d9ea1a76-673e-54df-b0d2-76e49584a73f",
+          "name": "Filter catalog by level",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json();",
+                  "pm.test('at least one A1 course', () => pm.expect(page.content.length).to.be.above(0));",
+                  "pm.test('only A1 courses', () => page.content.forEach((c) => pm.expect(c.level).to.eql('A1')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/courses?level=A1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "courses"
+              ],
+              "query": [
+                {
+                  "key": "level",
+                  "value": "A1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "aeefc730-dcde-5552-b94a-7e0447f51155",
+          "name": "Page size is clamped",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200 (no 4xx/5xx for out-of-range paging)', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json();",
+                  "pm.test('size clamped to 100, page to 0', () => { pm.expect(page.size).to.eql(100); pm.expect(page.page).to.eql(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/courses?size=1000&page=-3",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "courses"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "1000"
+                },
+                {
+                  "key": "page",
+                  "value": "-3"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "6b3d98a5-a71a-5423-87ec-b60329ffc36e",
+          "name": "Course by slug",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const course = pm.response.json();",
+                  "pm.test('matches slug and id', () => {",
+                  "  pm.expect(course.slug).to.eql(pm.collectionVariables.get('courseSlug'));",
+                  "  pm.expect(course.id).to.eql(pm.collectionVariables.get('courseId'));",
+                  "});",
+                  "pm.test('has description and instructor', () => { pm.expect(course.description).to.be.a('string').and.not.empty; pm.expect(course.instructor.fullName).to.eql('Anna Schneider'); });",
+                  "pm.test('outline lists live modules with items', () => {",
+                  "  pm.expect(course.outline).to.be.an('array').that.is.not.empty;",
+                  "  course.outline.forEach((m) => { pm.expect(m.title).to.be.a('string'); pm.expect(m.items).to.be.an('array'); });",
+                  "  const item = course.outline.flatMap((m) => m.items)[0];",
+                  "  ['id', 'title', 'type'].forEach((k) => pm.expect(item).to.have.property(k));",
+                  "});",
+                  "pm.test('public outline does not expose item bodies', () => course.outline.flatMap((m) => m.items).forEach((i) => pm.expect(i).to.not.have.property('body')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/courses/{{courseSlug}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "courses",
+                "{{courseSlug}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "6562d58e-7f57-5ec8-a0cf-7bec7cd38249",
+      "name": "Auth",
+      "description": "Log in as the seeded instructor and student and keep their access tokens.",
+      "item": [
+        {
+          "id": "f67d36db-6d20-531d-b880-154c3ae366c9",
+          "name": "Login as instructor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('access token issued', () => { pm.expect(res.accessToken).to.be.a('string').and.not.empty; pm.expect(res.expiresIn).to.be.above(0); });",
+                  "pm.test('user is the instructor', () => { pm.expect(res.user.email).to.eql(pm.environment.get('instructorEmail') || pm.collectionVariables.get('instructorEmail')); pm.expect(res.user.role).to.eql('INSTRUCTOR'); });",
+                  "pm.test('password hash is never returned', () => pm.expect(JSON.stringify(res)).to.not.match(/passwordHash|\\$2[aby]\\$/));",
+                  "pm.test('refresh cookie is http-only', () => {",
+                  "  const cookie = pm.response.headers.all().filter((h) => h.key.toLowerCase() === 'set-cookie').map((h) => h.value).join('\\n');",
+                  "  pm.expect(cookie).to.include('refresh_token=');",
+                  "  pm.expect(cookie.toLowerCase()).to.include('httponly');",
+                  "});",
+                  "pm.collectionVariables.set('instructorToken', res.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{instructorEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "f0f54501-fa68-574e-82f1-7429ba808e89",
+          "name": "Login as student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('user is the student with locale de', () => { pm.expect(res.user.role).to.eql('STUDENT'); pm.expect(res.user.locale).to.eql('de'); });",
+                  "pm.collectionVariables.set('studentToken', res.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "e4d73d25-589b-510d-ad8a-e3ccf96267fd",
+          "name": "Wrong password is rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('is application/problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "const problem = pm.response.json();",
+                  "pm.test('code INVALID_CREDENTIALS', () => pm.expect(problem.code).to.eql('INVALID_CREDENTIALS'));",
+                  "pm.test('problem shape', () => { pm.expect(problem.status).to.eql(401); pm.expect(problem.title).to.be.a('string'); pm.expect(problem.detail).to.be.a('string').and.not.empty; });",
+                  "pm.test('no stack trace or exception leaked', () => { pm.expect(problem).to.not.have.property('trace'); pm.expect(problem).to.not.have.property('exception'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"definitely-wrong-1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "30d5bad4-4b78-5b66-a6b0-f33d2d1b083e",
+      "name": "Instructor",
+      "description": "Instructor area (bearer token of lehrer@sprachweg.de).",
+      "item": [
+        {
+          "id": "5954753c-bda9-5a59-b76a-291cd2d552a8",
+          "name": "Current user (instructor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const me = pm.response.json();",
+                  "pm.test('profile of the instructor', () => { pm.expect(me.role).to.eql('INSTRUCTOR'); pm.expect(me.emailVerified).to.eql(true); pm.expect(me.locale).to.be.oneOf(['en', 'de']); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{instructorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "id": "add3c5b4-805e-51a8-820b-d1201c80c86e",
+          "name": "Instructor courses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const courses = pm.response.json();",
+                  "pm.test('owns the three demo courses', () => pm.expect(courses.length).to.be.at.least(3));",
+                  "pm.test('includes drafts with computed visibility', () => {",
+                  "  const draft = courses.find((c) => c.slug === 'pruefungsvorbereitung-goethe-b2');",
+                  "  pm.expect(draft.publishStatus).to.eql('DRAFT');",
+                  "  pm.expect(draft.visibility).to.eql('DRAFT');",
+                  "  const live = courses.find((c) => c.slug === pm.collectionVariables.get('courseSlug'));",
+                  "  pm.expect(live.visibility).to.eql('LIVE');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{instructorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/instructor/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "instructor",
+                "courses"
+              ]
+            }
+          }
+        },
+        {
+          "id": "714d60a9-afa7-55ed-bfae-c328b546bbc8",
+          "name": "Instructor dashboard",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('is an object', () => pm.expect(pm.response.json()).to.be.an('object'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{instructorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/instructor/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "instructor",
+                "dashboard"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "480cdce5-c8d6-5199-b58e-b88e17c90aab",
+      "name": "Student",
+      "description": "Learner endpoints (bearer token of student@sprachweg.de).",
+      "item": [
+        {
+          "id": "0999ff3e-32e1-550f-8c46-93de37c3e7ba",
+          "name": "Student enrollments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const list = pm.response.json();",
+                  "const approved = list.find((e) => e.course.id === pm.collectionVariables.get('courseId'));",
+                  "pm.test('approved in the A1 course', () => pm.expect(approved && approved.status).to.eql('APPROVED'));",
+                  "pm.test('pending in the B1 course with a waiting-list position', () => {",
+                  "  const pending = list.find((e) => e.status === 'PENDING');",
+                  "  pm.expect(pending).to.be.an('object');",
+                  "  pm.expect(pending.waitlistPosition).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/student/enrollments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "student",
+                "enrollments"
+              ]
+            }
+          }
+        },
+        {
+          "id": "5c1629c3-aeaa-52ac-af8e-143d203af908",
+          "name": "Learn outline",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const learn = pm.response.json();",
+                  "pm.test('course and progress', () => { pm.expect(learn.course.id).to.eql(pm.collectionVariables.get('courseId')); pm.expect(learn.progressPercent).to.be.within(0, 100); });",
+                  "pm.test('modules with live items', () => {",
+                  "  pm.expect(learn.modules).to.be.an('array').that.is.not.empty;",
+                  "  pm.expect(learn.modules[0].items).to.be.an('array').that.is.not.empty;",
+                  "});",
+                  "const first = learn.modules.flatMap((m) => m.items).find((i) => i.type === 'TEXT') || learn.modules[0].items[0];",
+                  "pm.collectionVariables.set('itemId', first.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/student/courses/{{courseId}}/learn",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "student",
+                "courses",
+                "{{courseId}}",
+                "learn"
+              ]
+            }
+          }
+        },
+        {
+          "id": "77823939-ec3b-5b05-8c6a-6be6828f3b44",
+          "name": "Learn item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const item = pm.response.json();",
+                  "pm.test('item of the course', () => { pm.expect(item.id).to.eql(pm.collectionVariables.get('itemId')); pm.expect(item.courseId).to.eql(pm.collectionVariables.get('courseId')); pm.expect(item.title).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/student/items/{{itemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "student",
+                "items",
+                "{{itemId}}"
+              ]
+            }
+          }
+        },
+        {
+          "id": "51033dcd-2490-58bc-a754-8f9c2636f5f4",
+          "name": "Pending enrollment cannot learn",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "pm.test('is application/problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "const problem = pm.response.json();",
+                  "pm.test('code NOT_ENROLLED', () => pm.expect(problem.code).to.eql('NOT_ENROLLED'));",
+                  "pm.test('problem shape', () => { pm.expect(problem.status).to.eql(403); pm.expect(problem.title).to.be.a('string'); pm.expect(problem.detail).to.be.a('string').and.not.empty; });",
+                  "pm.test('no stack trace or exception leaked', () => { pm.expect(problem).to.not.have.property('trace'); pm.expect(problem).to.not.have.property('exception'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/student/courses/{{pendingCourseId}}/learn",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "student",
+                "courses",
+                "{{pendingCourseId}}",
+                "learn"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "2723ee3e-0257-5468-8e6a-a9d8a6f7d947",
+      "name": "Error contracts",
+      "description": "RFC 7807 problem responses with stable codes and localized details.",
+      "item": [
+        {
+          "id": "f0013777-3d11-5003-9c2b-c8d1fc8f3dc0",
+          "name": "401 without token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('is application/problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "const problem = pm.response.json();",
+                  "pm.test('code UNAUTHORIZED', () => pm.expect(problem.code).to.eql('UNAUTHORIZED'));",
+                  "pm.test('problem shape', () => { pm.expect(problem.status).to.eql(401); pm.expect(problem.title).to.be.a('string'); pm.expect(problem.detail).to.be.a('string').and.not.empty; });",
+                  "pm.test('no stack trace or exception leaked', () => { pm.expect(problem).to.not.have.property('trace'); pm.expect(problem).to.not.have.property('exception'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "id": "aee5d148-3e66-57b7-a43c-d488f929ee16",
+          "name": "401 with an invalid token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('is application/problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "const problem = pm.response.json();",
+                  "pm.test('code UNAUTHORIZED', () => pm.expect(problem.code).to.eql('UNAUTHORIZED'));",
+                  "pm.test('problem shape', () => { pm.expect(problem.status).to.eql(401); pm.expect(problem.title).to.be.a('string'); pm.expect(problem.detail).to.be.a('string').and.not.empty; });",
+                  "pm.test('no stack trace or exception leaked', () => { pm.expect(problem).to.not.have.property('trace'); pm.expect(problem).to.not.have.property('exception'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer not-a-jwt"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "id": "4f583fa7-1187-50f1-8254-d7e4af5d253b",
+          "name": "403 student on instructor endpoint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "pm.test('is application/problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "const problem = pm.response.json();",
+                  "pm.test('code FORBIDDEN', () => pm.expect(problem.code).to.eql('FORBIDDEN'));",
+                  "pm.test('problem shape', () => { pm.expect(problem.status).to.eql(403); pm.expect(problem.title).to.be.a('string'); pm.expect(problem.detail).to.be.a('string').and.not.empty; });",
+                  "pm.test('no stack trace or exception leaked', () => { pm.expect(problem).to.not.have.property('trace'); pm.expect(problem).to.not.have.property('exception'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/instructor/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "instructor",
+                "courses"
+              ]
+            }
+          }
+        },
+        {
+          "id": "efa43d84-be80-5c2f-b8b3-7473d06e3ed3",
+          "name": "400 VALIDATION_FAILED with field errors",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('is application/problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "const problem = pm.response.json();",
+                  "pm.test('code VALIDATION_FAILED', () => pm.expect(problem.code).to.eql('VALIDATION_FAILED'));",
+                  "pm.test('problem shape', () => { pm.expect(problem.status).to.eql(400); pm.expect(problem.title).to.be.a('string'); pm.expect(problem.detail).to.be.a('string').and.not.empty; });",
+                  "pm.test('no stack trace or exception leaked', () => { pm.expect(problem).to.not.have.property('trace'); pm.expect(problem).to.not.have.property('exception'); });",
+                  "pm.test('field errors for every invalid field', () => {",
+                  "  pm.expect(problem.errors).to.be.an('object');",
+                  "  pm.expect(problem.errors).to.have.all.keys('fullName', 'email', 'password');",
+                  "});",
+                  "pm.test('English detail by default', () => pm.expect(problem.detail).to.eql('Some fields are invalid. Please check your input.'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "en"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"\",\n  \"email\": \"not-an-email\",\n  \"password\": \"x\",\n  \"role\": \"STUDENT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "32079edc-6515-594b-b700-09bf11a02d92",
+          "name": "400 VALIDATION_FAILED in German",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('is application/problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "const problem = pm.response.json();",
+                  "pm.test('code VALIDATION_FAILED', () => pm.expect(problem.code).to.eql('VALIDATION_FAILED'));",
+                  "pm.test('problem shape', () => { pm.expect(problem.status).to.eql(400); pm.expect(problem.title).to.be.a('string'); pm.expect(problem.detail).to.be.a('string').and.not.empty; });",
+                  "pm.test('no stack trace or exception leaked', () => { pm.expect(problem).to.not.have.property('trace'); pm.expect(problem).to.not.have.property('exception'); });",
+                  "pm.test('German detail', () => pm.expect(problem.detail).to.eql('Einige Felder sind ungültig. Bitte überprüfe deine Eingaben.'));",
+                  "pm.test('German field message', () => pm.expect(problem.errors.fullName).to.eql('darf nicht leer sein'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "de-DE,de;q=0.9"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"\",\n  \"email\": \"not-an-email\",\n  \"password\": \"x\",\n  \"role\": \"STUDENT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "4b46198d-5c1b-5491-803b-0176ae7bb19a",
+          "name": "400 MALFORMED_REQUEST for broken JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('is application/problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "const problem = pm.response.json();",
+                  "pm.test('code MALFORMED_REQUEST', () => pm.expect(problem.code).to.eql('MALFORMED_REQUEST'));",
+                  "pm.test('problem shape', () => { pm.expect(problem.status).to.eql(400); pm.expect(problem.title).to.be.a('string'); pm.expect(problem.detail).to.be.a('string').and.not.empty; });",
+                  "pm.test('no stack trace or exception leaked', () => { pm.expect(problem).to.not.have.property('trace'); pm.expect(problem).to.not.have.property('exception'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"student@sprachweg.de\", \"password\": ",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "5c682d35-cf8b-5746-b5f2-52f3e940f1cd",
+          "name": "400 INVALID_PARAMETER for a bad UUID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('is application/problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "const problem = pm.response.json();",
+                  "pm.test('code INVALID_PARAMETER', () => pm.expect(problem.code).to.eql('INVALID_PARAMETER'));",
+                  "pm.test('problem shape', () => { pm.expect(problem.status).to.eql(400); pm.expect(problem.title).to.be.a('string'); pm.expect(problem.detail).to.be.a('string').and.not.empty; });",
+                  "pm.test('no stack trace or exception leaked', () => { pm.expect(problem).to.not.have.property('trace'); pm.expect(problem).to.not.have.property('exception'); });",
+                  "pm.test('names the parameter', () => pm.expect(problem.errors).to.have.property('courseId'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/student/courses/not-a-uuid/learn",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "student",
+                "courses",
+                "not-a-uuid",
+                "learn"
+              ]
+            }
+          }
+        },
+        {
+          "id": "5acbc879-71f6-5db7-bd43-695272df60e3",
+          "name": "404 COURSE_NOT_FOUND",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('is application/problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "const problem = pm.response.json();",
+                  "pm.test('code COURSE_NOT_FOUND', () => pm.expect(problem.code).to.eql('COURSE_NOT_FOUND'));",
+                  "pm.test('problem shape', () => { pm.expect(problem.status).to.eql(404); pm.expect(problem.title).to.be.a('string'); pm.expect(problem.detail).to.be.a('string').and.not.empty; });",
+                  "pm.test('no stack trace or exception leaked', () => { pm.expect(problem).to.not.have.property('trace'); pm.expect(problem).to.not.have.property('exception'); });",
+                  "pm.test('English detail', () => pm.expect(problem.detail).to.eql('Course not found.'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/courses/this-course-does-not-exist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "courses",
+                "this-course-does-not-exist"
+              ]
+            }
+          }
+        },
+        {
+          "id": "9cbcd030-b6eb-50a2-85b6-7e484afe3a27",
+          "name": "404 COURSE_NOT_FOUND in German",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('is application/problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "const problem = pm.response.json();",
+                  "pm.test('code COURSE_NOT_FOUND', () => pm.expect(problem.code).to.eql('COURSE_NOT_FOUND'));",
+                  "pm.test('problem shape', () => { pm.expect(problem.status).to.eql(404); pm.expect(problem.title).to.be.a('string'); pm.expect(problem.detail).to.be.a('string').and.not.empty; });",
+                  "pm.test('no stack trace or exception leaked', () => { pm.expect(problem).to.not.have.property('trace'); pm.expect(problem).to.not.have.property('exception'); });",
+                  "pm.test('German detail', () => pm.expect(problem.detail).to.eql('Kurs nicht gefunden.'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "de"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/courses/this-course-does-not-exist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "courses",
+                "this-course-does-not-exist"
+              ]
+            }
+          }
+        },
+        {
+          "id": "bf6beea6-febc-55f4-8447-94072ee9d57f",
+          "name": "404 NOT_FOUND for an unknown route",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('is application/problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "const problem = pm.response.json();",
+                  "pm.test('code NOT_FOUND', () => pm.expect(problem.code).to.eql('NOT_FOUND'));",
+                  "pm.test('problem shape', () => { pm.expect(problem.status).to.eql(404); pm.expect(problem.title).to.be.a('string'); pm.expect(problem.detail).to.be.a('string').and.not.empty; });",
+                  "pm.test('no stack trace or exception leaked', () => { pm.expect(problem).to.not.have.property('trace'); pm.expect(problem).to.not.have.property('exception'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/this-route-does-not-exist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "this-route-does-not-exist"
+              ]
+            }
+          }
+        },
+        {
+          "id": "a2269a32-d77a-5a55-a7f6-79eca16e4802",
+          "name": "405 METHOD_NOT_ALLOWED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 405', () => pm.response.to.have.status(405));",
+                  "pm.test('is application/problem+json', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json'));",
+                  "const problem = pm.response.json();",
+                  "pm.test('code METHOD_NOT_ALLOWED', () => pm.expect(problem.code).to.eql('METHOD_NOT_ALLOWED'));",
+                  "pm.test('problem shape', () => { pm.expect(problem.status).to.eql(405); pm.expect(problem.title).to.be.a('string'); pm.expect(problem.detail).to.be.a('string').and.not.empty; });",
+                  "pm.test('no stack trace or exception leaked', () => { pm.expect(problem).to.not.have.property('trace'); pm.expect(problem).to.not.have.property('exception'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/public/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "courses"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('never a 5xx', () => pm.expect(pm.response.code).to.be.below(500));",
+          "pm.test('responds within 5 s', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "courseSlug",
+      "value": "deutsch-a1-erste-schritte"
+    },
+    {
+      "key": "courseId",
+      "value": ""
+    },
+    {
+      "key": "pendingCourseId",
+      "value": ""
+    },
+    {
+      "key": "itemId",
+      "value": ""
+    },
+    {
+      "key": "instructorToken",
+      "value": ""
+    },
+    {
+      "key": "studentToken",
+      "value": ""
+    }
+  ]
+}

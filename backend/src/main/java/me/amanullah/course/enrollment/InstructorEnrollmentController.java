@@ -1,5 +1,7 @@
 package me.amanullah.course.enrollment;
 
+import me.amanullah.course.enrollment.EnrollmentDtos.AddStudentsRequest;
+import me.amanullah.course.enrollment.EnrollmentDtos.AddStudentsResult;
 import me.amanullah.course.enrollment.EnrollmentDtos.BulkRequest;
 import me.amanullah.course.enrollment.EnrollmentDtos.EnrollmentDto;
 import me.amanullah.course.enrollment.EnrollmentDtos.ReasonRequest;
@@ -50,8 +52,15 @@ public class InstructorEnrollmentController {
         return service.revoke(CurrentUser.get(), id, request == null ? null : request.reason());
     }
 
+    /** Approves/restores, rejects or removes (REVOKE) many enrollments at once, all or nothing. */
     @PostMapping("/enrollments/bulk")
     public List<EnrollmentDto> bulk(@Valid @RequestBody BulkRequest request) {
-        return service.bulk(CurrentUser.get(), request.ids(), request.action(), request.reason());
+        return service.bulk(CurrentUser.get(), request.ids(), request.action(), request.reason(), request.courseId());
+    }
+
+    /** Adds learners by e-mail address (course owner or admin); see {@link AddStudentsResult}. */
+    @PostMapping("/courses/{courseId}/enrollments/add")
+    public AddStudentsResult add(@PathVariable UUID courseId, @Valid @RequestBody AddStudentsRequest request) {
+        return service.addStudents(CurrentUser.get(), courseId, request);
     }
 }

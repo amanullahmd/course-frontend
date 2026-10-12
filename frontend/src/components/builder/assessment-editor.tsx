@@ -3,11 +3,12 @@
 import * as React from "react";
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { ClipboardList, Plus, Save } from "lucide-react";
+import { ClipboardList, Info, Plus, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { AssessmentDto, QuestionType } from "@/lib/api/types";
 import { isApiError } from "@/lib/api/client";
+import { timeZoneName } from "@/lib/dates";
 import { QUESTION_TYPES, QUESTION_TYPE_META } from "@/lib/constants";
 import { useErrorMessage } from "@/hooks/use-error-message";
 import { useAssessment, useSaveAssessment } from "@/hooks/queries/instructor";
@@ -119,9 +120,13 @@ function AssessmentEditorInner({
     setExpanded((e) => new Set(e).add(q.key));
   };
 
+  const windowInvalid =
+    !!draft.availableFrom && !!draft.availableUntil && new Date(draft.availableUntil).getTime() <= new Date(draft.availableFrom).getTime();
+
   const submit = () => {
-    if (draft.availableFrom && draft.availableUntil && draft.availableUntil <= draft.availableFrom) {
+    if (windowInvalid) {
       toast.error(t("assessmentEditor.windowError"));
+      document.getElementById("available-until")?.focus();
       return;
     }
     if (errorCount > 0) {
@@ -269,16 +274,39 @@ function AssessmentEditorInner({
               <Switch checked={draft.showCorrectAnswers} onCheckedChange={(c) => set({ showCorrectAnswers: c })} />
             </label>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="available-from">{t("assessmentEditor.availableFrom")}</Label>
-              <DateTimePicker id="available-from" value={draft.availableFrom} onChange={(v) => set({ availableFrom: v })} />
+          <fieldset className="grid gap-3 rounded-lg border p-3 sm:p-4">
+            <legend className="px-1 text-sm font-medium">{t("assessmentEditor.window")}</legend>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid content-start gap-2">
+                <Label htmlFor="available-from">{t("assessmentEditor.availableFrom")}</Label>
+                <DateTimePicker id="available-from" value={draft.availableFrom} onChange={(v) => set({ availableFrom: v })} />
+              </div>
+              <div className="grid content-start gap-2">
+                <Label htmlFor="available-until">{t("assessmentEditor.availableUntil")}</Label>
+                <DateTimePicker
+                  id="available-until"
+                  value={draft.availableUntil}
+                  onChange={(v) => set({ availableUntil: v })}
+                  aria-invalid={windowInvalid}
+                  aria-describedby={windowInvalid ? "available-until-error" : undefined}
+                />
+                {windowInvalid && (
+                  <p id="available-until-error" role="alert" className="text-xs text-destructive">
+                    {t("assessmentEditor.windowError")}
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="available-until">{t("assessmentEditor.availableUntil")}</Label>
-              <DateTimePicker id="available-until" value={draft.availableUntil} onChange={(v) => set({ availableUntil: v })} />
+            <p className="text-[11px] text-muted-foreground">{t("publication.timezone", { tz: timeZoneName() })}</p>
+            <div className="flex gap-2.5 rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
+              <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+              <ul className="grid gap-1">
+                <li>{t("assessmentEditor.helpVisibility")}</li>
+                <li>{t("assessmentEditor.helpWindow")}</li>
+                <li>{t("assessmentEditor.helpTimeLimit")}</li>
+              </ul>
             </div>
-          </div>
+          </fieldset>
         </CardContent>
       </Card>
 

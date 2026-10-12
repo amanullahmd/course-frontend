@@ -212,15 +212,18 @@ export function LearnShell({ children }: { children: React.ReactNode }) {
             </div>
             <span className="text-xs font-medium tabular-nums">{Math.round(ctx.data.progressPercent)}%</span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="absolute top-3 left-3 z-10 hidden lg:inline-flex"
-            onClick={() => setCollapsed(!collapsed)}
-            aria-label={collapsed ? t("showOutline") : t("hideOutline")}
-          >
-            {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
-          </Button>
+          {/* Sticks just below the app header (h-14) instead of scrolling underneath it; h-0 keeps it out of the flow. */}
+          <div className="sticky top-14 z-20 hidden h-0 lg:block">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              className="absolute top-3 left-3 bg-background/90 shadow-xs backdrop-blur"
+              onClick={() => setCollapsed(!collapsed)}
+              aria-label={collapsed ? t("showOutline") : t("hideOutline")}
+            >
+              {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
+            </Button>
+          </div>
           {children}
         </div>
       </div>

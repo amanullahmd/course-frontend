@@ -16,6 +16,7 @@ interface DateTimePickerProps {
   className?: string;
   "aria-invalid"?: boolean;
   "aria-label"?: string;
+  "aria-describedby"?: string;
 }
 
 /** Native datetime-local input, styled; emits ISO instants (UTC). */

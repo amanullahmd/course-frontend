@@ -30,7 +30,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Segmented } from "@/components/ui/segmented";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EventChip, EventRow } from "./schedule-event";
+import { ACTION_META, ActionIcon, EventChip, EventRow } from "./schedule-event";
 
 
 function groupByDay(events: ScheduleEventDto[]): Map<string, ScheduleEventDto[]> {
@@ -90,7 +90,7 @@ function MonthGrid({ month, events, today }: { month: Date; events: ScheduleEven
               {list.length > 0 && (
                 <div className="flex flex-wrap gap-1 sm:hidden">
                   {list.slice(0, 4).map((e) => (
-                    <span key={e.id} className={cn("size-1.5 rounded-full", e.action === "PUBLISH" ? "bg-success" : "bg-warning")} />
+                    <span key={e.id} className={cn("size-1.5 rounded-full", ACTION_META[e.action].dot)} />
                   ))}
                 </div>
               )}
@@ -231,14 +231,15 @@ export function ScheduleView() {
           />
         </div>
       </div>
-      <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1.5">
-          <span className="size-2 rounded-full bg-success" /> {t("publish")}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="size-2 rounded-full bg-warning" /> {t("unpublish")}
-        </span>
-      </div>
+      <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground" aria-label={t("legend")}>
+        {(["PUBLISH", "UNPUBLISH", "OPENS", "CLOSES"] as const).map((action) => (
+          <li key={action} className="flex items-center gap-1.5">
+            <span className={cn("size-2 rounded-full", ACTION_META[action].dot)} />
+            <ActionIcon action={action} className="size-3" />
+            {t(ACTION_META[action].label as "publish" | "unpublish" | "windowOpens" | "windowCloses")}
+          </li>
+        ))}
+      </ul>
       <div className={cn("mt-4 transition-opacity", schedule.isFetching && !schedule.isPending && "opacity-70")}>
         {schedule.isError ? (
           <ErrorState error={schedule.error} onRetry={() => schedule.refetch()} />

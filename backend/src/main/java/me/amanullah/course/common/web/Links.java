@@ -25,6 +25,12 @@ public final class Links {
         return "/courses/" + slug;
     }
 
+    /** Registration with a pre-filled e-mail address that continues to {@code next} (a relative path) afterwards. */
+    public static String register(String email, String next) {
+        return "/register?email=" + java.net.URLEncoder.encode(email, java.nio.charset.StandardCharsets.UTF_8)
+                + "&next=" + java.net.URLEncoder.encode(next, java.nio.charset.StandardCharsets.UTF_8);
+    }
+
     public static String studentDashboard() {
         return "/dashboard";
     }

@@ -49,6 +49,24 @@ public class EmailTemplates {
         return build(to, "mail.revoked", link, reason, courseTitle);
     }
 
+    /** Access granted again after a removal or withdrawal. */
+    public Email enrollmentRestored(User to, String courseTitle, String link) {
+        return build(to, "mail.restored", link, null, courseTitle);
+    }
+
+    /** The instructor added the learner directly; {@code note} is the instructor's optional personal message. */
+    public Email enrollmentAdded(User to, String courseTitle, String instructorName, String note, String link) {
+        Locale locale = to.preferredLocale();
+        return build(locale, messages.get(locale, "mail.greeting", to.getFullName()), "mail.added", link,
+                noteLine(locale, instructorName, note), courseTitle, instructorName);
+    }
+
+    /** Invitation to register, for an address without an account (rendered in {@code locale}). */
+    public Email courseInvitation(Locale locale, String courseTitle, String instructorName, String note, String link) {
+        return build(locale, messages.get(locale, "mail.greetingNoName"), "mail.invite", link,
+                noteLine(locale, instructorName, note), courseTitle, instructorName);
+    }
+
     public Email attemptGraded(User to, String itemTitle, String link) {
         return build(to, "mail.graded", link, null, itemTitle);
     }
@@ -57,15 +75,23 @@ public class EmailTemplates {
         return props.frontendUrl() + path;
     }
 
+    private String noteLine(Locale locale, String instructorName, String note) {
+        return note == null || note.isBlank() ? null : messages.get(locale, "mail.note", instructorName, note.strip());
+    }
+
     private Email build(User to, String prefix, String link, String reason, Object... args) {
         Locale locale = to.preferredLocale();
+        String extra = reason != null && !reason.isBlank() ? messages.get(locale, "mail.reason", reason) : null;
+        return build(locale, messages.get(locale, "mail.greeting", to.getFullName()), prefix, link, extra, args);
+    }
+
+    private Email build(Locale locale, String greeting, String prefix, String link, String extra, Object... args) {
         String subject = messages.get(locale, prefix + ".subject", args);
         String message = messages.get(locale, prefix + ".message", args);
-        if (reason != null && !reason.isBlank()) {
-            message = message + " " + messages.get(locale, "mail.reason", reason);
+        if (extra != null) {
+            message = message + " " + extra;
         }
         String cta = messages.get(locale, prefix + ".cta", args);
-        String greeting = messages.get(locale, "mail.greeting", to.getFullName());
         String linkHint = messages.get(locale, "mail.linkHint");
         String footer = messages.get(locale, "mail.footer");
         String signature = messages.get(locale, "mail.signature");

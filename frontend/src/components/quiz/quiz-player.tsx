@@ -198,6 +198,9 @@ export function QuizPlayer({
   const inFlightRef = React.useRef(false);
   const doneRef = React.useRef(false);
   const submittingRef = React.useRef(false);
+  // latest callbacks for timers that re-schedule themselves
+  const saveRef = React.useRef<((keepalive?: boolean) => Promise<void>) | null>(null);
+  const doSubmitRef = React.useRef<((auto?: boolean, retry?: number) => void) | null>(null);
   const mountedRef = React.useRef(true);
   React.useEffect(() => {
     mountedRef.current = true;
@@ -260,7 +263,7 @@ export function QuizPlayer({
       }
       // changes made while this request was running
       if (mountedRef.current && !keepalive && versionRef.current !== savedVersionRef.current && !doneRef.current) {
-        setTimeout(() => void save(), AUTOSAVE_DEBOUNCE_MS);
+        setTimeout(() => void saveRef.current?.(), AUTOSAVE_DEBOUNCE_MS);
       }
     },
     [questions, session.id, showServerResult, storageKey],
@@ -321,7 +324,7 @@ export function QuizPlayer({
               // the timer ran out while offline: keep trying, answers stay saved on this device
               setSaveState({ kind: "offline" });
               setTimeout(() => {
-                if (mountedRef.current) doSubmit(true, retry + 1);
+                if (mountedRef.current) doSubmitRef.current?.(true, retry + 1);
               }, SUBMIT_RETRY_MS);
             }
             toast.error(errorMessage(error));
@@ -331,6 +334,11 @@ export function QuizPlayer({
     },
     [errorMessage, finish, questions, session.id, showServerResult, submit],
   );
+
+  React.useEffect(() => {
+    saveRef.current = save;
+    doSubmitRef.current = doSubmit;
+  }, [save, doSubmit]);
 
   if (!q) return null;
   const setAnswer = (value: DraftAnswer) => setAnswers({ ...answers, [q.id]: value });
