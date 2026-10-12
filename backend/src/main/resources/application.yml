@@ -84,9 +84,9 @@ management:
         enabled: true
   health:
     mail:
-      # Only check the SMTP server when e-mails are actually sent (MAIL_ENABLED); otherwise an unreachable
-      # SMTP host would report the whole application as DOWN although it never talks to it.
-      enabled: ${app.mail.enabled:true}
+      # An SMTP outage must not report the whole application as DOWN (load balancers would take it out of
+      # rotation although browsing, learning and exams still work). Opt in with MAIL_HEALTH_ENABLED=true.
+      enabled: ${MAIL_HEALTH_ENABLED:false}
 
 springdoc:
   api-docs:
