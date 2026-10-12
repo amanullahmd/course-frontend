@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -44,6 +45,7 @@ public class AttemptExpirySweeper {
 
     @Scheduled(fixedDelayString = "${app.attempts.sweeper.interval-ms:60000}",
             initialDelayString = "${app.attempts.sweeper.initial-delay-ms:20000}")
+    @SchedulerLock(name = "AttemptExpirySweeper.sweep", lockAtMostFor = "PT5M", lockAtLeastFor = "PT5S")
     public void scheduledSweep() {
         if (!enabled) {
             return;

@@ -48,14 +48,22 @@ function TableSkeleton() {
 }
 
 /** "Reports" tab of the course builder: overview, learner progress table and gradebook (`?tab=reports&view=`). */
-export function ReportsPanel({ courseId, courseTitle }: { courseId: string; courseTitle: string }) {
+export function ReportsPanel({
+  courseId,
+  courseTitle,
+}: {
+  courseId: string;
+  courseTitle: string;
+}) {
   const t = useTranslations("reports");
   const f = useReportFormat();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const viewParam = searchParams.get("view");
-  const view: View = VIEWS.includes(viewParam as View) ? (viewParam as View) : "overview";
+  const view: View = VIEWS.includes(viewParam as View)
+    ? (viewParam as View)
+    : "overview";
   const overview = useCourseOverviewReport(courseId, view === "overview");
   const gradebook = useGradebook(courseId, view !== "overview");
 
@@ -65,7 +73,10 @@ export function ReportsPanel({ courseId, courseTitle }: { courseId: string; cour
     else sp.set("view", v);
     router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
   };
-  const generatedAt = view === "overview" ? overview.data?.generatedAt : gradebook.data?.generatedAt;
+  const generatedAt =
+    view === "overview"
+      ? overview.data?.generatedAt
+      : gradebook.data?.generatedAt;
 
   return (
     <div className="report-root grid gap-4 sm:gap-6">
@@ -77,15 +88,29 @@ export function ReportsPanel({ courseId, courseTitle }: { courseId: string; cour
             value={view}
             onChange={setView}
             options={[
-              { value: "overview", label: t("views.overview"), icon: <LayoutDashboard /> },
-              { value: "learners", label: t("views.learners"), icon: <Users /> },
-              { value: "gradebook", label: t("views.gradebook"), icon: <Table2 /> },
+              {
+                value: "overview",
+                label: t("views.overview"),
+                icon: <LayoutDashboard />,
+              },
+              {
+                value: "learners",
+                label: t("views.learners"),
+                icon: <Users />,
+              },
+              {
+                value: "gradebook",
+                label: t("views.gradebook"),
+                icon: <Table2 />,
+              },
             ]}
           />
         </div>
         <div className="flex items-center gap-3">
           {generatedAt && (
-            <span className="hidden text-xs text-muted-foreground sm:inline">{t("generatedAt", { when: f.dateTime(generatedAt) })}</span>
+            <span className="hidden text-xs text-muted-foreground sm:inline">
+              {t("generatedAt", { when: f.dateTime(generatedAt) })}
+            </span>
           )}
           <PrintButton />
         </div>
@@ -95,14 +120,20 @@ export function ReportsPanel({ courseId, courseTitle }: { courseId: string; cour
         overview.isPending ? (
           <ReportsSkeleton />
         ) : overview.isError ? (
-          <ErrorState error={overview.error} onRetry={() => overview.refetch()} />
+          <ErrorState
+            error={overview.error}
+            onRetry={() => overview.refetch()}
+          />
         ) : (
           <OverviewView report={overview.data} />
         )
       ) : gradebook.isPending ? (
         <TableSkeleton />
       ) : gradebook.isError ? (
-        <ErrorState error={gradebook.error} onRetry={() => gradebook.refetch()} />
+        <ErrorState
+          error={gradebook.error}
+          onRetry={() => gradebook.refetch()}
+        />
       ) : view === "learners" ? (
         <LearnersView gradebook={gradebook.data} courseId={courseId} />
       ) : (

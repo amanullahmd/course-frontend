@@ -15,13 +15,21 @@ export function useReportFormat() {
   const locale = useLocale();
   const fmt = useFormat();
   return React.useMemo(() => {
-    const pct = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1 });
-    const pct0 = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
+    const pct = new Intl.NumberFormat(locale, {
+      style: "percent",
+      maximumFractionDigits: 1,
+    });
+    const pct0 = new Intl.NumberFormat(locale, {
+      style: "percent",
+      maximumFractionDigits: 0,
+    });
     const num = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
     return {
       ...fmt,
-      pct: (v: number | null | undefined) => (v == null ? "–" : pct.format(v / 100)),
-      pct0: (v: number | null | undefined) => (v == null ? "–" : pct0.format(v / 100)),
+      pct: (v: number | null | undefined) =>
+        v == null ? "–" : pct.format(v / 100),
+      pct0: (v: number | null | undefined) =>
+        v == null ? "–" : pct0.format(v / 100),
       num: (v: number | null | undefined) => (v == null ? "–" : num.format(v)),
       duration: (seconds: number | null | undefined) => {
         if (seconds == null) return "–";
@@ -63,7 +71,8 @@ export function DownloadButton({
       aria-busy={busy}
       onClick={() => void download(path, fallbackName)}
     >
-      {!busy && <Download />} {busy ? t("downloading") : (label ?? t("exportCsv"))}
+      {!busy && <Download />}{" "}
+      {busy ? t("downloading") : (label ?? t("exportCsv"))}
     </Button>
   );
 }
@@ -71,14 +80,27 @@ export function DownloadButton({
 export function PrintButton({ className }: { className?: string }) {
   const t = useTranslations("reports");
   return (
-    <Button variant="outline" size="sm" className={cn("print:hidden", className)} onClick={() => window.print()}>
+    <Button
+      variant="outline"
+      size="sm"
+      className={cn("print:hidden", className)}
+      onClick={() => window.print()}
+    >
       <Printer /> {t("print")}
     </Button>
   );
 }
 
 /** Header that only appears on paper: report kind, course, optional learner and the print date. */
-export function PrintHeader({ title, course, subject }: { title: string; course: string; subject?: string }) {
+export function PrintHeader({
+  title,
+  course,
+  subject,
+}: {
+  title: string;
+  course: string;
+  subject?: string;
+}) {
   const t = useTranslations("reports");
   const fmt = useFormat();
   return (
@@ -97,9 +119,12 @@ export function PrintHeader({ title, course, subject }: { title: string; course:
 
 /** Visual style per gradebook cell status: passed green, failed amber/red, pending blue, not started gray. */
 export function cellTone(status: CellStatus, passed: boolean | null): string {
-  if (status === "SUBMITTED_PENDING") return "bg-info-soft text-info ring-info/30";
-  if (status === "IN_PROGRESS") return "bg-muted text-foreground ring-border border-dashed";
-  if (status === "NOT_STARTED") return "bg-transparent text-muted-foreground ring-border/70 border-dashed";
+  if (status === "SUBMITTED_PENDING")
+    return "bg-info-soft text-info ring-info/30";
+  if (status === "IN_PROGRESS")
+    return "bg-muted text-foreground ring-border border-dashed";
+  if (status === "NOT_STARTED")
+    return "bg-transparent text-muted-foreground ring-border/70 border-dashed";
   if (passed) return "bg-success-soft text-success ring-success/30";
   return "bg-destructive-soft text-destructive ring-destructive/25";
 }
@@ -111,7 +136,13 @@ export const ACTIVITY_TONE: Record<ActivityStatus, string> = {
   INACTIVE: "bg-warning-soft text-warning ring-warning/30",
 };
 
-export function ActivityChip({ status, className }: { status: ActivityStatus; className?: string }) {
+export function ActivityChip({
+  status,
+  className,
+}: {
+  status: ActivityStatus;
+  className?: string;
+}) {
   const t = useTranslations("reports.activity");
   return (
     <span
@@ -144,15 +175,30 @@ export function ReportSection({
   bodyClassName?: string;
 }) {
   return (
-    <section className={cn("report-card min-w-0 rounded-xl border bg-card shadow-xs", className)}>
+    <section
+      className={cn(
+        "report-card min-w-0 rounded-xl border bg-card shadow-xs",
+        className,
+      )}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3 px-4 pt-4 sm:px-5 sm:pt-5">
         <div className="min-w-0">
           <h2 className="font-semibold">{title}</h2>
-          {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
+          {description && (
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {description}
+            </p>
+          )}
         </div>
-        {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+        {actions && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {actions}
+          </div>
+        )}
       </div>
-      <div className={cn("px-4 pt-4 pb-4 sm:px-5 sm:pb-5", bodyClassName)}>{children}</div>
+      <div className={cn("px-4 pt-4 pb-4 sm:px-5 sm:pb-5", bodyClassName)}>
+        {children}
+      </div>
     </section>
   );
 }

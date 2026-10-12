@@ -1,7 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { BadgeCheck, ChartColumn, Clock, Inbox, Target, Users } from "lucide-react";
+import {
+  BadgeCheck,
+  ChartColumn,
+  Clock,
+  Inbox,
+  Target,
+  Users,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { QuestionStats } from "@/lib/api/reports";
 import { reportCsv } from "@/lib/api/reports";
@@ -13,7 +20,13 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/ui/stat-card";
 import { ColumnChart, Meter } from "./charts";
-import { DownloadButton, PrintButton, PrintHeader, ReportSection, useReportFormat } from "./report-kit";
+import {
+  DownloadButton,
+  PrintButton,
+  PrintHeader,
+  ReportSection,
+  useReportFormat,
+} from "./report-kit";
 
 const HARD = 40;
 const VERY_EASY = 95;
@@ -26,7 +39,13 @@ function difficulty(q: QuestionStats): "hard" | "veryEasy" | null {
 }
 
 /** "Analytics" tab of the quiz/exam editor: score distribution, pass rate, duration and per-question difficulty. */
-export function AssessmentAnalytics({ itemId, active = true }: { itemId: string; active?: boolean }) {
+export function AssessmentAnalytics({
+  itemId,
+  active = true,
+}: {
+  itemId: string;
+  active?: boolean;
+}) {
   const t = useTranslations("reports");
   const tq = useTranslations("questionTypes");
   const f = useReportFormat();
@@ -45,12 +64,16 @@ export function AssessmentAnalytics({ itemId, active = true }: { itemId: string;
       </div>
     );
   }
-  if (data.isError) return <ErrorState error={data.error} onRetry={() => data.refetch()} />;
+  if (data.isError)
+    return <ErrorState error={data.error} onRetry={() => data.refetch()} />;
   const a = data.data;
 
   const actions = (
     <>
-      <DownloadButton path={reportCsv.attempts(itemId)} label={t("analytics.exportAttempts")} />
+      <DownloadButton
+        path={reportCsv.attempts(itemId)}
+        label={t("analytics.exportAttempts")}
+      />
       <PrintButton />
     </>
   );
@@ -61,7 +84,11 @@ export function AssessmentAnalytics({ itemId, active = true }: { itemId: string;
         <EmptyState
           icon={ChartColumn}
           title={t("empty.noAttempts")}
-          description={a.inProgress > 0 ? t("analytics.inProgressOnly", { count: a.inProgress }) : t("empty.noAttemptsText")}
+          description={
+            a.inProgress > 0
+              ? t("analytics.inProgressOnly", { count: a.inProgress })
+              : t("empty.noAttemptsText")
+          }
         />
       </div>
     );
@@ -69,9 +96,17 @@ export function AssessmentAnalytics({ itemId, active = true }: { itemId: string;
 
   return (
     <div className="report-root grid gap-4 sm:gap-6">
-      <PrintHeader title={t("analytics.printTitle", { title: a.title })} course={a.course.title} />
+      <PrintHeader
+        title={t("analytics.printTitle", { title: a.title })}
+        course={a.course.title}
+      />
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-        <p className="text-sm text-muted-foreground">{t("analytics.basis", { count: a.attempts, learners: a.uniqueLearners })}</p>
+        <p className="text-sm text-muted-foreground">
+          {t("analytics.basis", {
+            count: a.attempts,
+            learners: a.uniqueLearners,
+          })}
+        </p>
         <div className="flex flex-wrap gap-2">{actions}</div>
       </div>
 
@@ -87,7 +122,11 @@ export function AssessmentAnalytics({ itemId, active = true }: { itemId: string;
           value={f.pct(a.averagePercent)}
           icon={Target}
           accent="brand"
-          hint={a.medianPercent != null ? t("kpi.median", { value: f.pct(a.medianPercent) }) : t("analytics.noGraded")}
+          hint={
+            a.medianPercent != null
+              ? t("kpi.median", { value: f.pct(a.medianPercent) })
+              : t("analytics.noGraded")
+          }
         />
         <StatCard
           label={t("kpi.passRate")}
@@ -101,13 +140,27 @@ export function AssessmentAnalytics({ itemId, active = true }: { itemId: string;
           value={f.duration(a.averageDurationSeconds)}
           icon={a.pendingGrading > 0 ? Inbox : Clock}
           accent={a.pendingGrading > 0 ? "info" : "default"}
-          hint={a.pendingGrading > 0 ? t("analytics.pending", { count: a.pendingGrading }) : t("analytics.durationHint")}
+          hint={
+            a.pendingGrading > 0
+              ? t("analytics.pending", { count: a.pendingGrading })
+              : t("analytics.durationHint")
+          }
         />
       </div>
 
-      <ReportSection title={t("analytics.distribution")} description={t("analytics.distributionText", { graded: a.gradedAttempts })}>
+      <ReportSection
+        title={t("analytics.distribution")}
+        description={t("analytics.distributionText", {
+          graded: a.gradedAttempts,
+        })}
+      >
         {a.gradedAttempts === 0 ? (
-          <EmptyState compact icon={Inbox} title={t("analytics.noGraded")} description={t("analytics.noGradedText")} />
+          <EmptyState
+            compact
+            icon={Inbox}
+            title={t("analytics.noGraded")}
+            description={t("analytics.noGradedText")}
+          />
         ) : (
           <ColumnChart
             ariaLabel={t("analytics.distribution")}
@@ -126,7 +179,10 @@ export function AssessmentAnalytics({ itemId, active = true }: { itemId: string;
 
       <ReportSection
         title={t("analytics.questions")}
-        description={t("analytics.questionsText", { hard: HARD, easy: VERY_EASY })}
+        description={t("analytics.questionsText", {
+          hard: HARD,
+          easy: VERY_EASY,
+        })}
         bodyClassName="px-0 sm:px-0"
         className="print-break-ok"
       >
@@ -135,47 +191,97 @@ export function AssessmentAnalytics({ itemId, active = true }: { itemId: string;
             <caption className="sr-only">{t("analytics.questions")}</caption>
             <thead className="bg-muted/40 text-xs text-muted-foreground uppercase">
               <tr className="border-b">
-                <th scope="col" className="h-10 w-10 px-3 pl-4 text-left font-medium sm:pl-5">#</th>
-                <th scope="col" className="px-3 text-left font-medium">{t("analytics.question")}</th>
-                <th scope="col" className="w-56 px-3 text-left font-medium">{t("analytics.correct")}</th>
-                <th scope="col" className="px-3 text-right font-medium whitespace-nowrap">{t("analytics.avgPoints")}</th>
-                <th scope="col" className="px-3 pr-4 text-left font-medium sm:pr-5">{t("analytics.wrongAnswers")}</th>
+                <th
+                  scope="col"
+                  className="h-10 w-10 px-3 pl-4 text-left font-medium sm:pl-5"
+                >
+                  #
+                </th>
+                <th scope="col" className="px-3 text-left font-medium">
+                  {t("analytics.question")}
+                </th>
+                <th scope="col" className="w-56 px-3 text-left font-medium">
+                  {t("analytics.correct")}
+                </th>
+                <th
+                  scope="col"
+                  className="px-3 text-right font-medium whitespace-nowrap"
+                >
+                  {t("analytics.avgPoints")}
+                </th>
+                <th
+                  scope="col"
+                  className="px-3 pr-4 text-left font-medium sm:pr-5"
+                >
+                  {t("analytics.wrongAnswers")}
+                </th>
               </tr>
             </thead>
             <tbody>
               {a.questions.map((q) => {
                 const d = difficulty(q);
                 return (
-                  <tr key={q.questionId} className="border-b align-top last:border-0">
-                    <td className="py-3 pr-3 pl-4 text-muted-foreground tabular-nums sm:pl-5">{q.position}</td>
+                  <tr
+                    key={q.questionId}
+                    className="border-b align-top last:border-0"
+                  >
+                    <td className="py-3 pr-3 pl-4 text-muted-foreground tabular-nums sm:pl-5">
+                      {q.position}
+                    </td>
                     <td className="px-3 py-3">
-                      <p className="line-clamp-3 font-medium">{q.prompt || "–"}</p>
+                      <p className="line-clamp-3 font-medium">
+                        {q.prompt || "–"}
+                      </p>
                       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                         <span>{tq(`${q.type}.label`)}</span>
-                        <span>· {t("analytics.points", { count: q.points })}</span>
-                        {q.unanswered > 0 && <span>· {t("analytics.unanswered", { count: q.unanswered })}</span>}
+                        <span>
+                          · {t("analytics.points", { count: q.points })}
+                        </span>
+                        {q.unanswered > 0 && (
+                          <span>
+                            ·{" "}
+                            {t("analytics.unanswered", { count: q.unanswered })}
+                          </span>
+                        )}
                         {d && (
-                          <Badge variant={d === "hard" ? "destructive" : "info"}>{t(`analytics.${d}`)}</Badge>
+                          <Badge
+                            variant={d === "hard" ? "destructive" : "info"}
+                          >
+                            {t(`analytics.${d}`)}
+                          </Badge>
                         )}
                       </div>
                     </td>
                     <td className="px-3 py-3">
                       {q.percentCorrect == null ? (
-                        <span className="text-xs text-muted-foreground">{t("analytics.notEvaluated")}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {t("analytics.notEvaluated")}
+                        </span>
                       ) : (
                         <div className="flex items-center gap-2">
                           <Meter
                             value={q.percentCorrect}
                             className="w-28"
                             label={t("analytics.correct")}
-                            barClassName={cn(d === "hard" ? "bg-destructive" : q.percentCorrect >= 70 ? "bg-success" : "bg-warning")}
+                            barClassName={cn(
+                              d === "hard"
+                                ? "bg-destructive"
+                                : q.percentCorrect >= 70
+                                  ? "bg-success"
+                                  : "bg-warning",
+                            )}
                           />
-                          <span className="w-12 text-right font-medium tabular-nums">{f.pct0(q.percentCorrect)}</span>
+                          <span className="w-12 text-right font-medium tabular-nums">
+                            {f.pct0(q.percentCorrect)}
+                          </span>
                         </div>
                       )}
                     </td>
                     <td className="px-3 py-3 text-right whitespace-nowrap tabular-nums">
-                      {f.num(q.averagePoints)} <span className="text-muted-foreground">/ {q.points}</span>
+                      {f.num(q.averagePoints)}{" "}
+                      <span className="text-muted-foreground">
+                        / {q.points}
+                      </span>
                     </td>
                     <td className="px-3 py-3 pr-4 sm:pr-5">
                       {q.commonWrongAnswers.length === 0 ? (
@@ -183,9 +289,16 @@ export function AssessmentAnalytics({ itemId, active = true }: { itemId: string;
                       ) : (
                         <ul className="grid gap-1">
                           {q.commonWrongAnswers.map((w) => (
-                            <li key={w.text} className="flex items-center gap-2 text-xs">
-                              <span className="max-w-56 truncate rounded bg-destructive-soft px-1.5 py-0.5 text-destructive">{w.text}</span>
-                              <span className="text-muted-foreground tabular-nums">×{w.count}</span>
+                            <li
+                              key={w.text}
+                              className="flex items-center gap-2 text-xs"
+                            >
+                              <span className="max-w-56 truncate rounded bg-destructive-soft px-1.5 py-0.5 text-destructive">
+                                {w.text}
+                              </span>
+                              <span className="text-muted-foreground tabular-nums">
+                                ×{w.count}
+                              </span>
                             </li>
                           ))}
                         </ul>

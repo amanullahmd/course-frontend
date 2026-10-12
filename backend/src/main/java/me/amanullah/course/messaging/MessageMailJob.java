@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -49,6 +50,7 @@ public class MessageMailJob {
 
     @Scheduled(fixedDelayString = "${app.messaging.mail-job.interval-ms:60000}",
             initialDelayString = "${app.messaging.mail-job.initial-delay-ms:30000}")
+    @SchedulerLock(name = "MessageMailJob.sendDue", lockAtMostFor = "PT5M", lockAtLeastFor = "PT5S")
     public void scheduledRun() {
         if (!enabled) {
             return;

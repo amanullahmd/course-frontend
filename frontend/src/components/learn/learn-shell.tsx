@@ -21,6 +21,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Progress } from "@/components/ui/progress";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CourseSidebarLinks } from "@/components/announcements/course-sidebar-links";
 
 function Outline({ data, activeItemId, onNavigate }: { data: LearnCourseDto; activeItemId?: string; onNavigate?: () => void }) {
   const t = useTranslations("learn");
@@ -199,6 +200,7 @@ export function LearnShell({ children }: { children: React.ReactNode }) {
         >
           <SidebarHeader data={ctx.data} />
           <div className="min-h-0 flex-1 overflow-y-auto p-2">
+            <CourseSidebarLinks data={ctx.data} />
             <Outline data={ctx.data} activeItemId={params.itemId} />
           </div>
         </aside>
@@ -233,6 +235,7 @@ export function LearnShell({ children }: { children: React.ReactNode }) {
           <SheetDescription className="sr-only">{t("outlineDesc")}</SheetDescription>
           <SidebarHeader data={ctx.data} />
           <div className="min-h-0 flex-1 overflow-y-auto p-2">
+            <CourseSidebarLinks data={ctx.data} onNavigate={() => setMobileOpen(false)} />
             <Outline data={ctx.data} activeItemId={params.itemId} onNavigate={() => setMobileOpen(false)} />
           </div>
         </SheetContent>

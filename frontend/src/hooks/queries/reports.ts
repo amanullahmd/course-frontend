@@ -10,10 +10,14 @@ import { useErrorMessage } from "@/hooks/use-error-message";
 /** Query keys of the instructor reports (all below ["instructor", "reports"], so instructor invalidations refresh them). */
 export const reportKeys = {
   all: ["instructor", "reports"] as const,
-  overview: (courseId: string) => ["instructor", "reports", "overview", courseId] as const,
-  gradebook: (courseId: string) => ["instructor", "reports", "gradebook", courseId] as const,
-  student: (courseId: string, studentId: string) => ["instructor", "reports", "student", courseId, studentId] as const,
-  assessment: (itemId: string) => ["instructor", "reports", "assessment", itemId] as const,
+  overview: (courseId: string) =>
+    ["instructor", "reports", "overview", courseId] as const,
+  gradebook: (courseId: string) =>
+    ["instructor", "reports", "gradebook", courseId] as const,
+  student: (courseId: string, studentId: string) =>
+    ["instructor", "reports", "student", courseId, studentId] as const,
+  assessment: (itemId: string) =>
+    ["instructor", "reports", "assessment", itemId] as const,
 };
 
 const STALE = 30_000;
@@ -41,7 +45,13 @@ export function useStudentReport(courseId: string, studentId: string) {
     queryKey: reportKeys.student(courseId, studentId),
     queryFn: () => reportsApi.student(courseId, studentId),
     staleTime: STALE,
-    retry: (count, error) => count < 2 && !(error && "status" in error && (error as { status: number }).status < 500),
+    retry: (count, error) =>
+      count < 2 &&
+      !(
+        error &&
+        "status" in error &&
+        (error as { status: number }).status < 500
+      ),
   });
 }
 

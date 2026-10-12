@@ -23,6 +23,8 @@ export class ApiError extends Error {
   readonly detail?: string;
   readonly fieldErrors: Record<string, string>;
   readonly traceId?: string;
+  /** The full problem body (extension properties such as retryAfterSeconds, usedBytes, quotaBytes). */
+  readonly problem: ProblemDetail;
 
   constructor(status: number, problem: ProblemDetail = {}, fallbackMessage?: string) {
     super(problem.detail || fallbackMessage || problem.title || `Request failed (${status})`);
@@ -33,6 +35,7 @@ export class ApiError extends Error {
     this.detail = problem.detail;
     this.fieldErrors = problem.errors ?? {};
     this.traceId = problem.traceId;
+    this.problem = problem;
   }
 
   get isNetworkError(): boolean {

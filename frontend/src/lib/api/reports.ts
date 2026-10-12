@@ -1,5 +1,18 @@
-import { api, API_URL, ApiError, getAccessToken, getApiLocale, refreshSession } from "./client";
-import type { AttemptStatus, EnrollmentStatus, ItemType, ProblemDetail, QuestionType } from "./types";
+import {
+  api,
+  API_URL,
+  ApiError,
+  getAccessToken,
+  getApiLocale,
+  refreshSession,
+} from "./client";
+import type {
+  AttemptStatus,
+  EnrollmentStatus,
+  ItemType,
+  ProblemDetail,
+  QuestionType,
+} from "./types";
 
 // ---------------------------------------------------------------------------
 // DTOs (see docs/PLAN.md §6 "Reports"); percentages are 0–100, null = nothing to average
@@ -100,8 +113,16 @@ export interface GradebookColumn {
   stats: ColumnStats;
 }
 
-export type CellStatus = "NOT_STARTED" | "IN_PROGRESS" | "SUBMITTED_PENDING" | "GRADED";
-export type ActivityStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "INACTIVE";
+export type CellStatus =
+  | "NOT_STARTED"
+  | "IN_PROGRESS"
+  | "SUBMITTED_PENDING"
+  | "GRADED";
+export type ActivityStatus =
+  | "NOT_STARTED"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "INACTIVE";
 
 export interface GradebookCell {
   itemId: string;
@@ -149,8 +170,18 @@ export interface Gradebook {
 export interface StudentReport {
   course: CourseRef;
   generatedAt: string;
-  student: { id: string; fullName: string; email: string; avatarUrl: string | null };
-  enrollment: { id: string; status: EnrollmentStatus; appliedAt: string; decidedAt: string | null };
+  student: {
+    id: string;
+    fullName: string;
+    email: string;
+    avatarUrl: string | null;
+  };
+  enrollment: {
+    id: string;
+    status: EnrollmentStatus;
+    appliedAt: string;
+    decidedAt: string | null;
+  };
   progressPercent: number;
   completedItems: number;
   totalLiveItems: number;
@@ -161,7 +192,12 @@ export interface StudentReport {
     completedItems: number;
     totalItems: number;
     progressPercent: number;
-    items: { itemId: string; title: string; type: ItemType; completedAt: string | null }[];
+    items: {
+      itemId: string;
+      title: string;
+      type: ItemType;
+      completedAt: string | null;
+    }[];
   }[];
   attempts: {
     id: string;
@@ -231,17 +267,25 @@ export interface AssessmentAnalytics {
 const base = "/api/instructor";
 
 export const reportsApi = {
-  overview: (courseId: string) => api.get<OverviewReport>(`${base}/courses/${courseId}/reports/overview`),
-  gradebook: (courseId: string) => api.get<Gradebook>(`${base}/courses/${courseId}/reports/gradebook`),
+  overview: (courseId: string) =>
+    api.get<OverviewReport>(`${base}/courses/${courseId}/reports/overview`),
+  gradebook: (courseId: string) =>
+    api.get<Gradebook>(`${base}/courses/${courseId}/reports/gradebook`),
   student: (courseId: string, studentId: string) =>
-    api.get<StudentReport>(`${base}/courses/${courseId}/reports/students/${studentId}`),
-  assessment: (itemId: string) => api.get<AssessmentAnalytics>(`${base}/items/${itemId}/reports/assessment`),
+    api.get<StudentReport>(
+      `${base}/courses/${courseId}/reports/students/${studentId}`,
+    ),
+  assessment: (itemId: string) =>
+    api.get<AssessmentAnalytics>(`${base}/items/${itemId}/reports/assessment`),
 };
 
 export const reportCsv = {
-  gradebook: (courseId: string) => `${base}/courses/${courseId}/reports/gradebook.csv`,
-  progress: (courseId: string) => `${base}/courses/${courseId}/reports/progress.csv`,
-  student: (courseId: string, studentId: string) => `${base}/courses/${courseId}/reports/students/${studentId}.csv`,
+  gradebook: (courseId: string) =>
+    `${base}/courses/${courseId}/reports/gradebook.csv`,
+  progress: (courseId: string) =>
+    `${base}/courses/${courseId}/reports/progress.csv`,
+  student: (courseId: string, studentId: string) =>
+    `${base}/courses/${courseId}/reports/students/${studentId}.csv`,
   attempts: (itemId: string) => `${base}/items/${itemId}/reports/attempts.csv`,
 };
 
@@ -263,18 +307,27 @@ function fileNameFrom(disposition: string | null, fallback: string): string {
 }
 
 async function fetchFile(path: string): Promise<Response> {
-  const headers: Record<string, string> = { Accept: "text/csv, application/problem+json", "Accept-Language": getApiLocale() };
+  const headers: Record<string, string> = {
+    Accept: "text/csv, application/problem+json",
+    "Accept-Language": getApiLocale(),
+  };
   const token = getAccessToken();
   if (token) headers.Authorization = `Bearer ${token}`;
   try {
-    return await fetch(`${API_URL}${path}`, { headers, credentials: "include" });
+    return await fetch(`${API_URL}${path}`, {
+      headers,
+      credentials: "include",
+    });
   } catch {
     throw new ApiError(0, { code: "NETWORK_ERROR" }, "Server unreachable");
   }
 }
 
 /** Fetches a file with the access token and saves it via a temporary object URL. Returns the file name. */
-export async function downloadFile(path: string, fallbackName = "export.csv"): Promise<string> {
+export async function downloadFile(
+  path: string,
+  fallbackName = "export.csv",
+): Promise<string> {
   let res = await fetchFile(path);
   if (res.status === 401) {
     const session = await refreshSession();
@@ -283,14 +336,18 @@ export async function downloadFile(path: string, fallbackName = "export.csv"): P
   if (!res.ok) {
     let problem: ProblemDetail = {};
     try {
-      if ((res.headers.get("content-type") ?? "").includes("json")) problem = (await res.json()) as ProblemDetail;
+      if ((res.headers.get("content-type") ?? "").includes("json"))
+        problem = (await res.json()) as ProblemDetail;
     } catch {
       problem = {};
     }
     throw new ApiError(res.status, problem);
   }
   const blob = await res.blob();
-  const name = fileNameFrom(res.headers.get("content-disposition"), fallbackName);
+  const name = fileNameFrom(
+    res.headers.get("content-disposition"),
+    fallbackName,
+  );
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

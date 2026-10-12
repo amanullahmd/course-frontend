@@ -10,6 +10,8 @@ export type Instant = string;
 // Enums
 // ---------------------------------------------------------------------------
 export type Role = "STUDENT" | "INSTRUCTOR" | "ADMIN";
+/** Review state of instructor accounts (null for students and admins). */
+export type InstructorStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type RegisterRole = Exclude<Role, "ADMIN">;
 export type CefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
 export type EnrollmentMode = "APPROVAL" | "OPEN";
@@ -56,6 +58,11 @@ export interface ProblemDetail {
   errors?: Record<string, string>;
   /** Correlation id for 5xx errors (backend extension). */
   traceId?: string;
+  /** 429 RATE_LIMITED: seconds until the next attempt is allowed (also in the Retry-After header). */
+  retryAfterSeconds?: number;
+  /** 413 QUOTA_EXCEEDED: storage usage of the uploader. */
+  usedBytes?: number;
+  quotaBytes?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -72,10 +79,14 @@ export interface UserDto {
   avatarMediaId?: Uuid | null;
   locale?: "en" | "de";
   createdAt: Instant;
+  /** Instructors only: accounts must be approved by an admin before they can create courses. */
+  instructorStatus?: InstructorStatus | null;
 }
 
 export interface AdminUserDto extends UserDto {
   enabled: boolean;
+  /** The account was deleted by its owner (anonymised). */
+  deleted?: boolean;
 }
 
 export interface AuthResponse {
@@ -92,6 +103,8 @@ export interface RegisterRequest {
   role: RegisterRole;
   /** UI locale for e-mails (backend extension). */
   locale?: string;
+  /** "I accept the terms and have read the privacy policy" (required). */
+  acceptTerms?: boolean;
 }
 
 export interface LoginRequest {
@@ -583,6 +596,8 @@ export interface AdminStatsDto {
   courses: number;
   liveCourses: number;
   enrollments: number;
+  /** Instructor accounts waiting for approval. */
+  pendingInstructors?: number;
 }
 
 export interface AdminUserUpdate {
@@ -593,6 +608,7 @@ export interface AdminUserUpdate {
 export interface AdminUsersQuery {
   q?: string;
   role?: Role;
+  instructorStatus?: InstructorStatus;
   page?: number;
   size?: number;
 }

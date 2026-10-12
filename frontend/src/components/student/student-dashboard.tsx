@@ -19,6 +19,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/ui/stat-card";
+import { UnreadAnnouncementsHint } from "@/components/announcements/unread-hint";
 
 function ContinueCard({ enrollment }: { enrollment: StudentEnrollmentDto }) {
   const t = useTranslations("student");
@@ -34,6 +35,9 @@ function ContinueCard({ enrollment }: { enrollment: StudentEnrollmentDto }) {
         <div>
           <h3 className="line-clamp-1 font-semibold">{course.title}</h3>
           <p className="text-xs text-muted-foreground">{t("withInstructor", { name: course.instructor.fullName })}</p>
+          <div className="mt-2 empty:hidden">
+            <UnreadAnnouncementsHint courseId={course.id} />
+          </div>
         </div>
         <div className="mt-auto grid gap-1.5">
           <div className="flex justify-between text-xs">

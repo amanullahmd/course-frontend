@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { MessageInstructorButton } from "@/components/messages/message-button";
 
 type CourseLike = Pick<CoursePublicDto, "id" | "slug" | "title" | "enrollmentMode" | "capacity" | "studentCount" | "instructor">;
 
@@ -160,6 +161,7 @@ export function EnrollCard({ course, className }: { course: CourseLike; classNam
                 {t("continue")} <ArrowRight />
               </Link>
             </Button>
+            <MessageInstructorButton instructor={course.instructor} course={{ id: course.id, title: course.title }} />
           </div>
         );
         break;
@@ -183,6 +185,7 @@ export function EnrollCard({ course, className }: { course: CourseLike; classNam
                 )}
               </p>
             </div>
+            <MessageInstructorButton instructor={course.instructor} course={{ id: course.id, title: course.title }} />
             <Button variant="outline" onClick={() => setWithdrawOpen(true)}>
               {t("withdraw")}
             </Button>

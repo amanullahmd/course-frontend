@@ -81,6 +81,9 @@
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 10px !important;
   }
+  .report-root .report-grid.print-stack {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
   .report-root .kpi-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
@@ -95,6 +98,7 @@
   }
   .report-root table {
     font-size: 8.5pt;
+    min-width: 0 !important;
   }
   .report-root thead {
     display: table-header-group;

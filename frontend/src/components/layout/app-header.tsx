@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/
 import { LocaleSwitcher } from "./locale-switcher";
 import { Logo } from "./logo";
 import { NotificationsBell } from "./notifications-bell";
+import { MessagesHeaderButton } from "@/components/messages/messages-header-button";
 import { ThemeToggleButton } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 import { homeForRole, isActive, navForRole } from "./nav-config";
@@ -74,6 +75,7 @@ function MobileNavList({ onNavigate }: { onNavigate: () => void }) {
         <LocaleSwitcher />
       </div>
       {[
+        { href: "/messages", label: t("messages") },
         { href: "/notifications", label: t("notifications") },
         { href: "/settings", label: t("settings") },
       ].map((l) => (
@@ -109,6 +111,7 @@ export function AppHeader() {
           <span className="hidden sm:inline-flex">
             <ThemeToggleButton />
           </span>
+          {user && <MessagesHeaderButton />}
           {user && <NotificationsBell />}
           <UserMenu />
         </div>

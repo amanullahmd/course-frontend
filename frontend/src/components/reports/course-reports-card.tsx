@@ -16,7 +16,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function CourseReportsCard({ className }: { className?: string }) {
   const t = useTranslations("reports");
   const courses = useInstructorCourses();
-  const list = [...(courses.data ?? [])].sort((a, b) => b.studentCount - a.studentCount || b.updatedAt.localeCompare(a.updatedAt));
+  const list = [...(courses.data ?? [])].sort(
+    (a, b) =>
+      b.studentCount - a.studentCount || b.updatedAt.localeCompare(a.updatedAt),
+  );
   return (
     <Card className={cn(className)}>
       <CardHeader className="flex-row items-center justify-between">
@@ -39,21 +42,43 @@ export function CourseReportsCard({ className }: { className?: string }) {
         ) : (
           <ul className="-mx-2 grid gap-0.5">
             {list.slice(0, 6).map((c) => (
-              <li key={c.id} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-muted/40">
+              <li
+                key={c.id}
+                className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-muted/40"
+              >
                 <div className="min-w-0 flex-1">
-                  <Link href={`/instructor/courses/${c.id}`} className="block truncate text-sm font-medium hover:underline">
+                  <Link
+                    href={`/instructor/courses/${c.id}`}
+                    className="block truncate text-sm font-medium hover:underline"
+                  >
                     {c.title}
                   </Link>
                   <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <LevelBadge level={c.level} />
-                    <VisibilityBadge visibility={c.visibility} publishAt={c.publishAt} compact />
-                    <span>{t("dashboard.learners", { count: c.studentCount })}</span>
-                    {c.pendingCount > 0 && <span>· {t("dashboard.pending", { count: c.pendingCount })}</span>}
+                    <VisibilityBadge
+                      visibility={c.visibility}
+                      publishAt={c.publishAt}
+                      compact
+                    />
+                    <span>
+                      {t("dashboard.learners", { count: c.studentCount })}
+                    </span>
+                    {c.pendingCount > 0 && (
+                      <span>
+                        · {t("dashboard.pending", { count: c.pendingCount })}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <Button variant="outline" size="xs" asChild>
-                  <Link href={`/instructor/courses/${c.id}?tab=reports`} aria-label={t("dashboard.viewFor", { title: c.title })}>
-                    <BarChart3 /> <span className="hidden sm:inline">{t("dashboard.view")}</span>
+                  <Link
+                    href={`/instructor/courses/${c.id}?tab=reports`}
+                    aria-label={t("dashboard.viewFor", { title: c.title })}
+                  >
+                    <BarChart3 />{" "}
+                    <span className="hidden sm:inline">
+                      {t("dashboard.view")}
+                    </span>
                   </Link>
                 </Button>
               </li>

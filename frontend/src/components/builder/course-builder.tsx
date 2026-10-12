@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { BarChart3, ChevronRight, Ellipsis, ExternalLink, Eye, FileCog, Layers, Rocket, Trash, Users } from "lucide-react";
+import { BarChart3, ChevronRight, Ellipsis, ExternalLink, Eye, FileCog, Layers, Megaphone, Rocket, Trash, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { isApiError } from "@/lib/api/client";
@@ -32,8 +32,9 @@ import { PublishingPanel } from "./publishing-panel";
 import { CourseActiveSwitch } from "./course-active-switch";
 import { StudentsPanel } from "./students-panel";
 import { ReportsPanel } from "@/components/reports/reports-panel";
+import { AnnouncementsPanel } from "@/components/announcements/announcements-panel";
 
-const TABS = ["curriculum", "details", "publishing", "students", "reports"] as const;
+const TABS = ["curriculum", "details", "publishing", "students", "announcements", "reports"] as const;
 type Tab = (typeof TABS)[number];
 
 function BuilderSkeleton() {
@@ -197,6 +198,9 @@ export function CourseBuilder() {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="announcements">
+            <Megaphone /> {t("builder.tabs.announcements")}
+          </TabsTrigger>
           <TabsTrigger value="reports">
             <BarChart3 /> {t("builder.tabs.reports")}
           </TabsTrigger>
@@ -216,6 +220,9 @@ export function CourseBuilder() {
         </TabsContent>
         <TabsContent value="students" className="mt-6">
           <StudentsPanel courseId={c.id} capacity={c.capacity} />
+        </TabsContent>
+        <TabsContent value="announcements" className="mt-6">
+          <AnnouncementsPanel courseId={c.id} />
         </TabsContent>
         <TabsContent value="reports" className="mt-6">
           <ReportsPanel courseId={c.id} courseTitle={c.title} />

@@ -76,6 +76,9 @@
             "format": "date-time",
             "type": "string"
           },
+          "deleted": {
+            "type": "boolean"
+          },
           "email": {
             "type": "string"
           },
@@ -92,6 +95,14 @@
             "format": "uuid",
             "type": "string"
           },
+          "instructorStatus": {
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "type": "string"
+          },
           "locale": {
             "type": "string"
           },
@@ -104,6 +115,141 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "AnnouncementDto": {
+        "properties": {
+          "audience": {
+            "enum": [
+              "ALL_APPROVED",
+              "SELECTED"
+            ],
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/AuthorDto"
+          },
+          "body": {
+            "type": "string"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "courseTitle": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "readCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "readPercent": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "recipientCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "recipientIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "scheduledAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "sendEmail": {
+            "type": "boolean"
+          },
+          "sentAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "SCHEDULED",
+              "SENT"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AnnouncementUpsert": {
+        "properties": {
+          "audience": {
+            "enum": [
+              "ALL_APPROVED",
+              "SELECTED"
+            ],
+            "type": "string"
+          },
+          "body": {
+            "maxLength": 40000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "recipientIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 500,
+            "minItems": 0,
+            "type": "array"
+          },
+          "scheduledAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "sendEmail": {
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "SCHEDULED",
+              "SENT"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "audience",
+          "body",
+          "title"
+        ],
         "type": "object"
       },
       "AnswerResult": {
@@ -569,6 +715,21 @@
         },
         "type": "object"
       },
+      "AuthorDto": {
+        "properties": {
+          "avatarUrl": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "Bucket": {
         "properties": {
           "count": {
@@ -622,6 +783,276 @@
           "action",
           "ids"
         ],
+        "type": "object"
+      },
+      "CertificateDto": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "completedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "courseTitle": {
+            "type": "string"
+          },
+          "finalScore": {
+            "format": "double",
+            "type": "number"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "instructorName": {
+            "type": "string"
+          },
+          "issueType": {
+            "enum": [
+              "AUTOMATIC",
+              "MANUAL"
+            ],
+            "type": "string"
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "learnerName": {
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "organization": {
+            "type": "string"
+          },
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "revokedReason": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "REVOKED"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "verificationUrl": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CertificateSettingsDto": {
+        "properties": {
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "courseLevel": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "courseTitle": {
+            "type": "string"
+          },
+          "customText": {
+            "type": "string"
+          },
+          "defaultSignerName": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "issuedCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "language": {
+            "enum": [
+              "LEARNER",
+              "EN",
+              "DE"
+            ],
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "minAverageScore": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "minProgressPercent": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "organization": {
+            "type": "string"
+          },
+          "requireAssessmentsPassed": {
+            "type": "boolean"
+          },
+          "showScore": {
+            "type": "boolean"
+          },
+          "signatureImage": {
+            "$ref": "#/components/schemas/MediaDto"
+          },
+          "signerName": {
+            "type": "string"
+          },
+          "signerTitle": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CertificateSettingsUpdate": {
+        "properties": {
+          "customText": {
+            "maxLength": 400,
+            "minLength": 0,
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "language": {
+            "enum": [
+              "LEARNER",
+              "EN",
+              "DE"
+            ],
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "minAverageScore": {
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "minProgressPercent": {
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "organization": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
+          },
+          "requireAssessmentsPassed": {
+            "type": "boolean"
+          },
+          "showScore": {
+            "type": "boolean"
+          },
+          "signatureImageId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "signerName": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
+          },
+          "signerTitle": {
+            "maxLength": 80,
+            "minLength": 0,
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 80,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "language",
+          "minProgressPercent"
+        ],
+        "type": "object"
+      },
+      "CertificateStatusDto": {
+        "properties": {
+          "certificate": {
+            "$ref": "#/components/schemas/CertificateDto"
+          },
+          "criteria": {
+            "items": {
+              "$ref": "#/components/schemas/CriterionDto"
+            },
+            "type": "array"
+          },
+          "criteriaMet": {
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "NOT_ENABLED",
+              "IN_PROGRESS",
+              "ISSUED",
+              "REVOKED"
+            ],
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "ChangePasswordRequest": {
@@ -767,6 +1198,36 @@
               "EXPIRED"
             ],
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ConversationDto": {
+        "properties": {
+          "course": {
+            "$ref": "#/components/schemas/CourseRefDto"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "lastMessage": {
+            "$ref": "#/components/schemas/LastMessageDto"
+          },
+          "lastMessageAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "other": {
+            "$ref": "#/components/schemas/ParticipantDto"
+          },
+          "unreadCount": {
+            "format": "int64",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -1028,6 +1489,18 @@
         },
         "type": "object"
       },
+      "CourseRefDto": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "CourseSummaryDto": {
         "properties": {
           "coverImageUrl": {
@@ -1087,6 +1560,19 @@
             "type": "array"
           },
           "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CourseUnreadDto": {
+        "properties": {
+          "count": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "courseId": {
+            "format": "uuid",
             "type": "string"
           }
         },
@@ -1155,6 +1641,34 @@
         ],
         "type": "object"
       },
+      "CriterionDto": {
+        "properties": {
+          "current": {
+            "format": "double",
+            "type": "number"
+          },
+          "key": {
+            "enum": [
+              "PROGRESS",
+              "ASSESSMENTS_PASSED",
+              "AVERAGE_SCORE"
+            ],
+            "type": "string"
+          },
+          "met": {
+            "type": "boolean"
+          },
+          "pending": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "target": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
       "DashboardDto": {
         "properties": {
           "courseCount": {
@@ -1186,6 +1700,25 @@
             "type": "array"
           }
         },
+        "type": "object"
+      },
+      "DeleteAccountRequest": {
+        "properties": {
+          "confirm": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirm",
+          "password"
+        ],
         "type": "object"
       },
       "EmailRequest": {
@@ -1538,6 +2071,77 @@
         ],
         "type": "object"
       },
+      "InstructorCertificateDto": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "completedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "courseTitle": {
+            "type": "string"
+          },
+          "finalScore": {
+            "format": "double",
+            "type": "number"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "issueType": {
+            "enum": [
+              "AUTOMATIC",
+              "MANUAL"
+            ],
+            "type": "string"
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "issuedByName": {
+            "type": "string"
+          },
+          "learnerName": {
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "revokedReason": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "REVOKED"
+            ],
+            "type": "string"
+          },
+          "student": {
+            "$ref": "#/components/schemas/UserSummaryDto"
+          },
+          "verificationUrl": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "InstructorCourseDto": {
         "properties": {
           "coverImageUrl": {
@@ -1614,6 +2218,16 @@
         },
         "type": "object"
       },
+      "InstructorDecisionRequest": {
+        "properties": {
+          "reason": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "InstructorProfile": {
         "properties": {
           "avatarUrl": {
@@ -1645,6 +2259,18 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "IssueRequest": {
+        "properties": {
+          "studentId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "studentId"
+        ],
         "type": "object"
       },
       "ItemEngagement": {
@@ -1842,6 +2468,25 @@
         },
         "type": "object"
       },
+      "LastMessageDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "mine": {
+            "type": "boolean"
+          },
+          "preview": {
+            "type": "string"
+          },
+          "senderId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "LearnAssessmentDto": {
         "properties": {
           "attemptsUsed": {
@@ -2027,6 +2672,45 @@
         },
         "type": "object"
       },
+      "LearnerAnnouncementDto": {
+        "properties": {
+          "author": {
+            "$ref": "#/components/schemas/AuthorDto"
+          },
+          "body": {
+            "type": "string"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "edited": {
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "read": {
+            "type": "boolean"
+          },
+          "sentAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "LocaleRequest": {
         "properties": {
           "locale": {
@@ -2095,6 +2779,54 @@
             "type": "integer"
           },
           "url": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "MessageDto": {
+        "properties": {
+          "body": {
+            "type": "string"
+          },
+          "conversationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "mine": {
+            "type": "boolean"
+          },
+          "read": {
+            "type": "boolean"
+          },
+          "senderId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "MessagePageDto": {
+        "properties": {
+          "hasMore": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MessageDto"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "format": "uuid",
             "type": "string"
           }
         },
@@ -2259,7 +2991,11 @@
               "ENROLLMENT_REVOKED",
               "ENROLLMENT_WITHDRAWN",
               "ATTEMPT_SUBMITTED",
-              "ATTEMPT_GRADED"
+              "ATTEMPT_GRADED",
+              "CERTIFICATE_ISSUED",
+              "CERTIFICATE_REVOKED",
+              "ANNOUNCEMENT",
+              "MESSAGE"
             ],
             "type": "string"
           }
@@ -2428,6 +3164,33 @@
         },
         "type": "object"
       },
+      "PageResponseConversationDto": {
+        "properties": {
+          "content": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalElements": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalPages": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "PageResponseCourseSummaryDto": {
         "properties": {
           "content": {
@@ -2478,6 +3241,29 @@
           "totalPages": {
             "format": "int32",
             "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ParticipantDto": {
+        "properties": {
+          "avatarUrl": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "STUDENT",
+              "INSTRUCTOR",
+              "ADMIN"
+            ],
+            "type": "string"
           }
         },
         "type": "object"
@@ -2722,6 +3508,9 @@
       },
       "RegisterRequest": {
         "properties": {
+          "acceptTerms": {
+            "type": "boolean"
+          },
           "email": {
             "format": "email",
             "maxLength": 255,
@@ -2790,6 +3579,19 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "RevokeRequest": {
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
         "type": "object"
       },
       "SaveAnswersRequest": {
@@ -2864,6 +3666,19 @@
         },
         "type": "object"
       },
+      "SendMessageRequest": {
+        "properties": {
+          "body": {
+            "maxLength": 5000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "type": "object"
+      },
       "SessionOption": {
         "properties": {
           "id": {
@@ -2923,6 +3738,28 @@
         },
         "type": "object"
       },
+      "StartConversationRequest": {
+        "properties": {
+          "body": {
+            "maxLength": 5000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "recipientId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "recipientId"
+        ],
+        "type": "object"
+      },
       "StatsDto": {
         "properties": {
           "courses": {
@@ -2941,11 +3778,28 @@
             "format": "int64",
             "type": "integer"
           },
+          "pendingInstructors": {
+            "format": "int64",
+            "type": "integer"
+          },
           "students": {
             "format": "int64",
             "type": "integer"
           },
           "users": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "StorageUsage": {
+        "properties": {
+          "quotaBytes": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "usedBytes": {
             "format": "int64",
             "type": "integer"
           }
@@ -3238,6 +4092,19 @@
         },
         "type": "object"
       },
+      "UnreadCountDto": {
+        "properties": {
+          "conversations": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "count": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "UpdateProfileRequest": {
         "properties": {
           "avatarMediaId": {
@@ -3305,6 +4172,14 @@
             "format": "uuid",
             "type": "string"
           },
+          "instructorStatus": {
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "type": "string"
+          },
           "locale": {
             "type": "string"
           },
@@ -3333,6 +4208,58 @@
           "id": {
             "format": "uuid",
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "VerificationDto": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "completedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "courseTitle": {
+            "type": "string"
+          },
+          "instructorName": {
+            "type": "string"
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "learnerName": {
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "organization": {
+            "type": "string"
+          },
+          "revoked": {
+            "type": "boolean"
+          },
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
           }
         },
         "type": "object"
@@ -3429,6 +4356,19 @@
           },
           {
             "in": "query",
+            "name": "instructorStatus",
+            "required": false,
+            "schema": {
+              "enum": [
+                "PENDING",
+                "APPROVED",
+                "REJECTED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "page",
             "required": false,
             "schema": {
@@ -3465,7 +4405,7 @@
     },
     "/api/admin/users/{id}": {
       "put": {
-        "operationId": "update_2",
+        "operationId": "update_3",
         "parameters": [
           {
             "in": "path",
@@ -3486,6 +4426,77 @@
             }
           },
           "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/admin/users/{id}/approve-instructor": {
+      "post": {
+        "operationId": "approveInstructor",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/admin/users/{id}/reject-instructor": {
+      "post": {
+        "operationId": "rejectInstructor",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstructorDecisionRequest"
+              }
+            }
+          }
         },
         "responses": {
           "200": {
@@ -3717,6 +4728,129 @@
         ]
       }
     },
+    "/api/instructor/announcements/{id}": {
+      "delete": {
+        "operationId": "delete_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: announcements"
+        ]
+      },
+      "get": {
+        "operationId": "get_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: announcements"
+        ]
+      },
+      "put": {
+        "operationId": "update_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: announcements"
+        ]
+      }
+    },
+    "/api/instructor/announcements/{id}/send": {
+      "post": {
+        "operationId": "send_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: announcements"
+        ]
+      }
+    },
     "/api/instructor/attempts/{id}": {
       "get": {
         "operationId": "attempt",
@@ -3789,6 +4923,88 @@
         ]
       }
     },
+    "/api/instructor/certificates/{id}/pdf": {
+      "get": {
+        "operationId": "pdf_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Certificate as PDF (A4 landscape); revoked certificates carry a stamp",
+        "tags": [
+          "Instructor: certificates"
+        ]
+      }
+    },
+    "/api/instructor/certificates/{id}/revoke": {
+      "post": {
+        "operationId": "revoke_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstructorCertificateDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: certificates"
+        ]
+      }
+    },
     "/api/instructor/courses": {
       "get": {
         "operationId": "courses",
@@ -3837,6 +5053,234 @@
         },
         "tags": [
           "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/announcements": {
+      "get": {
+        "operationId": "list",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AnnouncementDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: announcements"
+        ]
+      },
+      "post": {
+        "operationId": "create_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementDto"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Instructor: announcements"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/certificate-settings": {
+      "get": {
+        "operationId": "settings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateSettingsDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: certificates"
+        ]
+      },
+      "put": {
+        "operationId": "updateSettings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateSettingsDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: certificates"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/certificates": {
+      "get": {
+        "operationId": "list_4",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InstructorCertificateDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Issued certificates of a course (newest first), optionally filtered by name, e-mail or code",
+        "tags": [
+          "Instructor: certificates"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/certificates/issue": {
+      "post": {
+        "operationId": "issue",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstructorCertificateDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Issue a certificate manually (override), also when the learner does not meet the criteria",
+        "tags": [
+          "Instructor: certificates"
         ]
       }
     },
@@ -4185,7 +5629,7 @@
     },
     "/api/instructor/courses/{id}/enrollments": {
       "get": {
-        "operationId": "list_1",
+        "operationId": "list_3",
         "parameters": [
           {
             "in": "path",
@@ -5082,9 +6526,29 @@
         ]
       }
     },
+    "/api/media/usage": {
+      "get": {
+        "operationId": "usage",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageUsage"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
     "/api/media/{id}": {
       "delete": {
-        "operationId": "delete_1",
+        "operationId": "delete_2",
         "parameters": [
           {
             "in": "path",
@@ -5106,7 +6570,7 @@
         ]
       },
       "get": {
-        "operationId": "get_2",
+        "operationId": "get_3",
         "parameters": [
           {
             "in": "path",
@@ -5193,9 +6657,288 @@
         ]
       }
     },
+    "/api/messages/conversations": {
+      "get": {
+        "operationId": "conversations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseConversationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      },
+      "post": {
+        "operationId": "start_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartConversationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDto"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/messages/conversations/with/{userId}": {
+      "get": {
+        "operationId": "with",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "courseId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/messages/conversations/{id}": {
+      "get": {
+        "operationId": "conversation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/messages/conversations/{id}/messages": {
+      "get": {
+        "operationId": "messages",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagePageDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      },
+      "post": {
+        "operationId": "send",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageDto"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/messages/conversations/{id}/read": {
+      "post": {
+        "operationId": "read_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/messages/unread-count": {
+      "get": {
+        "operationId": "unreadCount_1",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
     "/api/notifications": {
       "get": {
-        "operationId": "list",
+        "operationId": "list_2",
         "parameters": [
           {
             "in": "query",
@@ -5268,7 +7011,7 @@
     },
     "/api/notifications/{id}/read": {
       "post": {
-        "operationId": "read",
+        "operationId": "read_1",
         "parameters": [
           {
             "in": "path",
@@ -5287,6 +7030,37 @@
         },
         "tags": [
           "Notifications"
+        ]
+      }
+    },
+    "/api/public/certificates/{code}": {
+      "get": {
+        "operationId": "verify",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Verify a certificate code (no personal data beyond the name on the certificate); unknown codes → 404 CERTIFICATE_NOT_FOUND, too many lookups → 429 RATE_LIMITED",
+        "tags": [
+          "Public: certificate verification"
         ]
       }
     },
@@ -5381,6 +7155,53 @@
         },
         "tags": [
           "Public catalog"
+        ]
+      }
+    },
+    "/api/student/announcements/unread": {
+      "get": {
+        "operationId": "unread",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CourseUnreadDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: announcements"
+        ]
+      }
+    },
+    "/api/student/announcements/{id}/read": {
+      "post": {
+        "operationId": "read",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: announcements"
         ]
       }
     },
@@ -5487,6 +7308,137 @@
         },
         "tags": [
           "Learner: quizzes & exams"
+        ]
+      }
+    },
+    "/api/student/certificates": {
+      "get": {
+        "operationId": "mine_1",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CertificateDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "My certificates (newest first, including revoked ones)",
+        "tags": [
+          "Learner: certificates"
+        ]
+      }
+    },
+    "/api/student/certificates/{id}/pdf": {
+      "get": {
+        "operationId": "pdf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "My certificate as PDF (A4 landscape); lang=en|de overrides the course's language",
+        "tags": [
+          "Learner: certificates"
+        ]
+      }
+    },
+    "/api/student/courses/{courseId}/announcements": {
+      "get": {
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LearnerAnnouncementDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: announcements"
+        ]
+      }
+    },
+    "/api/student/courses/{courseId}/certificate": {
+      "get": {
+        "operationId": "status",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateStatusDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Certificate status for a course: NOT_ENABLED, IN_PROGRESS (with criteria), ISSUED or REVOKED",
+        "tags": [
+          "Learner: certificates"
         ]
       }
     },
@@ -5787,6 +7739,27 @@
       }
     },
     "/api/users/me": {
+      "delete": {
+        "operationId": "deleteAccount",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Me"
+        ]
+      },
       "get": {
         "operationId": "me",
         "responses": {
@@ -5827,6 +7800,27 @@
               }
             },
             "description": "OK"
+          }
+        },
+        "tags": [
+          "Me"
+        ]
+      }
+    },
+    "/api/users/me/export": {
+      "get": {
+        "operationId": "exportData",
+        "responses": {
+          "200": {
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "ZIP archive"
           }
         },
         "tags": [

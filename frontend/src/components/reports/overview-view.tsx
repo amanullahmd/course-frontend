@@ -44,21 +44,33 @@ export function OverviewView({ report }: { report: OverviewReport }) {
           label={t("kpi.averageProgress")}
           value={f.pct0(k.averageProgress)}
           icon={TrendingUp}
-          hint={k.medianProgress != null ? t("kpi.median", { value: f.pct0(k.medianProgress) }) : t("kpi.noLearnersYet")}
+          hint={
+            k.medianProgress != null
+              ? t("kpi.median", { value: f.pct0(k.medianProgress) })
+              : t("kpi.noLearnersYet")
+          }
         />
         <StatCard
           label={t("kpi.completed")}
           value={f.num(k.completedLearners)}
           icon={CircleCheckBig}
           accent="success"
-          hint={k.completionRate != null ? t("kpi.completedHint", { rate: f.pct(k.completionRate) }) : undefined}
+          hint={
+            k.completionRate != null
+              ? t("kpi.completedHint", { rate: f.pct(k.completionRate) })
+              : undefined
+          }
         />
         <StatCard
           label={t("kpi.active7d")}
           value={f.num(k.activeLearners7d)}
           icon={Activity}
           accent="info"
-          hint={!noLearners ? t("kpi.ofLearners", { count: k.approvedLearners }) : undefined}
+          hint={
+            !noLearners
+              ? t("kpi.ofLearners", { count: k.approvedLearners })
+              : undefined
+          }
         />
         <StatCard
           label={t("kpi.assessments")}
@@ -66,14 +78,29 @@ export function OverviewView({ report }: { report: OverviewReport }) {
           icon={ClipboardCheck}
           hint={t("kpi.items", { count: k.totalLiveItems })}
         />
-        <StatCard label={t("kpi.averageBestScore")} value={f.pct(k.averageBestScore)} icon={Target} hint={t("kpi.averageBestScoreHint")} />
-        <StatCard label={t("kpi.passRate")} value={f.pct(k.passRate)} icon={BadgeCheck} accent="success" hint={t("kpi.passRateHint")} />
+        <StatCard
+          label={t("kpi.averageBestScore")}
+          value={f.pct(k.averageBestScore)}
+          icon={Target}
+          hint={t("kpi.averageBestScoreHint")}
+        />
+        <StatCard
+          label={t("kpi.passRate")}
+          value={f.pct(k.passRate)}
+          icon={BadgeCheck}
+          accent="success"
+          hint={t("kpi.passRateHint")}
+        />
         <StatCard
           label={t("kpi.pendingGrading")}
           value={f.num(k.pendingGrading)}
           icon={Inbox}
           accent={k.pendingGrading > 0 ? "warning" : "default"}
-          hint={k.pendingGrading > 0 ? t("kpi.pendingGradingHint") : t("kpi.allGraded")}
+          hint={
+            k.pendingGrading > 0
+              ? t("kpi.pendingGradingHint")
+              : t("kpi.allGraded")
+          }
         />
       </div>
 
@@ -83,39 +110,72 @@ export function OverviewView({ report }: { report: OverviewReport }) {
       </div>
 
       <div className="report-grid grid gap-4 sm:gap-6 lg:grid-cols-2">
-        <ReportSection title={t("distribution.title")} description={t("distribution.text")}>
+        <ReportSection
+          title={t("distribution.title")}
+          description={t("distribution.text")}
+        >
           {noLearners ? (
-            <EmptyState compact icon={Users} title={t("empty.noLearners")} description={t("empty.noLearnersText")} />
+            <EmptyState
+              compact
+              icon={Users}
+              title={t("empty.noLearners")}
+              description={t("empty.noLearnersText")}
+            />
           ) : (
             <ColumnChart
               ariaLabel={t("distribution.title")}
-              series={[{ name: t("distribution.learners"), className: "bg-brand" }]}
+              series={[
+                { name: t("distribution.learners"), className: "bg-brand" },
+              ]}
               data={report.progressDistribution.map((b) => ({
                 key: b.label,
                 label: b.label === "100" ? f.pct0(100) : `${b.from}–${b.to}`,
-                fullLabel: b.label === "100" ? t("distribution.complete") : t("distribution.range", { from: b.from, to: b.to }),
+                fullLabel:
+                  b.label === "100"
+                    ? t("distribution.complete")
+                    : t("distribution.range", { from: b.from, to: b.to }),
                 values: [b.count],
               }))}
               format={(n) => f.num(n)}
             />
           )}
         </ReportSection>
-        <ReportSection title={t("modules.title")} description={t("modules.text")}>
+        <ReportSection
+          title={t("modules.title")}
+          description={t("modules.text")}
+        >
           {report.modules.length === 0 ? (
-            <EmptyState compact icon={ChartColumn} title={t("empty.noContent")} description={t("empty.noContentText")} />
+            <EmptyState
+              compact
+              icon={ChartColumn}
+              title={t("empty.noContent")}
+              description={t("empty.noContentText")}
+            />
           ) : (
             <ul className="grid gap-3.5">
               {report.modules.map((m, i) => (
                 <li key={m.moduleId} className="grid gap-1.5">
                   <div className="flex items-baseline justify-between gap-3 text-sm">
                     <span className="min-w-0 truncate">
-                      <span className="mr-1.5 text-muted-foreground tabular-nums">{i + 1}.</span>
+                      <span className="mr-1.5 text-muted-foreground tabular-nums">
+                        {i + 1}.
+                      </span>
                       {m.title}
                     </span>
-                    <span className="shrink-0 font-medium tabular-nums">{f.pct0(m.completionPercent)}</span>
+                    <span className="shrink-0 font-medium tabular-nums">
+                      {f.pct0(m.completionPercent)}
+                    </span>
                   </div>
-                  <Meter value={m.completionPercent} label={m.title} barClassName={m.completionPercent === 100 ? "bg-success" : "bg-brand"} />
-                  <span className="text-xs text-muted-foreground">{t("modules.items", { count: m.itemCount })}</span>
+                  <Meter
+                    value={m.completionPercent}
+                    label={m.title}
+                    barClassName={
+                      m.completionPercent === 100 ? "bg-success" : "bg-brand"
+                    }
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {t("modules.items", { count: m.itemCount })}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -138,9 +198,18 @@ function EnrollmentTimeline({ report }: { report: OverviewReport }) {
   ];
   const total = weeks.reduce((n, w) => n + w.applications + w.approvals, 0);
   return (
-    <ReportSection title={t("timeline.title")} description={t("timeline.text", { weeks: weeks.length })} actions={<Legend series={series} />}>
+    <ReportSection
+      title={t("timeline.title")}
+      description={t("timeline.text", { weeks: weeks.length })}
+      actions={<Legend series={series} />}
+    >
       {total === 0 ? (
-        <EmptyState compact icon={UserPlus} title={t("timeline.empty")} description={t("timeline.emptyText")} />
+        <EmptyState
+          compact
+          icon={UserPlus}
+          title={t("timeline.empty")}
+          description={t("timeline.emptyText")}
+        />
       ) : (
         <ColumnChart
           ariaLabel={t("timeline.title")}
@@ -164,11 +233,36 @@ function EnrollmentTotals({ report }: { report: OverviewReport }) {
   const f = useReportFormat();
   const fu = report.funnel;
   const rows: { key: string; label: string; value: number; tone: string }[] = [
-    { key: "approved", label: t("funnel.approved"), value: fu.approved, tone: "bg-success" },
-    { key: "pending", label: t("funnel.pending"), value: fu.pending, tone: "bg-info" },
-    { key: "rejected", label: t("funnel.rejected"), value: fu.rejected, tone: "bg-destructive" },
-    { key: "revoked", label: t("funnel.revoked"), value: fu.revoked, tone: "bg-warning" },
-    { key: "withdrawn", label: t("funnel.withdrawn"), value: fu.withdrawn, tone: "bg-muted-foreground/60" },
+    {
+      key: "approved",
+      label: t("funnel.approved"),
+      value: fu.approved,
+      tone: "bg-success",
+    },
+    {
+      key: "pending",
+      label: t("funnel.pending"),
+      value: fu.pending,
+      tone: "bg-info",
+    },
+    {
+      key: "rejected",
+      label: t("funnel.rejected"),
+      value: fu.rejected,
+      tone: "bg-destructive",
+    },
+    {
+      key: "revoked",
+      label: t("funnel.revoked"),
+      value: fu.revoked,
+      tone: "bg-warning",
+    },
+    {
+      key: "withdrawn",
+      label: t("funnel.withdrawn"),
+      value: fu.withdrawn,
+      tone: "bg-muted-foreground/60",
+    },
   ];
   const max = Math.max(1, fu.applied);
   return (
@@ -176,21 +270,38 @@ function EnrollmentTotals({ report }: { report: OverviewReport }) {
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-lg bg-muted/60 p-3">
           <p className="text-xs text-muted-foreground">{t("funnel.applied")}</p>
-          <p className="text-2xl font-semibold tabular-nums">{f.num(fu.applied)}</p>
+          <p className="text-2xl font-semibold tabular-nums">
+            {f.num(fu.applied)}
+          </p>
         </div>
         <div className="rounded-lg bg-muted/60 p-3">
-          <p className="text-xs text-muted-foreground">{t("funnel.approvalRate")}</p>
-          <p className="text-2xl font-semibold tabular-nums">{f.pct0(fu.approvalRate)}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("funnel.approvalRate")}
+          </p>
+          <p className="text-2xl font-semibold tabular-nums">
+            {f.pct0(fu.approvalRate)}
+          </p>
         </div>
       </div>
       <ul className="mt-4 grid gap-2.5" aria-label={t("funnel.title")}>
         {rows.map((r) => (
-          <li key={r.key} className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)_2.5rem] items-center gap-3 text-sm">
+          <li
+            key={r.key}
+            className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)_2.5rem] items-center gap-3 text-sm"
+          >
             <span className="truncate text-muted-foreground">{r.label}</span>
-            <span className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
-              <span className={cn("block h-full rounded-full", r.tone)} style={{ width: `${(r.value / max) * 100}%` }} />
+            <span
+              className="h-2 overflow-hidden rounded-full bg-muted"
+              aria-hidden
+            >
+              <span
+                className={cn("block h-full rounded-full", r.tone)}
+                style={{ width: `${(r.value / max) * 100}%` }}
+              />
             </span>
-            <span className="text-right font-medium tabular-nums">{f.num(r.value)}</span>
+            <span className="text-right font-medium tabular-nums">
+              {f.num(r.value)}
+            </span>
           </li>
         ))}
       </ul>
@@ -217,10 +328,20 @@ function ContentFunnel({ report }: { report: OverviewReport }) {
       className="print-break-ok"
       title={t("engagement.title")}
       description={t("engagement.text")}
-      actions={<DownloadButton path={reportCsv.progress(report.course.id)} label={t("exportProgress")} />}
+      actions={
+        <DownloadButton
+          path={reportCsv.progress(report.course.id)}
+          label={t("exportProgress")}
+        />
+      }
     >
       {report.items.length === 0 ? (
-        <EmptyState compact icon={ChartColumn} title={t("empty.noContent")} description={t("empty.noContentText")} />
+        <EmptyState
+          compact
+          icon={ChartColumn}
+          title={t("empty.noContent")}
+          description={t("empty.noContentText")}
+        />
       ) : (
         <div className="grid gap-6">
           {groups.map(([moduleId, g], gi) => (
@@ -237,16 +358,26 @@ function ContentFunnel({ report }: { report: OverviewReport }) {
                       className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 rounded-lg px-1 py-2 sm:grid-cols-[auto_minmax(0,16rem)_minmax(0,1fr)_auto] sm:px-2 sm:hover:bg-muted/40"
                     >
                       <ItemTypeIcon type={i.type} className="size-7" />
-                      <span className="min-w-0 truncate text-sm font-medium">{i.title}</span>
+                      <span className="min-w-0 truncate text-sm font-medium">
+                        {i.title}
+                      </span>
                       <div className="col-span-2 sm:col-span-1">
                         <Meter
                           value={i.completedPercent}
-                          label={t("engagement.completedBy", { count: i.completed, percent: f.pct0(i.completedPercent) })}
+                          label={t("engagement.completedBy", {
+                            count: i.completed,
+                            percent: f.pct0(i.completedPercent),
+                          })}
                           barClassName={assessment ? "bg-info" : "bg-brand"}
                         />
                       </div>
                       <div className="col-span-2 text-xs text-muted-foreground tabular-nums sm:col-span-1 sm:min-w-44 sm:text-right">
-                        <span className="text-foreground">{t("engagement.completedShort", { count: i.completed, total: learners })}</span>{" "}
+                        <span className="text-foreground">
+                          {t("engagement.completedShort", {
+                            count: i.completed,
+                            total: learners,
+                          })}
+                        </span>{" "}
                         · {f.pct0(i.completedPercent)}
                         {assessment && i.taken != null && (
                           <span className="block">
@@ -269,7 +400,13 @@ function ContentFunnel({ report }: { report: OverviewReport }) {
       )}
       <ChartDataTable
         caption={t("engagement.title")}
-        columns={[t("engagement.item"), t("engagement.completedCol"), t("engagement.takenCol"), t("engagement.passedCol"), t("engagement.averageCol")]}
+        columns={[
+          t("engagement.item"),
+          t("engagement.completedCol"),
+          t("engagement.takenCol"),
+          t("engagement.passedCol"),
+          t("engagement.averageCol"),
+        ]}
         rows={report.items.map((i) => [
           i.title,
           `${i.completed} (${f.pct0(i.completedPercent)})`,

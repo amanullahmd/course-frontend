@@ -31,6 +31,10 @@ import javax.imageio.ImageIO;
 import me.amanullah.course.common.i18n.Messages;
 import me.amanullah.course.course.CefrLevel;
 import org.jsoup.Jsoup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.jsoup.helper.W3CDom;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.HtmlUtils;
@@ -48,6 +52,7 @@ public class CertificatePdfRenderer {
     static final ZoneId ZONE = ZoneId.of("Europe/Berlin");
 
     private static final String FONTS = "/certificate/fonts/";
+    private static final Logger log = LoggerFactory.getLogger(CertificatePdfRenderer.class);
 
     /** Everything printed on one certificate; {@code title} {@code null} = localized default. */
     public record PdfModel(String code, String learnerName, String courseTitle, CefrLevel level, String title,
@@ -62,6 +67,20 @@ public class CertificatePdfRenderer {
     public CertificatePdfRenderer(Messages messages) {
         this.messages = messages;
         this.logoDataUri = png(logoMark(256));
+    }
+
+    /** Renders one sample in the background after startup: the first rendering loads fonts and classes (seconds). */
+    @EventListener(ApplicationReadyEvent.class)
+    public void warmUp() {
+        Thread.ofVirtual().name("certificate-pdf-warmup").start(() -> {
+            try {
+                render(new PdfModel("SW-2026-0000-0000-0000", "Sprachweg", "Sprachweg", CefrLevel.A1, null,
+                        Instant.now(), 100.0, true, "Sprachweg", null, null, "Ä Ö Ü ß", null, null,
+                        "https://example.org", true, Locale.GERMAN));
+            } catch (RuntimeException e) {
+                log.debug("Certificate renderer warm-up failed: {}", e.toString());
+            }
+        });
     }
 
     public byte[] render(PdfModel m) {
@@ -219,7 +238,7 @@ public class CertificatePdfRenderer {
             .qr { position: absolute; right: 19.5mm; bottom: 19.5mm; width: 17mm; height: 17mm; }
             .verify { position: absolute; left: 40mm; width: 217mm; bottom: 20mm; text-align: center; font-size: 7pt; color: #6B6F82; }
             .verify-label { letter-spacing: 0.3mm; text-transform: uppercase; }
-            .verify-code { font-weight: 700; letter-spacing: 0.25mm; color: #151C38; }
+            .verify-code { font-weight: 700; color: #151C38; }
             .compact .title { font-size: 26pt; margin-top: 3mm; }
             .compact .lead { margin-top: 4mm; }
             .compact .name { font-size: 28pt; margin-top: 2mm; }
