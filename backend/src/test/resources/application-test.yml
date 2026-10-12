@@ -16,6 +16,10 @@ app:
     enabled: false
   seed:
     enabled: false
+  # tests call AttemptExpirySweeper.sweep(now) directly
+  attempts:
+    sweeper:
+      enabled: false
 
 logging:
   level:

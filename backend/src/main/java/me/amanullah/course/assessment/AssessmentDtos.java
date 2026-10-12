@@ -68,8 +68,15 @@ public final class AssessmentDtos {
                                   List<SessionOption> options) {
     }
 
+    /**
+     * {@code deadline} is the effective deadline: the attempt's time limit capped at the end of the assessment window
+     * (also set for untimed attempts when the window closes), {@code null} when the attempt never expires.
+     * {@code timeLimitMinutes}, {@code availableUntil}, {@code serverTime} (to correct client clock skew) and
+     * {@code savedAnswers} (autosaved drafts, restored on resume) are additions to the contract.
+     */
     public record AttemptSessionDto(UUID id, AttemptStatus status, Instant startedAt, Instant deadline,
-                                    List<SessionQuestion> questions) {
+                                    Integer timeLimitMinutes, Instant availableUntil, Instant serverTime,
+                                    List<SessionQuestion> questions, List<SubmittedAnswer> savedAnswers) {
     }
 
     public record SubmittedAnswer(@NotNull UUID questionId, @Size(max = 50) List<@NotNull UUID> selectedOptionIds,
@@ -79,6 +86,10 @@ public final class AssessmentDtos {
     public record SubmitRequest(@NotNull @Size(max = 500) List<@Valid @NotNull SubmittedAnswer> answers) {
     }
 
+    /** Body of the autosave endpoint (same shape as a submission). */
+    public record SaveAnswersRequest(@NotNull @Size(max = 500) List<@Valid @NotNull SubmittedAnswer> answers) {
+    }
+
     public record Grade(@NotNull UUID questionId, @NotNull @DecimalMin("0.0") Double pointsAwarded,
                         @Size(max = 5000) String feedback) {
     }
@@ -86,10 +97,13 @@ public final class AssessmentDtos {
     public record GradeRequest(@NotNull @Size(min = 1, max = 500) List<@Valid @NotNull Grade> grades) {
     }
 
-    /** {@code late} is an addition to the contract (submitted after deadline + 30 s grace). */
+    /**
+     * {@code late} (submitted after deadline + 30 s grace) and {@code autoSubmitted} (submitted by the server with the
+     * autosaved answers because time ran out or the window closed) are additions to the contract.
+     */
     public record AttemptSummaryDto(UUID id, UserSummaryDto student, AttemptStatus status, Instant startedAt,
                                     Instant submittedAt, Double score, double maxScore, Double percent, Boolean passed,
-                                    boolean pendingManualGrading, boolean late) {
+                                    boolean pendingManualGrading, boolean late, boolean autoSubmitted) {
     }
 
     public record ResultOption(UUID id, String text, Boolean correct) {
@@ -104,7 +118,8 @@ public final class AssessmentDtos {
 
     public record AttemptResultDto(UUID id, UserSummaryDto student, AttemptStatus status, Instant startedAt,
                                    Instant submittedAt, Double score, double maxScore, Double percent, Boolean passed,
-                                   boolean pendingManualGrading, boolean late, UUID itemId, String itemTitle,
+                                   boolean pendingManualGrading, boolean late, boolean autoSubmitted,
+                                   UUID itemId, String itemTitle,
                                    Instant deadline, List<AnswerResult> answers) {
     }
 }

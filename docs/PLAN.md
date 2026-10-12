@@ -160,8 +160,11 @@ QuestionDto        = {id?, type, prompt, explanation, points, position, caseSens
                       options:[{id?, text, correct, position}]}
 EnrollmentDto      = {id, courseId, courseTitle, student:{id,fullName,email,avatarUrl}, status, message, decisionReason,
                       appliedAt, decidedAt, waitlistPosition?, progressPercent}
-ScheduleEventDto   = {id, entityType:"COURSE"|"MODULE"|"ITEM", entityId, courseId, courseTitle, title, itemType?, action:"PUBLISH"|"UNPUBLISH", at}
-AttemptSummaryDto  = {id, student:{id,fullName,email,avatarUrl}, status, startedAt, submittedAt, score, maxScore, percent, passed, pendingManualGrading}
+ScheduleEventDto   = {id, entityType:"COURSE"|"MODULE"|"ITEM", entityId, courseId, courseTitle, title, itemType?,
+                      action:"PUBLISH"|"UNPUBLISH"|"OPENS"|"CLOSES", at}   (OPENS/CLOSES = availableFrom/availableUntil of a
+                      quiz/exam, entityType ITEM, id "ITEM:<itemId>:OPENS")
+AttemptSummaryDto  = {id, student:{id,fullName,email,avatarUrl}, status, startedAt, submittedAt, score, maxScore, percent, passed, pendingManualGrading,
+                      late, autoSubmitted}   (autoSubmitted: submitted by the server with the autosaved answers when time ran out)
 AttemptResultDto   = AttemptSummaryDto + {itemId, itemTitle, deadline, answers:[{questionId, type, prompt, points, selectedOptionIds[], textAnswer,
                       correct?, pointsAwarded?, feedback, options?:[{id,text,correct?}], acceptedAnswers?[]}]}
 ```
@@ -177,9 +180,13 @@ AttemptResultDto   = AttemptSummaryDto + {itemId, itemTitle, deadline, answers:[
 | GET | `/items/{itemId}` | `LearnItemDto = {id,courseId,moduleId,type,title,summary,body,externalUrl,durationMinutes,attachments:MediaDto[],completed,prevItemId,nextItemId,assessment?:{instructions,timeLimitMinutes,maxAttempts,passingScore,questionCount,totalPoints,availableFrom,availableUntil,attemptsUsed,bestPercent,inProgressAttemptId}}` |
 | POST/DELETE | `/items/{itemId}/complete` | 204 |
 | GET | `/items/{itemId}/attempts` | AttemptSummaryDto[] (mine) |
-| POST | `/items/{itemId}/attempts` | → `AttemptSessionDto = {id,status,startedAt,deadline,questions:[{id,type,prompt,points,media?,options:[{id,text}]}]}` (resumes in-progress attempt) |
-| POST | `/attempts/{id}/submit` | `{answers:[{questionId,selectedOptionIds[],textAnswer}]}` → AttemptResultDto |
+| POST | `/items/{itemId}/attempts` | → `AttemptSessionDto = {id,status,startedAt,deadline,timeLimitMinutes,availableUntil,serverTime,questions:[{id,type,prompt,points,media?,options:[{id,text}]}],savedAnswers:[{questionId,selectedOptionIds[],textAnswer}]}` (resumes the in-progress attempt with its saved answers; an expired one is auto-submitted first, then a new attempt starts or 403/409; `deadline` = time limit capped at `availableUntil`, or `availableUntil` alone) |
+| PUT | `/attempts/{id}/answers` | `{answers:[{questionId,selectedOptionIds[],textAnswer}]}` → 204: autosave of draft answers (owner only, not graded; unknown ids ignored); 409 `ATTEMPT_ALREADY_SUBMITTED`, or 409 `ATTEMPT_EXPIRED` after deadline + 30 s grace (the attempt is then auto-submitted) |
+| POST | `/attempts/{id}/submit` | `{answers:[{questionId,selectedOptionIds[],textAnswer}]}` → AttemptResultDto (after deadline + 30 s grace the payload is ignored and the saved answers are submitted: `autoSubmitted=true`) |
 | GET | `/attempts/{id}` | AttemptResultDto (correct answers only if `showCorrectAnswers`) |
+
+Expired in-progress attempts (deadline or window end + 30 s grace) are also submitted automatically by a background
+job every 60 s and lazily whenever attempts are read, with `submittedAt` = the effective deadline.
 
 ### Notifications `/api/notifications`
 `GET ?page=&size=` → Page<{id,type,title,body,link,read,createdAt}> · `GET /unread-count` → `{count}` ·

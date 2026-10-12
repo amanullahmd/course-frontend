@@ -167,6 +167,8 @@ export interface RequestOptions {
   auth?: boolean;
   signal?: AbortSignal;
   headers?: Record<string, string>;
+  /** Let the request outlive the page (pagehide / tab close). */
+  keepalive?: boolean;
 }
 
 export function buildUrl(path: string, query?: Record<string, QueryValue>): string {
@@ -192,7 +194,7 @@ async function parseProblem(res: Response): Promise<ProblemDetail> {
 }
 
 async function send(path: string, options: RequestOptions): Promise<Response> {
-  const { method = "GET", body, query, auth = true, signal, headers = {} } = options;
+  const { method = "GET", body, query, auth = true, signal, headers = {}, keepalive } = options;
   const finalHeaders: Record<string, string> = { Accept: "application/json", "Accept-Language": apiLocale, ...headers };
   let payload: BodyInit | undefined;
   if (body instanceof FormData) {
@@ -209,6 +211,7 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
       headers: finalHeaders,
       credentials: "include",
       signal,
+      keepalive,
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") throw error;

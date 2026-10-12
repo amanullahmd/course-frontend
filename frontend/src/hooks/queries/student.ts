@@ -102,6 +102,8 @@ export function useStartAttempt(itemId: string) {
 export function useSubmitAttempt(itemId: string, courseId: string) {
   const qc = useQueryClient();
   return useMutation({
+    // the quiz player handles errors itself (expired / already submitted / offline)
+    meta: { suppressErrorToast: true },
     mutationFn: ({ attemptId, body }: { attemptId: string; body: SubmitAttemptRequest }) =>
       studentApi.submitAttempt(attemptId, body),
     onSuccess: (result) => {

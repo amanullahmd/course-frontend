@@ -26,6 +26,9 @@ export const studentApi = {
 
   attempts: (itemId: string) => api.get<AttemptSummaryDto[]>(`${base}/items/${itemId}/attempts`),
   startAttempt: (itemId: string) => api.post<AttemptSessionDto>(`${base}/items/${itemId}/attempts`),
+  /** Autosave of draft answers (204); 409 ATTEMPT_EXPIRED once the time is up. */
+  saveAnswers: (attemptId: string, body: SubmitAttemptRequest, opts: { keepalive?: boolean; signal?: AbortSignal } = {}) =>
+    api.put<void>(`${base}/attempts/${attemptId}/answers`, body, opts),
   submitAttempt: (attemptId: string, body: SubmitAttemptRequest) =>
     api.post<AttemptResultDto>(`${base}/attempts/${attemptId}/submit`, body),
   attempt: (attemptId: string) => api.get<AttemptResultDto>(`${base}/attempts/${attemptId}`),

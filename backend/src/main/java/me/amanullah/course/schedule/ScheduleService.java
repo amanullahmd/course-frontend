@@ -1,5 +1,7 @@
 package me.amanullah.course.schedule;
 
+import me.amanullah.course.assessment.Assessment;
+import me.amanullah.course.assessment.AssessmentRepository;
 import me.amanullah.course.common.exception.ValidationException;
 import me.amanullah.course.common.publication.PublishStatus;
 import me.amanullah.course.common.publication.Publishable;
@@ -26,7 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Publish/unpublish events of PUBLISHED courses, modules and items with a {@code publishAt}/{@code unpublishAt}
- * inside the requested window. Admins see all courses; instructors only their own.
+ * inside the requested window, plus the opening/closing of availability windows of quizzes and exams (PUBLISHED
+ * items). Admins see all courses; instructors only their own.
  */
 @Service
 public class ScheduleService {
@@ -34,13 +37,15 @@ public class ScheduleService {
     private final CourseRepository courses;
     private final CourseModuleRepository modules;
     private final ContentItemRepository items;
+    private final AssessmentRepository assessments;
     private final Clock clock;
 
     public ScheduleService(CourseRepository courses, CourseModuleRepository modules, ContentItemRepository items,
-                           Clock clock) {
+                           AssessmentRepository assessments, Clock clock) {
         this.courses = courses;
         this.modules = modules;
         this.items = items;
+        this.assessments = assessments;
         this.clock = clock;
     }
 
@@ -63,6 +68,16 @@ public class ScheduleService {
         for (ContentItem i : items.findScheduled(instructorId, courseId, PublishStatus.PUBLISHED, f, t)) {
             add(events, i, EntityType.ITEM, i.getId(), i.getModule().getCourse(), i.getTitle(), i.getType(), f, t);
         }
+        for (Assessment a : assessments.findWindows(instructorId, courseId, PublishStatus.PUBLISHED, f, t)) {
+            ContentItem i = a.getItem();
+            Course c = i.getModule().getCourse();
+            if (within(a.getAvailableFrom(), f, t)) {
+                events.add(event(EntityType.ITEM, i.getId(), c, i.getTitle(), i.getType(), Action.OPENS, a.getAvailableFrom()));
+            }
+            if (within(a.getAvailableUntil(), f, t)) {
+                events.add(event(EntityType.ITEM, i.getId(), c, i.getTitle(), i.getType(), Action.CLOSES, a.getAvailableUntil()));
+            }
+        }
         events.sort(Comparator.comparing(ScheduleEventDto::at).thenComparing(ScheduleEventDto::id));
         return events;
     }
@@ -70,13 +85,17 @@ public class ScheduleService {
     private static void add(List<ScheduleEventDto> out, Publishable p, EntityType type, UUID id, Course course,
                             String title, ItemType itemType, Instant from, Instant to) {
         if (within(p.getPublishAt(), from, to)) {
-            out.add(new ScheduleEventDto(type + ":" + id + ":" + Action.PUBLISH, type, id, course.getId(),
-                    course.getTitle(), title, itemType, Action.PUBLISH, p.getPublishAt()));
+            out.add(event(type, id, course, title, itemType, Action.PUBLISH, p.getPublishAt()));
         }
         if (within(p.getUnpublishAt(), from, to)) {
-            out.add(new ScheduleEventDto(type + ":" + id + ":" + Action.UNPUBLISH, type, id, course.getId(),
-                    course.getTitle(), title, itemType, Action.UNPUBLISH, p.getUnpublishAt()));
+            out.add(event(type, id, course, title, itemType, Action.UNPUBLISH, p.getUnpublishAt()));
         }
+    }
+
+    private static ScheduleEventDto event(EntityType type, UUID id, Course course, String title, ItemType itemType,
+                                          Action action, Instant at) {
+        return new ScheduleEventDto(type + ":" + id + ":" + action, type, id, course.getId(), course.getTitle(), title,
+                itemType, action, at);
     }
 
     private static boolean within(Instant at, Instant from, Instant to) {

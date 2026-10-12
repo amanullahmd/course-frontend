@@ -27,7 +27,8 @@ export type QuestionType =
 export type AttemptStatus = "IN_PROGRESS" | "SUBMITTED" | "GRADED";
 export type EnrollmentStatus = "PENDING" | "APPROVED" | "REJECTED" | "WITHDRAWN" | "REVOKED";
 export type ScheduleEntityType = "COURSE" | "MODULE" | "ITEM";
-export type ScheduleAction = "PUBLISH" | "UNPUBLISH";
+/** OPENS/CLOSES: start and end of a quiz/exam availability window (entityType ITEM). */
+export type ScheduleAction = "PUBLISH" | "UNPUBLISH" | "OPENS" | "CLOSES";
 export type BulkAction = "APPROVE" | "REJECT";
 
 // ---------------------------------------------------------------------------
@@ -382,6 +383,8 @@ export interface AttemptSummaryDto {
   pendingManualGrading: boolean;
   /** Submitted after the deadline (backend extension). */
   late?: boolean;
+  /** Submitted by the server with the autosaved answers because time ran out or the window closed. */
+  autoSubmitted?: boolean;
 }
 
 export interface AttemptAnswerOption {
@@ -509,8 +512,15 @@ export interface AttemptSessionDto {
   id: Uuid;
   status: AttemptStatus;
   startedAt: Instant;
+  /** Effective deadline: the time limit capped at the window end (or the window end alone); null = never expires. */
   deadline: Instant | null;
+  timeLimitMinutes?: number | null;
+  availableUntil?: Instant | null;
+  /** Server clock when the session was returned (corrects client clock skew). */
+  serverTime?: Instant | null;
   questions: SessionQuestion[];
+  /** Autosaved draft answers (restored when resuming, also on another device). */
+  savedAnswers?: SubmitAnswer[];
 }
 
 export interface SubmitAnswer {

@@ -5,6 +5,7 @@ import me.amanullah.course.assessment.AssessmentDtos.AttemptSessionDto;
 import me.amanullah.course.assessment.AssessmentDtos.AttemptSummaryDto;
 import me.amanullah.course.assessment.AssessmentDtos.Grade;
 import me.amanullah.course.assessment.AssessmentDtos.SubmittedAnswer;
+import me.amanullah.course.common.exception.ApiException;
 import me.amanullah.course.common.exception.BadRequestException;
 import me.amanullah.course.common.exception.ConflictException;
 import me.amanullah.course.common.exception.ForbiddenException;
@@ -15,8 +16,6 @@ import me.amanullah.course.common.web.Links;
 import me.amanullah.course.course.ContentItem;
 import me.amanullah.course.course.Course;
 import me.amanullah.course.course.CourseAccess;
-import me.amanullah.course.learning.ItemProgress;
-import me.amanullah.course.learning.ItemProgressRepository;
 import me.amanullah.course.learning.LearnerAccess;
 import me.amanullah.course.notification.EmailTemplates;
 import me.amanullah.course.notification.NotificationService;
@@ -33,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,9 +40,6 @@ import org.springframework.transaction.annotation.Transactional;
 /** Taking, submitting and grading attempts. */
 @Service
 public class AttemptService {
-
-    /** Submissions up to 30 s after the deadline are not flagged as late (network latency). */
-    static final Duration GRACE = Duration.ofSeconds(30);
 
     private final AssessmentRepository assessments;
     private final AttemptRepository attempts;
@@ -52,12 +49,12 @@ public class AttemptService {
     private final AttemptMapper mapper;
     private final NotificationService notifications;
     private final EmailTemplates templates;
-    private final ItemProgressRepository progress;
+    private final AttemptFinalizer finalizer;
     private final Clock clock;
 
     public AttemptService(AssessmentRepository assessments, AttemptRepository attempts, UserRepository users,
                           LearnerAccess learnerAccess, CourseAccess courseAccess, AttemptMapper mapper,
-                          NotificationService notifications, EmailTemplates templates, ItemProgressRepository progress,
+                          NotificationService notifications, EmailTemplates templates, AttemptFinalizer finalizer,
                           Clock clock) {
         this.assessments = assessments;
         this.attempts = attempts;
@@ -67,28 +64,39 @@ public class AttemptService {
         this.mapper = mapper;
         this.notifications = notifications;
         this.templates = templates;
-        this.progress = progress;
+        this.finalizer = finalizer;
         this.clock = clock;
     }
 
     // ---------------- learner ----------------
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<AttemptSummaryDto> myAttempts(CurrentUser me, UUID itemId) {
-        ContentItem item = learnerAccess.item(itemId, me, Instant.now(clock));
+        Instant now = Instant.now(clock);
+        ContentItem item = learnerAccess.item(itemId, me, now);
         Assessment a = requireAssessment(item);
-        return attempts.findByAssessmentAndStudent(a.getId(), me.id()).stream().map(mapper::toSummary).toList();
+        List<Attempt> mine = attempts.findByAssessmentAndStudent(a.getId(), me.id());
+        finalizer.finalizeExpired(mine, now);
+        return mine.stream().map(mapper::toSummary).toList();
     }
 
-    /** Starts a new attempt or resumes the one in progress. */
-    @Transactional
+    /**
+     * Starts a new attempt or resumes the one in progress. An in-progress attempt whose time is up is never resumed:
+     * it is submitted with its saved answers first, then a new attempt starts if the rules allow it. The
+     * finalization is kept even when starting a new attempt is refused (no rollback for API errors; nothing else is
+     * written before those checks).
+     */
+    @Transactional(noRollbackFor = ApiException.class)
     public AttemptSessionDto start(CurrentUser me, UUID itemId) {
         Instant now = Instant.now(clock);
         ContentItem item = learnerAccess.item(itemId, me, now);
         Assessment a = requireAssessment(item);
         var inProgress = attempts.findFirstByAssessmentIdAndStudentIdAndStatus(a.getId(), me.id(), AttemptStatus.IN_PROGRESS);
         if (inProgress.isPresent()) {
-            return mapper.toSession(inProgress.get());
+            if (!finalizer.finalizeIfExpired(inProgress.get(), now)) {
+                return mapper.toSession(inProgress.get(), now);
+            }
+            attempts.flush();
         }
         if (a.getAvailableFrom() != null && now.isBefore(a.getAvailableFrom())) {
             throw new ForbiddenException("ASSESSMENT_NOT_AVAILABLE", "This assessment is not open yet")
@@ -119,71 +127,109 @@ public class AttemptService {
         }
         attempt.setMaxScore(questions.stream().mapToInt(Question::getPoints).sum());
         attempts.save(attempt);
-        return mapper.toSession(attempt);
+        return mapper.toSession(attempt, now);
     }
 
+    /**
+     * Autosave: stores draft answers on the attempt without grading. Unknown question ids are ignored (as on
+     * submit); selected option ids that do not belong to the question are dropped. After the deadline + grace the
+     * attempt is submitted with the drafts saved before and 409 {@code ATTEMPT_EXPIRED} is returned (the
+     * finalization is committed).
+     */
+    @Transactional(noRollbackFor = AttemptExpiredException.class)
+    public void saveAnswers(CurrentUser me, UUID attemptId, List<SubmittedAnswer> drafts) {
+        Attempt attempt = requireOwnAttempt(me, attemptId);
+        if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
+            throw alreadySubmitted();
+        }
+        if (finalizer.finalizeIfExpired(attempt, Instant.now(clock))) {
+            throw new AttemptExpiredException();
+        }
+        applyAnswers(attempt, drafts, false);
+    }
+
+    /**
+     * Submits an attempt. After the deadline + grace the payload is ignored: the attempt is submitted with the
+     * answers autosaved before the deadline and the result has {@code autoSubmitted=true}.
+     */
     @Transactional
     public AttemptResultDto submit(CurrentUser me, UUID attemptId, List<SubmittedAnswer> submitted) {
-        Attempt attempt = attempts.findWithContext(attemptId).orElseThrow(() -> NotFoundException.of("Attempt"));
-        if (!attempt.getStudent().getId().equals(me.id())) {
-            throw NotFoundException.of("Attempt");
-        }
+        Attempt attempt = requireOwnAttempt(me, attemptId);
         if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
-            throw new ConflictException("ATTEMPT_ALREADY_SUBMITTED", "This attempt has already been submitted");
+            throw alreadySubmitted();
         }
         Instant now = Instant.now(clock);
-        Map<UUID, SubmittedAnswer> byQuestion = new HashMap<>();
-        if (submitted != null) {
-            submitted.forEach(s -> byQuestion.put(s.questionId(), s));
-        }
-        for (AttemptAnswer answer : attempt.getAnswers()) {
-            SubmittedAnswer s = byQuestion.get(answer.getQuestionId());
-            answer.setSelectedOptionIds(s == null || s.selectedOptionIds() == null ? new HashSet<UUID>()
-                    : new HashSet<>(s.selectedOptionIds()));
-            answer.setTextAnswer(s == null || s.textAnswer() == null ? null : s.textAnswer().strip());
-            Grader.grade(answer);
-        }
-        attempt.setSubmittedAt(now);
-        attempt.setLate(attempt.getDeadline() != null && now.isAfter(attempt.getDeadline().plus(GRACE)));
-        attempt.recomputeScore();
-        boolean manual = attempt.needsManualGrading();
-        attempt.setStatus(manual ? AttemptStatus.SUBMITTED : AttemptStatus.GRADED);
-        ContentItem item = attempt.getAssessment().getItem();
-        // Submitting a quiz/exam counts as working through that item, so it shows up in the course progress.
-        if (!progress.existsByStudentIdAndItemId(me.id(), item.getId())) {
-            progress.save(new ItemProgress(attempt.getStudent(), item, now));
-        }
-        if (manual) {
-            Course course = item.getModule().getCourse();
-            notifications.notify(course.getInstructor(), NotificationType.ATTEMPT_SUBMITTED,
-                    "notification.attemptSubmitted", Links.instructorAttempt(attempt.getId()), null,
-                    attempt.getStudent().getFullName(), item.getTitle());
+        if (!finalizer.finalizeIfExpired(attempt, now)) {
+            applyAnswers(attempt, submitted, true);
+            finalizer.complete(attempt, now, false, false);
         }
         return mapper.toResult(attempt, attempt.getAssessment().isShowCorrectAnswers());
     }
 
-    @Transactional(readOnly = true)
-    public AttemptResultDto myResult(CurrentUser me, UUID attemptId) {
+    /**
+     * Copies answers onto the attempt's answer rows. With {@code replaceAll}, questions missing from the list are
+     * cleared (a submission is the complete answer sheet); otherwise only the listed questions change.
+     */
+    private static void applyAnswers(Attempt attempt, List<SubmittedAnswer> given, boolean replaceAll) {
+        Map<UUID, SubmittedAnswer> byQuestion = new HashMap<>();
+        if (given != null) {
+            given.forEach(s -> byQuestion.put(s.questionId(), s));
+        }
+        for (AttemptAnswer answer : attempt.getAnswers()) {
+            SubmittedAnswer s = byQuestion.get(answer.getQuestionId());
+            if (s == null && !replaceAll) {
+                continue;
+            }
+            Set<UUID> valid = new HashSet<>();
+            answer.getOptions().forEach(o -> valid.add(o.getOptionId()));
+            Set<UUID> selected = new HashSet<>();
+            if (s != null && s.selectedOptionIds() != null) {
+                s.selectedOptionIds().stream().filter(valid::contains).forEach(selected::add);
+            }
+            answer.setSelectedOptionIds(selected);
+            answer.setTextAnswer(s == null || s.textAnswer() == null || s.textAnswer().isBlank() ? null : s.textAnswer());
+        }
+    }
+
+    private Attempt requireOwnAttempt(CurrentUser me, UUID attemptId) {
         Attempt attempt = attempts.findWithContext(attemptId).orElseThrow(() -> NotFoundException.of("Attempt"));
         if (!attempt.getStudent().getId().equals(me.id())) {
             throw NotFoundException.of("Attempt");
         }
+        return attempt;
+    }
+
+    private static ConflictException alreadySubmitted() {
+        return new ConflictException("ATTEMPT_ALREADY_SUBMITTED", "This attempt has already been submitted");
+    }
+
+    @Transactional
+    public AttemptResultDto myResult(CurrentUser me, UUID attemptId) {
+        Attempt attempt = requireOwnAttempt(me, attemptId);
+        finalizer.finalizeIfExpired(attempt, Instant.now(clock));
         return mapper.toResult(attempt, attempt.getAssessment().isShowCorrectAnswers());
     }
 
     // ---------------- instructor ----------------
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<AttemptSummaryDto> attemptsForItem(CurrentUser me, UUID itemId) {
         ContentItem item = courseAccess.item(itemId, me);
+        Instant now = Instant.now(clock);
         return assessments.findByItemId(item.getId())
-                .map(a -> attempts.findByAssessment(a.getId()).stream().map(mapper::toSummary).toList())
+                .map(a -> {
+                    List<Attempt> list = attempts.findByAssessment(a.getId());
+                    finalizer.finalizeExpired(list, now);
+                    return list.stream().map(mapper::toSummary).toList();
+                })
                 .orElse(List.of());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AttemptResultDto instructorView(CurrentUser me, UUID attemptId) {
-        return mapper.toResult(requireManageable(me, attemptId), true);
+        Attempt attempt = requireManageable(me, attemptId);
+        finalizer.finalizeIfExpired(attempt, Instant.now(clock));
+        return mapper.toResult(attempt, true);
     }
 
     @Transactional

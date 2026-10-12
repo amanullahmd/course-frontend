@@ -3,6 +3,7 @@ package me.amanullah.course.learning;
 import me.amanullah.course.assessment.Assessment;
 import me.amanullah.course.assessment.AssessmentRepository;
 import me.amanullah.course.assessment.Attempt;
+import me.amanullah.course.assessment.AttemptFinalizer;
 import me.amanullah.course.assessment.AttemptRepository;
 import me.amanullah.course.assessment.AttemptStatus;
 import me.amanullah.course.assessment.Grader;
@@ -38,6 +39,7 @@ public class LearningService {
     private final ItemProgressRepository progress;
     private final AssessmentRepository assessments;
     private final AttemptRepository attempts;
+    private final AttemptFinalizer finalizer;
     private final UserRepository users;
     private final MediaMapper mediaMapper;
     private final Clock clock;
@@ -45,7 +47,7 @@ public class LearningService {
     public LearningService(LearnerAccess access, CourseMapper courseMapper, CourseStats stats,
                            ProgressService progressService, ItemProgressRepository progress,
                            AssessmentRepository assessments, AttemptRepository attempts, UserRepository users,
-                           MediaMapper mediaMapper, Clock clock) {
+                           MediaMapper mediaMapper, AttemptFinalizer finalizer, Clock clock) {
         this.access = access;
         this.courseMapper = courseMapper;
         this.stats = stats;
@@ -53,6 +55,7 @@ public class LearningService {
         this.progress = progress;
         this.assessments = assessments;
         this.attempts = attempts;
+        this.finalizer = finalizer;
         this.users = users;
         this.mediaMapper = mediaMapper;
         this.clock = clock;
@@ -74,7 +77,8 @@ public class LearningService {
                 ProgressService.percent(completed, itemIds.size()), outline);
     }
 
-    @Transactional(readOnly = true)
+    /** Read-write: an expired in-progress attempt of this assessment is submitted automatically first. */
+    @Transactional
     public LearnItemDto item(CurrentUser me, UUID itemId) {
         Instant now = Instant.now(clock);
         ContentItem item = access.item(itemId, me, now);
@@ -92,15 +96,16 @@ public class LearningService {
         UUID next = idx >= 0 && idx < live.size() - 1 ? live.get(idx + 1).getId() : null;
         boolean completed = progress.existsByStudentIdAndItemId(me.id(), item.getId());
         LearnAssessmentDto assessment = item.getType().isAssessment()
-                ? assessments.findByItemId(item.getId()).map(a -> assessmentInfo(a, me.id())).orElse(null)
+                ? assessments.findByItemId(item.getId()).map(a -> assessmentInfo(a, me.id(), now)).orElse(null)
                 : null;
         return new LearnItemDto(item.getId(), course.getId(), item.getModule().getId(), item.getType(), item.getTitle(),
                 item.getSummary(), courseMapper.html(item.getBody()), item.getExternalUrl(), item.getDurationMinutes(),
                 item.getAttachments().stream().map(mediaMapper::toDto).toList(), completed, prev, next, assessment);
     }
 
-    private LearnAssessmentDto assessmentInfo(Assessment a, UUID studentId) {
+    private LearnAssessmentDto assessmentInfo(Assessment a, UUID studentId, Instant now) {
         List<Attempt> mine = attempts.findByAssessmentAndStudent(a.getId(), studentId);
+        finalizer.finalizeExpired(mine, now);
         Double best = mine.stream().filter(x -> x.getStatus() == AttemptStatus.GRADED)
                 .map(x -> Grader.percent(x.getScore(), x.getMaxScore()))
                 .max(Double::compare).orElse(null);

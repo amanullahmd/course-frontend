@@ -154,6 +154,26 @@ class RobustnessTest extends IntegrationTestSupport {
         expect("submit unknown attempt", bearer(raw(post("/api/student/attempts/" + rnd + "/submit"),
                 "{\"answers\":[]}"), student), 404, "ATTEMPT_NOT_FOUND");
         expect("attempt result unknown", bearer(get("/api/student/attempts/" + rnd), student), 404, "ATTEMPT_NOT_FOUND");
+        String answersUrl = "/api/student/attempts/" + rnd + "/answers";
+        expect("autosave empty object", bearer(raw(put(answersUrl), "{}"), student), 400, "VALIDATION_FAILED");
+        expect("autosave malformed", bearer(raw(put(answersUrl), "{\"answers\":"), student), 400, "MALFORMED_REQUEST");
+        expect("autosave answers not a list", bearer(raw(put(answersUrl), "{\"answers\":\"x\"}"), student), 400,
+                "MALFORMED_REQUEST");
+        expect("autosave invalid uuid in body", bearer(raw(put(answersUrl),
+                "{\"answers\":[{\"questionId\":\"x\"}]}"), student), 400, "MALFORMED_REQUEST");
+        expect("autosave null element", bearer(raw(put(answersUrl), "{\"answers\":[null]}"), student), 400,
+                "VALIDATION_FAILED");
+        expect("autosave missing question id", bearer(raw(put(answersUrl), "{\"answers\":[{}]}"), student), 400,
+                "VALIDATION_FAILED");
+        expect("autosave null option id", bearer(raw(put(answersUrl),
+                "{\"answers\":[{\"questionId\":\"" + rnd + "\",\"selectedOptionIds\":[null]}]}"), student), 400,
+                "VALIDATION_FAILED");
+        expect("autosave unknown attempt", bearer(raw(put(answersUrl), "{\"answers\":[]}"), student), 404,
+                "ATTEMPT_NOT_FOUND");
+        expect("autosave invalid attempt id", bearer(raw(put("/api/student/attempts/abc/answers"),
+                "{\"answers\":[]}"), student), 400, "INVALID_PARAMETER");
+        expect("autosave wrong method", bearer(post(answersUrl), student), 405, "METHOD_NOT_ALLOWED");
+        expect("autosave anonymous", raw(put(answersUrl), "{\"answers\":[]}"), 401, "UNAUTHORIZED");
         expect("withdraw unknown", bearer(post("/api/student/enrollments/" + rnd + "/withdraw"), student), 404,
                 "ENROLLMENT_NOT_FOUND");
         expect("withdraw wrong method", bearer(get("/api/student/enrollments/" + rnd + "/withdraw"), student), 405,

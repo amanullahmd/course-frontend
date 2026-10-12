@@ -175,6 +175,7 @@ the same JSON shape. Paging parameters are clamped (`page ≥ 0`, `1 ≤ size �
 | 406 | `NOT_ACCEPTABLE` | `Accept` excludes JSON |
 | 409 | `EMAIL_TAKEN` · `ALREADY_ENROLLED` · `INVALID_STATUS` · `CAPACITY_REACHED` | Account/enrollment conflicts |
 | 409 | `MAX_ATTEMPTS_REACHED` · `ATTEMPT_ALREADY_SUBMITTED` · `ATTEMPT_NOT_SUBMITTED` | Assessment attempts |
+| 409 | `ATTEMPT_EXPIRED` | Autosave after the deadline (or window end) + 30 s grace; the attempt was submitted automatically with the saved answers |
 | 409 | `CONFLICT` · `CONCURRENT_MODIFICATION` | Data integrity violation · optimistic locking |
 | 413 | `FILE_TOO_LARGE` | Upload exceeds `MAX_UPLOAD_SIZE` / `MAX_REQUEST_SIZE` |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | Wrong `Content-Type` |
@@ -187,7 +188,8 @@ All application settings are bound to `me.amanullah.course.config.AppProperties`
 `app.frontend-url`, `app.public-base-url`, `app.jwt.{secret,issuer,access-token-ttl (15m),refresh-token-ttl (14d)}`,
 `app.auth.{email-verification-ttl (24h),password-reset-ttl (1h),refresh-cookie-name,secure-cookie,cookie-same-site}`,
 `app.media.{secret,url-ttl (6h)}`, `app.storage.location`, `app.mail.{enabled,from}`, `app.cors.allowed-origins`,
-`app.seed.enabled`.
+`app.seed.enabled`, `app.attempts.sweeper.{enabled (true),interval-ms (60000),initial-delay-ms (20000)}`
+(the background job that auto-submits expired quiz/exam attempts; disabled in the `test` profile).
 
 ## Architecture
 

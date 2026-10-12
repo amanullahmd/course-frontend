@@ -57,12 +57,23 @@ export function fileExtension(name: string): string {
   return idx >= 0 ? name.slice(idx + 1).toLowerCase() : "";
 }
 
-/** Strip HTML tags for short plain-text previews. */
+const BLOCK_TAG = /<\/?(?:p|div|br|li|ul|ol|h[1-6]|tr|td|th|table|thead|tbody|blockquote|pre|hr|section|article|header|footer)\b[^>]*>/gi;
+
+/**
+ * Strip HTML tags for short plain-text previews. Inline elements (em, strong, a, span, …) add no whitespace;
+ * block elements and line breaks become a single space. Whitespace is collapsed and trimmed.
+ */
 export function stripHtml(html: string | null | undefined): string {
   if (!html) return "";
   return html
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/g, " ")
+    .replace(BLOCK_TAG, " ")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;|&#160;/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
     .replace(/&amp;/g, "&")
     .replace(/\s+/g, " ")
     .trim();

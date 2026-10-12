@@ -7,8 +7,10 @@ import me.amanullah.course.assessment.AssessmentDtos.AttemptSummaryDto;
 import me.amanullah.course.assessment.AssessmentDtos.ResultOption;
 import me.amanullah.course.assessment.AssessmentDtos.SessionOption;
 import me.amanullah.course.assessment.AssessmentDtos.SessionQuestion;
+import me.amanullah.course.assessment.AssessmentDtos.SubmittedAnswer;
 import me.amanullah.course.media.MediaMapper;
 import me.amanullah.course.user.UserMapper;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -25,13 +27,19 @@ public class AttemptMapper {
         this.mediaMapper = mediaMapper;
     }
 
-    public AttemptSessionDto toSession(Attempt a) {
+    public AttemptSessionDto toSession(Attempt a, Instant now) {
         List<SessionQuestion> questions = sorted(a).stream()
                 .map(ans -> new SessionQuestion(ans.getQuestionId(), ans.getQuestionType(), ans.getPrompt(),
                         ans.getPoints(), mediaMapper.toDto(ans.getMedia()),
                         ans.getOptions().stream().map(o -> new SessionOption(o.getOptionId(), o.getText())).toList()))
                 .toList();
-        return new AttemptSessionDto(a.getId(), a.getStatus(), a.getStartedAt(), a.getDeadline(), questions);
+        List<SubmittedAnswer> saved = sorted(a).stream()
+                .filter(ans -> !ans.getSelectedOptionIds().isEmpty() || ans.getTextAnswer() != null)
+                .map(ans -> new SubmittedAnswer(ans.getQuestionId(), List.copyOf(ans.getSelectedOptionIds()),
+                        ans.getTextAnswer()))
+                .toList();
+        return new AttemptSessionDto(a.getId(), a.getStatus(), a.getStartedAt(), AttemptFinalizer.effectiveDeadline(a),
+                a.getAssessment().getTimeLimitMinutes(), a.getAssessment().getAvailableUntil(), now, questions, saved);
     }
 
     public AttemptSummaryDto toSummary(Attempt a) {
@@ -39,7 +47,7 @@ public class AttemptMapper {
         Double percent = submitted ? Grader.percent(a.getScore(), a.getMaxScore()) : null;
         return new AttemptSummaryDto(a.getId(), userMapper.toSummary(a.getStudent()), a.getStatus(), a.getStartedAt(),
                 a.getSubmittedAt(), submitted ? a.getScore() : null, a.getMaxScore(), percent, passed(a, percent),
-                a.getStatus() == AttemptStatus.SUBMITTED, a.isLate());
+                a.getStatus() == AttemptStatus.SUBMITTED, a.isLate(), a.isAutoSubmitted());
     }
 
     /**
@@ -62,7 +70,7 @@ public class AttemptMapper {
         )).toList();
         var item = a.getAssessment().getItem();
         return new AttemptResultDto(s.id(), s.student(), s.status(), s.startedAt(), s.submittedAt(), s.score(),
-                s.maxScore(), s.percent(), s.passed(), s.pendingManualGrading(), s.late(), item.getId(),
+                s.maxScore(), s.percent(), s.passed(), s.pendingManualGrading(), s.late(), s.autoSubmitted(), item.getId(),
                 item.getTitle(), a.getDeadline(), answers);
     }
 

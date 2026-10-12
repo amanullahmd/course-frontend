@@ -54,6 +54,10 @@ public class Attempt extends BaseEntity {
     @Column(nullable = false)
     private boolean late;
 
+    /** Submitted by the server with the saved draft answers because time ran out or the window closed. */
+    @Column(name = "auto_submitted", nullable = false)
+    private boolean autoSubmitted;
+
     @Version
     @Column(nullable = false)
     private long version;
@@ -94,5 +98,7 @@ public class Attempt extends BaseEntity {
     public void setMaxScore(double maxScore) { this.maxScore = maxScore; }
     public boolean isLate() { return late; }
     public void setLate(boolean late) { this.late = late; }
+    public boolean isAutoSubmitted() { return autoSubmitted; }
+    public void setAutoSubmitted(boolean autoSubmitted) { this.autoSubmitted = autoSubmitted; }
     public List<AttemptAnswer> getAnswers() { return answers; }
 }
