@@ -25,6 +25,11 @@ import { Button } from "@/components/ui/button";
 import { Field, fieldA11y } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
+/** Timestamp (ms) `seconds` from now; outside the component so the React compiler sees a pure render. */
+function secondsFromNow(seconds: number): number {
+  return Date.now() + Math.max(1, seconds) * 1000;
+}
+
 export function LoginForm() {
   const t = useTranslations();
   const locale = useLocale();
@@ -68,7 +73,7 @@ export function LoginForm() {
       if (adoptLocale) router.refresh();
     } catch (err) {
       if (isApiError(err) && err.code === "RATE_LIMITED") {
-        setLockedUntil(Date.now() + Math.max(1, err.problem.retryAfterSeconds ?? 60) * 1000);
+        setLockedUntil(secondsFromNow(err.problem.retryAfterSeconds ?? 60));
         return;
       }
       const unverified = isApiError(err) && err.code === "EMAIL_NOT_VERIFIED";
