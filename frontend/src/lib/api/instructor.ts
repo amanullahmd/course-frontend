@@ -1,5 +1,7 @@
 import { api } from "./client";
 import type {
+  AddStudentsRequest,
+  AddStudentsResult,
   AssessmentDto,
   AttemptResultDto,
   AttemptSummaryDto,
@@ -62,6 +64,8 @@ export const instructorApi = {
   reject: (id: string, reason: string | null) => api.post<EnrollmentDto>(`${base}/enrollments/${id}/reject`, { reason }),
   revoke: (id: string, reason: string | null) => api.post<EnrollmentDto>(`${base}/enrollments/${id}/revoke`, { reason }),
   bulk: (body: BulkEnrollmentRequest) => api.post<EnrollmentDto[]>(`${base}/enrollments/bulk`, body),
+  addStudents: (courseId: string, body: AddStudentsRequest) =>
+    api.post<AddStudentsResult>(`${base}/courses/${courseId}/enrollments/add`, body),
 
   // Schedule
   schedule: (query: ScheduleQuery) => api.get<ScheduleEventDto[]>(`${base}/schedule`, { ...query }),

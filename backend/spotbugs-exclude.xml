@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs (+ FindSecBugs) exclusions for `./mvnw -Pspotbugs -DskipTests verify`.
+  Keep this list short and specific: every entry states why the finding is not a bug.
+  Real findings are fixed in the code instead.
+-->
+<FindBugsFilter
+        xmlns="https://github.com/spotbugs/filter/3.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
+
+    <!--
+      "May expose internal representation": JPA entities return/accept their associations and collections by design
+      (Hibernate needs the managed instances), DTO records carry lists that are serialized straight to JSON, and
+      Spring beans store their constructor-injected collaborators. None of these objects crosses a trust boundary.
+    -->
+    <Match>
+        <Package name="~me\.amanullah\.course(\..*)?"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- Stateless JWT API: credentials travel in the Authorization header, the only cookie (refresh token) is
+         SameSite=Lax + HttpOnly and the refresh response is only readable by the CORS-allowed frontend origin. -->
+    <Match>
+        <Class name="me.amanullah.course.security.SecurityConfig"/>
+        <Bug pattern="SPRING_CSRF_PROTECTION_DISABLED"/>
+    </Match>
+
+    <!-- /error must answer for every HTTP method; it only renders a problem document and changes no state. -->
+    <Match>
+        <Class name="me.amanullah.course.common.exception.ProblemErrorController"/>
+        <Bug pattern="SPRING_CSRF_UNRESTRICTED_REQUEST_MAPPING"/>
+    </Match>
+
+    <!-- The traceId of 500 responses only correlates a response with a log line; it is not a secret or token. -->
+    <Match>
+        <Class name="me.amanullah.course.common.exception.Problems"/>
+        <Bug pattern="PREDICTABLE_RANDOM"/>
+    </Match>
+
+    <!-- Standard Hibernate equals(): compares the persistent class of (possibly proxied) entities. -->
+    <Match>
+        <Class name="me.amanullah.course.common.persistence.BaseEntity"/>
+        <Method name="equals"/>
+        <Bug pattern="EQ_CHECK_FOR_OPERAND_NOT_COMPATIBLE_WITH_THIS"/>
+    </Match>
+
+    <!-- Tri-state result: null means "not graded yet" and is serialized as JSON null (passed: true|false|null). -->
+    <Match>
+        <Class name="me.amanullah.course.assessment.AttemptMapper"/>
+        <Method name="passed"/>
+        <Bug pattern="NP_BOOLEAN_RETURN_NULL"/>
+    </Match>
+
+    <!-- Rewrites signed media URLs inside lesson HTML. Only one optional prefix group (no nested repetition), the
+         character class excludes whitespace and quotes, and bodies are size-limited, so there is no
+         catastrophic backtracking. -->
+    <Match>
+        <Class name="me.amanullah.course.media.MediaUrlSigner"/>
+        <Bug pattern="REDOS"/>
+    </Match>
+
+    <!-- HTML e-mail text block: the line breaks are literal markup, not platform-specific output. -->
+    <Match>
+        <Class name="me.amanullah.course.notification.EmailTemplates"/>
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    </Match>
+
+    <!-- Intentional exact check after rounding to one decimal: 3.0 is written as "3", 2.5 as "2.5". -->
+    <Match>
+        <Class name="me.amanullah.course.report.Csv"/>
+        <Method name="number"/>
+        <Bug pattern="FE_FLOATING_POINT_EQUALITY"/>
+    </Match>
+
+    <!-- Null-coalescing of nullable Double scores (score == null ? 0.0 : score) in report rows: a micro-allocation,
+         not a bug. -->
+    <Match>
+        <Package name="me.amanullah.course.report"/>
+        <Bug pattern="BX_UNBOXING_IMMEDIATELY_REBOXED"/>
+    </Match>
+</FindBugsFilter>

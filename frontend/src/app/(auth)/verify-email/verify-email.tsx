@@ -9,10 +9,13 @@ import { CircleCheck, LoaderCircle, MailX } from "lucide-react";
 import { authApi } from "@/lib/api/auth";
 import { isApiError } from "@/lib/api/client";
 import { useErrorMessage } from "@/hooks/use-error-message";
+import { loginHref, rememberedNext } from "@/lib/post-auth-next";
 import { AuthHeading } from "@/components/auth/auth-card";
 import { ResendVerificationButton } from "@/components/auth/resend-verification";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+const noopSubscribe = () => () => undefined;
 
 export function VerifyEmail() {
   const t = useTranslations("auth.verify");
@@ -27,6 +30,8 @@ export function VerifyEmail() {
     staleTime: Infinity,
     gcTime: Infinity,
   });
+  // Continue where sign-up started (e.g. the course page of an invitation); read after mount (localStorage).
+  const login = React.useSyncExternalStore(noopSubscribe, () => loginHref(rememberedNext()), () => "/login");
   if (!token) {
     return (
       <>
@@ -50,7 +55,7 @@ export function VerifyEmail() {
       <>
         <AuthHeading icon={CircleCheck} tone="success" title={t("successTitle")} description={verify.data?.message || t("successText")} />
         <Button size="lg" className="w-full" asChild>
-          <Link href="/login">{t("continue")}</Link>
+          <Link href={login}>{t("continue")}</Link>
         </Button>
       </>
     );
@@ -62,7 +67,7 @@ export function VerifyEmail() {
       <>
         <AuthHeading icon={CircleCheck} tone="success" title={t("usedTitle")} description={t("usedText")} />
         <Button size="lg" className="w-full" asChild>
-          <Link href="/login">{t("continue")}</Link>
+          <Link href={login}>{t("continue")}</Link>
         </Button>
       </>
     );

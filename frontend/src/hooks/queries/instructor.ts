@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tansta
 import { instructorApi } from "@/lib/api/instructor";
 import type {
   AssessmentDto,
+  AddStudentsRequest,
   BulkEnrollmentRequest,
   ContentItemDto,
   CourseDto,
@@ -372,6 +373,15 @@ export function useEnrollmentActions(courseId?: string) {
   });
   const bulk = useMutation({ mutationFn: (body: BulkEnrollmentRequest) => instructorApi.bulk(body), onSuccess });
   return { approve, reject, revoke, bulk };
+}
+
+/** "Add learners" by e-mail; refreshes the enrollment lists afterwards. */
+export function useAddStudents(courseId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: AddStudentsRequest) => instructorApi.addStudents(courseId, body),
+    onSuccess: () => invalidateEnrollments(qc, courseId),
+  });
 }
 
 // ---------------------------------------------------------------------------

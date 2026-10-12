@@ -1,0 +1,109 @@
+/*
+ * Print / "Save as PDF" layout for the instructor reports. Only active while a report is on the page
+ * (body:has(.report-root)): the app chrome is hidden, the report is laid out on clean A4 pages in light colours,
+ * and sticky table parts become static so wide tables are not clipped.
+ */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm 11mm 14mm;
+  }
+
+  html:has(.report-root),
+  html:has(.report-root).dark {
+    --background: #fff;
+    --foreground: #15171f;
+    --card: #fff;
+    --card-foreground: #15171f;
+    --muted: #f1f2f6;
+    --muted-foreground: #5b6070;
+    --border: #d9dce4;
+    --brand: oklch(0.72 0.155 70);
+    --brand-soft: oklch(0.96 0.045 85);
+    --brand-strong: oklch(0.6 0.15 62);
+    --success: oklch(0.55 0.14 155);
+    --success-soft: oklch(0.95 0.04 160);
+    --info: oklch(0.52 0.16 250);
+    --info-soft: oklch(0.95 0.03 250);
+    --warning: oklch(0.6 0.15 65);
+    --warning-soft: oklch(0.96 0.05 80);
+    --destructive: oklch(0.55 0.215 26);
+    --destructive-soft: oklch(0.96 0.025 25);
+    color-scheme: light;
+    background: #fff !important;
+  }
+
+  body:has(.report-root) {
+    background: #fff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    font-size: 10pt;
+  }
+
+  /* hide everything except the report */
+  body:has(.report-root) * {
+    visibility: hidden;
+  }
+  body:has(.report-root) .report-root,
+  body:has(.report-root) .report-root * {
+    visibility: visible;
+  }
+  body:has(.report-root) header.sticky,
+  body:has(.report-root) aside,
+  body:has(.report-root) [data-sonner-toaster] {
+    display: none !important;
+  }
+  body:has(.report-root) .report-root {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .report-root .print\:hidden,
+  .report-root button:not(.print-keep),
+  .report-root [role="radiogroup"],
+  .report-root input {
+    display: none !important;
+  }
+
+  .report-root .report-card {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border-color: var(--border);
+  }
+  .report-root .report-card.print-break-ok {
+    break-inside: auto;
+  }
+  .report-root .report-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  .report-root .kpi-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  /* tables: no sticky parts, no inner scrolling, compact */
+  .report-root .report-scroll {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  .report-root .sticky {
+    position: static !important;
+  }
+  .report-root table {
+    font-size: 8.5pt;
+  }
+  .report-root thead {
+    display: table-header-group;
+  }
+  .report-root tr {
+    break-inside: avoid;
+  }
+  .report-root a {
+    color: inherit;
+    text-decoration: none;
+  }
+}

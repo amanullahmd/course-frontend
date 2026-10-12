@@ -14,7 +14,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
-public class LocalFileStorage implements FileStorage {
+public final class LocalFileStorage implements FileStorage {
 
     private static final Logger log = LoggerFactory.getLogger(LocalFileStorage.class);
 
@@ -33,8 +33,12 @@ public class LocalFileStorage implements FileStorage {
     @Override
     public long store(String key, InputStream in) throws IOException {
         Path target = resolve(key);
-        Files.createDirectories(target.getParent());
-        Path tmp = Files.createTempFile(target.getParent(), ".upload-", ".tmp");
+        Path directory = target.getParent();
+        if (directory == null || target.equals(root)) {
+            throw new IllegalArgumentException("Invalid storage key");
+        }
+        Files.createDirectories(directory);
+        Path tmp = Files.createTempFile(directory, ".upload-", ".tmp");
         try {
             long bytes = Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
             Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);

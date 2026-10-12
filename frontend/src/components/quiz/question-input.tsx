@@ -59,7 +59,7 @@ export function QuestionPrompt({ prompt, type }: { prompt: string; type: Session
   const html = /<\/?[a-z][\s\S]*>/i.test(prompt) ? prompt : escapeHtml(prompt);
   const blank = `<span role="img" aria-label="${escapeHtml(t("blank"))}" class="mx-1 inline-block min-w-16 border-b-2 border-dashed border-brand align-baseline"></span>`;
   return (
-    <p
+    <div
       className="text-lg leading-relaxed font-medium whitespace-pre-line [&_p]:inline [&_strong]:font-semibold"
       dangerouslySetInnerHTML={{ __html: html.replace(/_{3,}/g, blank) }}
     />

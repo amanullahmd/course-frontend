@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { loginHref } from "@/lib/post-auth-next";
 import { MailCheck } from "lucide-react";
 import { AuthHeading } from "@/components/auth/auth-card";
 import { ResendVerificationButton } from "@/components/auth/resend-verification";
@@ -10,7 +11,9 @@ import { Button } from "@/components/ui/button";
 
 export function CheckEmail() {
   const t = useTranslations("auth.checkEmail");
-  const email = useSearchParams().get("email") ?? "";
+  const params = useSearchParams();
+  const email = params.get("email") ?? "";
+  const next = params.get("next");
   return (
     <>
       <AuthHeading
@@ -30,7 +33,7 @@ export function CheckEmail() {
       <div className="grid gap-3">
         {email && <ResendVerificationButton email={email} className="w-full" />}
         <Button variant="ghost" asChild className="w-full">
-          <Link href="/login">{t("back")}</Link>
+          <Link href={loginHref(next)}>{t("back")}</Link>
         </Button>
       </div>
       <p className="mt-6 text-center text-xs text-muted-foreground">{t("spam")}</p>

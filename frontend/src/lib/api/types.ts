@@ -29,7 +29,8 @@ export type EnrollmentStatus = "PENDING" | "APPROVED" | "REJECTED" | "WITHDRAWN"
 export type ScheduleEntityType = "COURSE" | "MODULE" | "ITEM";
 /** OPENS/CLOSES: start and end of a quiz/exam availability window (entityType ITEM). */
 export type ScheduleAction = "PUBLISH" | "UNPUBLISH" | "OPENS" | "CLOSES";
-export type BulkAction = "APPROVE" | "REJECT";
+/** APPROVE also restores REJECTED, REVOKED and WITHDRAWN enrollments; REVOKE removes approved learners. */
+export type BulkAction = "APPROVE" | "REJECT" | "REVOKE";
 
 // ---------------------------------------------------------------------------
 // Common
@@ -420,10 +421,35 @@ export interface GradeRequest {
   grades: { questionId: Uuid; pointsAwarded: number; feedback: string | null }[];
 }
 
+/** All or nothing. With `courseId`, every id must belong to that course. */
 export interface BulkEnrollmentRequest {
   ids: Uuid[];
   action: BulkAction;
   reason?: string | null;
+  courseId?: Uuid;
+}
+
+export interface AddStudentsRequest {
+  /** 1–200 addresses; trimmed and de-duplicated (case-insensitive) by the server. */
+  emails: string[];
+  message?: string | null;
+  invite?: boolean;
+}
+
+export type AddStudentsSkipCode =
+  | "EMAIL_NOT_VERIFIED"
+  | "ACCOUNT_DISABLED"
+  | "OWN_COURSE"
+  | "CAPACITY_REACHED"
+  | "ALREADY_INVITED";
+
+/** Addresses are lower-cased. `invited` ⊆ `notFound`. */
+export interface AddStudentsResult {
+  added: EnrollmentDto[];
+  alreadyEnrolled: string[];
+  invited: string[];
+  notFound: string[];
+  skipped: { email: string; code: AddStudentsSkipCode | string }[];
 }
 
 export interface ScheduleQuery {

@@ -19,7 +19,12 @@ public record CurrentUser(UUID id, String email, Role role) {
         if (auth == null || !(auth.getPrincipal() instanceof Jwt jwt)) {
             throw new UnauthorizedException("Authentication required");
         }
-        return new CurrentUser(UUID.fromString(jwt.getSubject()), jwt.getClaimAsString(JwtService.CLAIM_EMAIL),
-                Role.valueOf(jwt.getClaimAsString(JwtService.CLAIM_ROLE)));
+        String subject = jwt.getSubject();
+        String role = jwt.getClaimAsString(JwtService.CLAIM_ROLE);
+        if (subject == null || role == null) {
+            throw new UnauthorizedException("Authentication required");
+        }
+        return new CurrentUser(UUID.fromString(subject), jwt.getClaimAsString(JwtService.CLAIM_EMAIL),
+                Role.valueOf(role));
     }
 }

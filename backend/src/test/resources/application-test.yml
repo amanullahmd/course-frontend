@@ -20,6 +20,13 @@ app:
   attempts:
     sweeper:
       enabled: false
+  # tests call AnnouncementScheduler.sendDue(now) and MessageMailJob.sendDue(now) directly
+  announcements:
+    scheduler:
+      enabled: false
+  messaging:
+    mail-job:
+      enabled: false
 
 logging:
   level:

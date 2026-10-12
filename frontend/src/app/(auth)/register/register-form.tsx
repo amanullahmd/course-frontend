@@ -10,6 +10,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { GraduationCap, Presentation } from "lucide-react";
 import { isApiError } from "@/lib/api/client";
 import { applyServerErrors } from "@/lib/form-errors";
+import { loginHref, rememberNext } from "@/lib/post-auth-next";
+import { safeNextPath } from "@/lib/utils";
 import { makeEmailSchema, makePasswordSchema, type ValidationT } from "@/lib/validation";
 import { useErrorMessage } from "@/hooks/use-error-message";
 import { useAuth } from "@/providers/auth-provider";
@@ -27,6 +29,8 @@ export function RegisterForm() {
   const { register: registerUser } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
+  // Invitation links: /register?email=<address>&next=/courses/<slug> (only relative paths are honoured).
+  const next = safeNextPath(params.get("next"), "") || null;
   const [error, setError] = React.useState<string | null>(null);
   const schema = React.useMemo(() => {
     const vt: ValidationT = (k) => t(`validation.${k}`);
@@ -40,7 +44,7 @@ export function RegisterForm() {
   type Values = z.infer<typeof schema>;
   const form = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { role: params.get("role") === "INSTRUCTOR" ? "INSTRUCTOR" : "STUDENT", fullName: "", email: "", password: "" },
+    defaultValues: { role: params.get("role") === "INSTRUCTOR" ? "INSTRUCTOR" : "STUDENT", fullName: "", email: (params.get("email") ?? "").trim().slice(0, 254), password: "" },
   });
   const { errors, isSubmitting } = form.formState;
   const password = useWatch({ control: form.control, name: "password" });
@@ -49,7 +53,8 @@ export function RegisterForm() {
     setError(null);
     try {
       await registerUser({ ...values, locale });
-      router.push(`/check-email?email=${encodeURIComponent(values.email)}`);
+      rememberNext(next);
+      router.push(`/check-email?email=${encodeURIComponent(values.email)}${next ? `&next=${encodeURIComponent(next)}` : ""}`);
     } catch (err) {
       const mapped = applyServerErrors(err, form.setError, ["fullName", "email", "password", "role"]);
       if (isApiError(err) && (err.status === 409 || err.code === "EMAIL_TAKEN")) {
@@ -95,7 +100,7 @@ export function RegisterForm() {
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">
         {t("auth.register.haveAccount")}{" "}
-        <Link href="/login" className="font-medium text-foreground underline-offset-4 hover:underline">
+        <Link href={loginHref(next)} className="font-medium text-foreground underline-offset-4 hover:underline">
           {t("auth.register.login")}
         </Link>
       </p>

@@ -29,10 +29,14 @@ class AccountStatusJwtValidator implements OAuth2TokenValidator<Jwt> {
 
     @Override
     public OAuth2TokenValidatorResult validate(Jwt jwt) {
+        String subject = jwt.getSubject();
+        if (subject == null) {
+            return INACTIVE;
+        }
         UUID id;
         try {
-            id = UUID.fromString(jwt.getSubject());
-        } catch (IllegalArgumentException | NullPointerException e) {
+            id = UUID.fromString(subject);
+        } catch (IllegalArgumentException e) {
             return INACTIVE;
         }
         return users.findAccountState(id)
