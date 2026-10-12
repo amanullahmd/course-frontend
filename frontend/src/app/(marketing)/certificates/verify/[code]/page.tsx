@@ -8,7 +8,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** Public verification page (linked from the certificate's QR code). The lookup runs in the browser. */
-export default async function VerifyCertificatePage({ params }: PageProps<"/certificates/verify/[code]">) {
+export default async function VerifyCertificatePage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
   return <VerifyCertificateView code={decodeURIComponent(code)} />;
 }
