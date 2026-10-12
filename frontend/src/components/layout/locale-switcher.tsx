@@ -3,9 +3,21 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Languages } from "lucide-react";
+import { ChevronDown, Languages } from "lucide-react";
 import { api, setApiLocale } from "@/lib/api/client";
-import { LOCALES, persistLocaleCookie, type AppLocale } from "@/i18n/config";
+import { LOCALES, isLocale, persistLocaleCookie, type AppLocale } from "@/i18n/config";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/providers/auth-provider";
 import { cn } from "@/lib/utils";
 
@@ -27,52 +39,74 @@ export function useSwitchLocale() {
   return { switchTo, pending };
 }
 
-/** Compact EN | DE toggle: a radio group with roving focus (Tab enters once, arrow keys switch). */
-export function LocaleSwitcher({ className }: { className?: string }) {
+/** Each language is listed under its own name, so speakers of either language can always find theirs. */
+const ENDONYMS: Record<AppLocale, string> = { en: "English", de: "Deutsch" };
+
+function LocaleRadioItems({ onSelect }: { onSelect: (locale: AppLocale) => void }) {
+  const locale = useLocale();
+  return (
+    <DropdownMenuRadioGroup value={locale} onValueChange={(value) => isLocale(value) && onSelect(value)}>
+      {LOCALES.map((l) => (
+        <DropdownMenuRadioItem key={l} value={l} lang={l}>
+          <span className="grid h-5 w-7 place-items-center rounded border bg-muted text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+            {l}
+          </span>
+          {ENDONYMS[l]}
+        </DropdownMenuRadioItem>
+      ))}
+    </DropdownMenuRadioGroup>
+  );
+}
+
+/**
+ * Language dropdown. `compact` (default) shows the language code for headers;
+ * `full` shows the language name, for settings pages and wide layouts.
+ */
+export function LocaleSwitcher({ className, variant = "compact" }: { className?: string; variant?: "compact" | "full" }) {
   const locale = useLocale();
   const t = useTranslations("locale");
   const { switchTo, pending } = useSwitchLocale();
-  const refs = React.useRef<(HTMLButtonElement | null)[]>([]);
-  const onKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-    const delta = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
-    let next: number | undefined;
-    if (delta) next = (index + delta + LOCALES.length) % LOCALES.length;
-    else if (event.key === "Home") next = 0;
-    else if (event.key === "End") next = LOCALES.length - 1;
-    if (next === undefined) return;
-    event.preventDefault();
-    refs.current[next]?.focus();
-    if (LOCALES[next] !== locale) switchTo(LOCALES[next]);
-  };
+  const current = isLocale(locale) ? locale : LOCALES[0];
   return (
-    <div
-      role="radiogroup"
-      aria-label={t("label")}
-      aria-busy={pending || undefined}
-      className={cn("inline-flex h-8 items-center gap-0.5 rounded-lg border bg-card p-0.5", pending && "opacity-70", className)}
-    >
-      <Languages className="mx-1 size-3.5 text-muted-foreground" aria-hidden />
-      {LOCALES.map((l, i) => (
-        <button
-          key={l}
-          ref={(el) => {
-            refs.current[i] = el;
-          }}
-          type="button"
-          role="radio"
-          aria-checked={locale === l}
-          aria-label={t(l)}
-          tabIndex={locale === l ? 0 : -1}
-          onKeyDown={(e) => onKeyDown(e, i)}
-          onClick={() => locale !== l && switchTo(l)}
-          className={cn(
-            "h-full rounded-md px-2 text-xs font-semibold text-muted-foreground uppercase transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
-            locale === l && "bg-primary text-primary-foreground hover:text-primary-foreground",
-          )}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          aria-label={`${t("switch")}: ${ENDONYMS[current]}`}
+          aria-busy={pending || undefined}
+          className={cn("gap-1.5 px-2.5", pending && "opacity-70", className)}
         >
-          {l}
-        </button>
-      ))}
-    </div>
+          <Languages className="text-muted-foreground" aria-hidden />
+          <span className={cn(variant === "compact" && "text-xs font-semibold uppercase")}>
+            {variant === "compact" ? current : ENDONYMS[current]}
+          </span>
+          <ChevronDown className="ml-auto size-3.5 text-muted-foreground" aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-44">
+        <DropdownMenuLabel>{t("label")}</DropdownMenuLabel>
+        <LocaleRadioItems onSelect={(l) => l !== current && switchTo(l)} />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/** The same choice as a submenu, for use inside another dropdown (e.g. the user menu). */
+export function LocaleSubmenu() {
+  const locale = useLocale();
+  const t = useTranslations("locale");
+  const { switchTo } = useSwitchLocale();
+  const current = isLocale(locale) ? locale : LOCALES[0];
+  return (
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger>
+        <Languages /> {t("label")}
+        <span className="ml-auto pl-3 text-xs text-muted-foreground">{ENDONYMS[current]}</span>
+      </DropdownMenuSubTrigger>
+      <DropdownMenuSubContent className="min-w-44">
+        <LocaleRadioItems onSelect={(l) => l !== current && switchTo(l)} />
+      </DropdownMenuSubContent>
+    </DropdownMenuSub>
   );
 }

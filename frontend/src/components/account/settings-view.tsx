@@ -246,7 +246,7 @@ export function SettingsView() {
             <CardDescription>{t("settings.languageText")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <LocaleSwitcher />
+            <LocaleSwitcher variant="full" className="min-w-40" />
           </CardContent>
         </Card>
         <PasswordCard />

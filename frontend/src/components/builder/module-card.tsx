@@ -74,7 +74,7 @@ export function ModuleCardBody({
             {index + 1}
           </span>
           <span className="min-w-0">
-            <span className="block truncate font-semibold">{module.title}</span>
+            <span className="line-clamp-2 font-semibold [overflow-wrap:anywhere] sm:line-clamp-1">{module.title}</span>
             <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
               <span>
                 {t("course.itemsCount", { count: module.items.length })}

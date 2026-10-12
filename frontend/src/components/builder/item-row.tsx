@@ -56,7 +56,7 @@ export function ItemRowContent({
       {handle ?? <GripVertical className="size-4 shrink-0 text-muted-foreground/50" />}
       <ItemTypeIcon type={item.type} />
       <div className="min-w-0 flex-1">
-        <Link href={href} className="block truncate text-sm font-medium hover:underline">
+        <Link href={href} className="line-clamp-2 text-sm font-medium [overflow-wrap:anywhere] hover:underline sm:line-clamp-1">
           {item.title}
         </Link>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">

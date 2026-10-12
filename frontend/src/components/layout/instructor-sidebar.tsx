@@ -110,20 +110,23 @@ export function InstructorSidebar() {
         collapsed ? "w-[60px]" : "w-60",
       )}
     >
-      <React.Suspense fallback={null}>
-        <SidebarInner collapsed={collapsed} />
-      </React.Suspense>
-      <div className={cn("mt-auto pt-3", collapsed && "flex justify-center")}>
+      <div className={cn("mb-2 flex", collapsed ? "justify-center" : "justify-end")}>
         <Button
           variant="ghost"
-          size={collapsed ? "icon-sm" : "sm"}
+          size="icon-sm"
           onClick={() => setCollapsed(!collapsed)}
           aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
-          className={cn(!collapsed && "w-full justify-start text-muted-foreground")}
+          aria-expanded={!collapsed}
+          title={collapsed ? t("expandSidebar") : t("collapseSidebar")}
+          className="text-muted-foreground"
         >
           {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
-          {!collapsed && t("collapse")}
         </Button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <React.Suspense fallback={null}>
+          <SidebarInner collapsed={collapsed} />
+        </React.Suspense>
       </div>
     </aside>
   );

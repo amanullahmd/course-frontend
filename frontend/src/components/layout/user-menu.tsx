@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { LocaleSwitcher } from "./locale-switcher";
+import { LocaleSubmenu } from "./locale-switcher";
 import { ThemeSegmented } from "./theme-toggle";
 
 export function UserMenu() {
@@ -83,10 +83,7 @@ export function UserMenu() {
         <div className="px-2 pb-2">
           <ThemeSegmented />
         </div>
-        <DropdownMenuLabel>{t("locale.label")}</DropdownMenuLabel>
-        <div className="px-2 pb-2">
-          <LocaleSwitcher className="w-full justify-between" />
-        </div>
+        <LocaleSubmenu />
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={async () => {
