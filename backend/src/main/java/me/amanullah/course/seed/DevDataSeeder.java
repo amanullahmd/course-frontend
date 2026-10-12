@@ -5,6 +5,7 @@ import me.amanullah.course.assessment.AssessmentRepository;
 import me.amanullah.course.assessment.Question;
 import me.amanullah.course.assessment.QuestionOption;
 import me.amanullah.course.assessment.QuestionType;
+import me.amanullah.course.assessment.Scoring;
 import me.amanullah.course.common.publication.PublishStatus;
 import me.amanullah.course.common.web.Links;
 import me.amanullah.course.common.util.SlugGenerator;
@@ -134,6 +135,10 @@ public class DevDataSeeder implements CommandLineRunner {
                 "Teste dein Wissen – beliebig viele Versuche", "<p>Fünf kurze Fragen zu Modul 1 und 2.</p>", 10, 4,
                 PublishStatus.PUBLISHED, null);
         seedQuiz(quizItem);
+        ContentItem exercisesItem = item(a1m1, ItemType.QUIZ, "Übungen: Lücken, Wortbank, Zuordnen",
+                "Sprachübungen mit Teilpunkten, Diktat und Sprechaufgabe", "<p>Je eine Aufgabe pro Übungstyp.</p>",
+                15, 5, PublishStatus.PUBLISHED, null);
+        seedLanguageExercises(exercisesItem, anna);
 
         CourseModule a1m2 = module(a1, "Artikel und Zahlen",
                 "Der, die, das – und alles rund um Zahlen, Wochentage und Uhrzeit.", 1, PublishStatus.PUBLISHED, null);
@@ -286,6 +291,121 @@ public class DevDataSeeder implements CommandLineRunner {
         text(a, 4, QuestionType.FILL_BLANK, "Ergänze das Verb <em>sein</em>: „Ich ___ Luca.“",
                 "ich bin, du bist, er/sie/es ist", 1, "bin");
         assessments.save(a);
+    }
+
+    /** One example of every language question type: cloze, word bank, matching, ordering, dictation and speaking. */
+    private void seedLanguageExercises(ContentItem item, User owner) {
+        Assessment a = new Assessment(item);
+        a.setInstructions("<p>Hier übst du Lücken, Wortbank, Zuordnen, Ordnen, Hören und Sprechen. "
+                + "Für die meisten Aufgaben gibt es <strong>Teilpunkte</strong>.</p>");
+        a.setMaxAttempts(0);
+        a.setPassingScore(60);
+        a.setShowCorrectAnswers(true);
+
+        Question cloze = question(a, 0, QuestionType.CLOZE,
+                "Ergänze die Verbformen: Ich {{1}} gestern im Kino und {{2}} einen Film gesehen.",
+                "Perfekt mit „haben“: ich habe ... gesehen. Aber: ich bin ... gewesen.", 4);
+        cloze.setScoring(Scoring.PARTIAL);
+        cloze.setLenientSpelling(true);
+        cloze.setBlankAnswers(java.util.Map.of(1, List.of("war", "bin gewesen"), 2, List.of("habe")));
+        a.getQuestions().add(cloze);
+
+        Question bank = question(a, 1, QuestionType.WORD_BANK,
+                "Wähle die richtigen Wörter: Das Mädchen {{1}} nach Berlin und {{2}} dort Deutsch.", null, 4);
+        bank.setScoring(Scoring.PARTIAL);
+        bank.setShuffleOptions(true);
+        chip(bank, 0, "fährt", 1);
+        chip(bank, 1, "lernt", 2);
+        chip(bank, 2, "fahren", null);
+        chip(bank, 3, "lernen", null);
+        a.getQuestions().add(bank);
+
+        Question matching = question(a, 2, QuestionType.MATCHING, "Ordne den Artikel dem Nomen zu.",
+                "Merke dir Nomen immer mit Artikel.", 4);
+        matching.setScoring(Scoring.PARTIAL);
+        pair(matching, 0, "der", "Tisch");
+        pair(matching, 1, "die", "Lampe");
+        pair(matching, 2, "das", "Kind");
+        pair(matching, 3, "die", "Zeitung");
+        a.getQuestions().add(matching);
+
+        Question ordering = question(a, 3, QuestionType.ORDERING,
+                "Bringe die Satzteile in die richtige Reihenfolge.", "Im Hauptsatz steht das Verb an Position 2.", 4);
+        ordering.setScoring(Scoring.PARTIAL);
+        for (int i = 0; i < 4; i++) {
+            QuestionOption o = new QuestionOption(ordering);
+            o.setText(new String[]{"Morgen", "fahre", "ich", "nach Hamburg"}[i]);
+            o.setPosition(i);
+            ordering.getOptions().add(o);
+        }
+        a.getQuestions().add(ordering);
+
+        Question dictation = question(a, 4, QuestionType.DICTATION,
+                "Höre zu und schreibe den Satz auf (Demo: ein Signalton – in echten Kursen lädst du eine Aufnahme hoch).",
+                "Umlaute dürfen als ae, oe, ue geschrieben werden.", 4);
+        dictation.setScoring(Scoring.PARTIAL);
+        dictation.setLenientSpelling(true);
+        dictation.setAcceptedAnswers(List.of("Das Mädchen trinkt gern Tee."));
+        dictation.setMedia(storeAudio(owner, "Diktat_Demo.wav"));
+        a.getQuestions().add(dictation);
+
+        Question speaking = question(a, 5, QuestionType.SPEAKING,
+                "<p>Stell dich vor: Wie heißt du, woher kommst du und was machst du gern? Sprich etwa 30 Sekunden.</p>",
+                null, 5);
+        speaking.setMaxRecordingSeconds(60);
+        a.getQuestions().add(speaking);
+        assessments.save(a);
+    }
+
+    private static Question question(Assessment a, int pos, QuestionType type, String prompt, String explanation,
+                                     int points) {
+        Question q = new Question(a);
+        q.setType(type);
+        q.setPrompt(prompt);
+        q.setExplanation(explanation);
+        q.setPoints(points);
+        q.setPosition(pos);
+        return q;
+    }
+
+    private static void chip(Question q, int pos, String text, Integer blankIndex) {
+        QuestionOption o = new QuestionOption(q);
+        o.setText(text);
+        o.setPosition(pos);
+        o.setBlankIndex(blankIndex);
+        o.setCorrect(blankIndex != null);
+        q.getOptions().add(o);
+    }
+
+    /** A MATCHING pair: {@code text} is shown on the left, {@code matchText} is what it has to be matched with. */
+    private static void pair(Question q, int pos, String matchText, String text) {
+        QuestionOption o = new QuestionOption(q);
+        o.setText(text);
+        o.setMatchText(matchText);
+        o.setPosition(pos);
+        q.getOptions().add(o);
+    }
+
+    /** A short two-tone beep as a stand-in for a spoken sentence (16-bit mono WAV). */
+    private MediaAsset storeAudio(User owner, String name) {
+        int rate = 8000;
+        int samples = rate * 2;
+        java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocate(44 + samples * 2).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+        buf.put("RIFF".getBytes(StandardCharsets.US_ASCII)).putInt(36 + samples * 2)
+                .put("WAVEfmt ".getBytes(StandardCharsets.US_ASCII)).putInt(16).putShort((short) 1).putShort((short) 1)
+                .putInt(rate).putInt(rate * 2).putShort((short) 2).putShort((short) 16)
+                .put("data".getBytes(StandardCharsets.US_ASCII)).putInt(samples * 2);
+        for (int i = 0; i < samples; i++) {
+            double t = i / (double) rate;
+            double freq = (int) (t * 4) % 2 == 0 ? 440 : 554;
+            double envelope = Math.min(1, Math.min(t * 4 % 1, 1 - t * 4 % 1) * 8);
+            buf.putShort((short) (Math.sin(2 * Math.PI * freq * t) * envelope * 9000));
+        }
+        try {
+            return mediaService.store(owner.getId(), name, "audio/wav", new ByteArrayInputStream(buf.array()));
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
     }
 
     private void seedExam(ContentItem item) {

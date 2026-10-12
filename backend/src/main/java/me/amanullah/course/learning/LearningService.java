@@ -24,6 +24,7 @@ import me.amanullah.course.user.UserRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class LearningService {
 
     private final LearnerAccess access;
+    private final ReleaseService release;
     private final CourseMapper courseMapper;
     private final CourseStats stats;
     private final ProgressService progressService;
@@ -44,11 +46,12 @@ public class LearningService {
     private final MediaMapper mediaMapper;
     private final Clock clock;
 
-    public LearningService(LearnerAccess access, CourseMapper courseMapper, CourseStats stats,
+    public LearningService(LearnerAccess access, ReleaseService release, CourseMapper courseMapper, CourseStats stats,
                            ProgressService progressService, ItemProgressRepository progress,
                            AssessmentRepository assessments, AttemptRepository attempts, UserRepository users,
                            MediaMapper mediaMapper, AttemptFinalizer finalizer, Clock clock) {
         this.access = access;
+        this.release = release;
         this.courseMapper = courseMapper;
         this.stats = stats;
         this.progressService = progressService;
@@ -69,12 +72,19 @@ public class LearningService {
         List<UUID> itemIds = modules.stream().flatMap(m -> courseMapper.liveItems(m, now).stream())
                 .map(ContentItem::getId).toList();
         Set<UUID> done = progressService.completedItemIds(me.id(), itemIds);
+        List<ContentItem> liveList = modules.stream().flatMap(m -> courseMapper.liveItems(m, now).stream()).toList();
+        Map<UUID, ReleasePolicy.State> locks = release.states(course, me, liveList, now);
         List<LearnModule> outline = modules.stream().map(m -> new LearnModule(m.getId(), m.getTitle(), m.getDescription(),
                 courseMapper.liveItems(m, now).stream().map(i -> new LearnOutlineItem(i.getId(), i.getTitle(),
-                        i.getType(), i.getDurationMinutes(), done.contains(i.getId()))).toList())).toList();
-        int completed = (int) itemIds.stream().filter(done::contains).count();
+                        i.getType(), i.getDurationMinutes(), done.contains(i.getId()), i.isRequired(),
+                        ReleaseService.toDto(locks.get(i.getId())))).toList())).toList();
+        List<ContentItem> counted = ProgressService.counted(liveList);
+        int completed = (int) counted.stream().filter(i -> done.contains(i.getId())).count();
+        int requiredCount = (int) liveList.stream().filter(ContentItem::isRequired).count();
+        int completedRequired = (int) liveList.stream().filter(i -> i.isRequired() && done.contains(i.getId())).count();
         return new LearnCourseDto(courseMapper.toDetail(course, stats.count(course.getId(), EnrollmentStatus.APPROVED), now),
-                ProgressService.percent(completed, itemIds.size()), outline);
+                ProgressService.percent(completed, counted.size()), course.getProgression(), requiredCount,
+                completedRequired, outline);
     }
 
     /** Read-write: an expired in-progress attempt of this assessment is submitted automatically first. */
@@ -100,7 +110,8 @@ public class LearningService {
                 : null;
         return new LearnItemDto(item.getId(), course.getId(), item.getModule().getId(), item.getType(), item.getTitle(),
                 item.getSummary(), courseMapper.html(item.getBody()), item.getExternalUrl(), item.getDurationMinutes(),
-                item.getAttachments().stream().map(mediaMapper::toDto).toList(), completed, prev, next, assessment);
+                item.getAttachments().stream().map(mediaMapper::toDto).toList(), completed, prev, next, assessment,
+                item.isRequired());
     }
 
     private LearnAssessmentDto assessmentInfo(Assessment a, UUID studentId, Instant now) {

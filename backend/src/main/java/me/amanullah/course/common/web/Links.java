@@ -42,4 +42,17 @@ public final class Links {
     public static String instructorAttempt(UUID attemptId) {
         return "/instructor/attempts/" + attemptId;
     }
+
+    /** Opens the feedback of one assignment submission inside the learning player. */
+    public static String learnSubmission(UUID courseId, UUID itemId, UUID submissionId) {
+        return learnItem(courseId, itemId) + "?submission=" + submissionId;
+    }
+
+    public static String instructorSubmission(UUID courseId, UUID submissionId) {
+        return "/instructor/courses/" + courseId + "/submissions?submission=" + submissionId;
+    }
+
+    public static String learnLive(UUID courseId) {
+        return "/learn/" + courseId + "/live";
+    }
 }

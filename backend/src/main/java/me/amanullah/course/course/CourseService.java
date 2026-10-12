@@ -37,11 +37,12 @@ public class CourseService {
     private final CourseMapper mapper;
     private final CourseStats stats;
     private final MediaService mediaService;
+    private final ReleasePrerequisiteRepository prerequisites;
     private final Clock clock;
 
     public CourseService(CourseRepository courses, CourseModuleRepository modules, UserRepository users,
                          CourseAccess access, CourseMapper mapper, CourseStats stats, MediaService mediaService,
-                         Clock clock) {
+                         ReleasePrerequisiteRepository prerequisites, Clock clock) {
         this.courses = courses;
         this.modules = modules;
         this.users = users;
@@ -49,6 +50,7 @@ public class CourseService {
         this.mapper = mapper;
         this.stats = stats;
         this.mediaService = mediaService;
+        this.prerequisites = prerequisites;
         this.clock = clock;
     }
 
@@ -88,6 +90,7 @@ public class CourseService {
     @Transactional
     public void delete(CurrentUser me, UUID id) {
         Course course = access.course(id, me);
+        prerequisites.deleteByCourse(course.getId());
         courses.deleteCourseById(course.getId());
     }
 
@@ -132,6 +135,9 @@ public class CourseService {
         course.setLevel(req.level());
         course.setEnrollmentMode(req.enrollmentMode());
         course.setCapacity(req.capacity());
+        if (req.progression() != null) {
+            course.setProgression(req.progression());
+        }
         course.setTags(normalizeTags(req.tags()));
         if (req.coverImageId() == null) {
             course.setCoverImage(null);

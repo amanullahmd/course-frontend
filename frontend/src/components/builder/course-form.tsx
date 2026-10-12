@@ -4,7 +4,7 @@ import * as React from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { DoorOpen, ImageUp, ShieldCheck, Trash } from "lucide-react";
+import { DoorOpen, Footprints, ImageUp, LayoutList, Layers, ShieldCheck, Trash } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { CourseDto, CourseUpsert, MediaDto } from "@/lib/api/types";
 import { CEFR_LEVELS, CEFR_META } from "@/lib/constants";
@@ -36,6 +36,7 @@ const makeSchema = (t: FormT) =>
     level: z.enum(["A1", "A2", "B1", "B2", "C1", "C2"]),
     tags: z.array(z.string()).max(20),
     enrollmentMode: z.enum(["APPROVAL", "OPEN"]),
+    progression: z.enum(["FREE", "SEQUENTIAL_MODULES", "SEQUENTIAL_ITEMS"]),
     capacity: z.string().regex(/^\d*$/, t("validation.wholeNumber")),
     cover: z.custom<MediaDto | null>(),
   });
@@ -49,6 +50,7 @@ export function courseToForm(course?: CourseDto): CourseFormValues {
     level: course?.level ?? "A1",
     tags: course?.tags ?? [],
     enrollmentMode: course?.enrollmentMode ?? "APPROVAL",
+    progression: course?.progression ?? "FREE",
     capacity: course?.capacity != null ? String(course.capacity) : "",
     cover: course?.coverImage ?? null,
   };
@@ -63,6 +65,7 @@ export function formToUpsert(values: CourseFormValues): CourseUpsert {
     tags: values.tags,
     coverImageId: values.cover?.id ?? null,
     enrollmentMode: values.enrollmentMode,
+    progression: values.progression,
     capacity: values.capacity ? Number(values.capacity) : null,
   };
 }
@@ -236,6 +239,26 @@ export function CourseForm({
           <Field label={t("courseForm.capacity")} htmlFor="capacity" error={errors.capacity?.message} hint={t("courseForm.capacityHint")} className="max-w-xs">
             <Input type="number" min={1} inputMode="numeric" placeholder={t("common.unlimited")} {...fieldA11y("capacity", errors.capacity?.message)} {...form.register("capacity")} />
           </Field>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("release.progressionTitle")}</CardTitle>
+          <CardDescription>{t("release.progressionText")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Controller
+            control={form.control}
+            name="progression"
+            render={({ field }) => (
+              <RadioGroup value={field.value} onValueChange={field.onChange} className="grid gap-3 lg:grid-cols-3" aria-label={t("release.progressionLabel")}>
+                <RadioCard value="FREE" icon={<LayoutList />} title={t("release.progressionFREE")} description={t("release.progressionFREEText")} />
+                <RadioCard value="SEQUENTIAL_MODULES" icon={<Layers />} title={t("release.progressionSEQUENTIAL_MODULES")} description={t("release.progressionSEQUENTIAL_MODULESText")} />
+                <RadioCard value="SEQUENTIAL_ITEMS" icon={<Footprints />} title={t("release.progressionSEQUENTIAL_ITEMS")} description={t("release.progressionSEQUENTIAL_ITEMSText")} />
+              </RadioGroup>
+            )}
+          />
         </CardContent>
       </Card>
 

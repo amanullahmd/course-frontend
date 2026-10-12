@@ -1,6 +1,10 @@
 package me.amanullah.course.schedule;
 
 import me.amanullah.course.assessment.Assessment;
+import me.amanullah.course.assignment.Assignment;
+import me.amanullah.course.assignment.AssignmentRepository;
+import me.amanullah.course.live.LiveSession;
+import me.amanullah.course.live.LiveSessionRepository;
 import me.amanullah.course.assessment.AssessmentRepository;
 import me.amanullah.course.common.exception.ValidationException;
 import me.amanullah.course.common.publication.PublishStatus;
@@ -38,14 +42,19 @@ public class ScheduleService {
     private final CourseModuleRepository modules;
     private final ContentItemRepository items;
     private final AssessmentRepository assessments;
+    private final AssignmentRepository assignments;
+    private final LiveSessionRepository liveSessions;
     private final Clock clock;
 
     public ScheduleService(CourseRepository courses, CourseModuleRepository modules, ContentItemRepository items,
-                           AssessmentRepository assessments, Clock clock) {
+                           AssessmentRepository assessments, AssignmentRepository assignments,
+                           LiveSessionRepository liveSessions, Clock clock) {
         this.courses = courses;
         this.modules = modules;
         this.items = items;
         this.assessments = assessments;
+        this.assignments = assignments;
+        this.liveSessions = liveSessions;
         this.clock = clock;
     }
 
@@ -77,6 +86,15 @@ public class ScheduleService {
             if (within(a.getAvailableUntil(), f, t)) {
                 events.add(event(EntityType.ITEM, i.getId(), c, i.getTitle(), i.getType(), Action.CLOSES, a.getAvailableUntil()));
             }
+        }
+        for (Assignment a : assignments.findDue(instructorId, courseId, PublishStatus.PUBLISHED, f, t)) {
+            ContentItem i = a.getItem();
+            events.add(event(EntityType.ITEM, i.getId(), i.getModule().getCourse(), i.getTitle(), i.getType(),
+                    Action.DUE, a.getDueAt()));
+        }
+        for (LiveSession s : liveSessions.findInWindow(instructorId, courseId, f, t)) {
+            events.add(event(EntityType.SESSION, s.getId(), s.getCourse(), s.getTitle(), null, Action.SESSION,
+                    s.getStartsAt()));
         }
         events.sort(Comparator.comparing(ScheduleEventDto::at).thenComparing(ScheduleEventDto::id));
         return events;

@@ -53,6 +53,8 @@ Guiding principles:
 | C6 | Build quizzes/exams with single choice, multiple choice, true/false, short answer, fill-in-the-blank and essay questions, optionally with an audio/image per question (listening/reading comprehension) | Points per question, time limit, attempts, passing score, availability window, shuffle, show answers |
 | C7 | Grade essay answers manually and give feedback | Attempt becomes `GRADED` once all manual answers are graded |
 | C8 | Preview the course as a student would see it | — |
+| C-REL | Control the pace per learner: open an item or module N days after enrollment, require other items (with a minimum quiz score), mark items optional, run the course module by module or step by step | Builder: item tab **Release**, module menu "Release rules…", course setting **Progression**; badges "Day +7", "Optional", lock count |
+| C-DUP | Duplicate a lesson or module, and clone a whole course (optionally moving all dates) | Item/module menus "Duplicate"; "Clone course" in the course menu and the course list; the copy is a draft, enrollments are not copied |
 
 ### 3.3 Publishing & scheduling (instructor)
 | ID | Story | Acceptance criteria |
@@ -88,6 +90,8 @@ learner sees item  ⇔ live(course) && live(module) && live(item)
 | L3 | Mark items complete and see course progress | Progress % per course |
 | L4 | Take quizzes/exams with timer and attempt limit; see score and (if allowed) correct answers | Auto-grading for objective questions; essay = pending until graded |
 | L5 | Receive in-app notifications (application approved/rejected, essay graded) | Bell with unread count |
+| L6 | See which lessons are not open yet and why | Lock icon in the outline with "Available from 19 Oct" or "Complete “X” first"; a friendly locked page with links to what is missing; unlocks as soon as I finish the prerequisite |
+| L7 | Progress only counts what is required | Optional lessons are marked "Optional"; the progress bar reads "x of y required items done" |
 
 ### 3.6 Administration
 | ID | Story |

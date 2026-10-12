@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { BarChart3, Clock, LayoutGrid, Layers, Library, List, Plus, Users } from "lucide-react";
+import { BarChart3, Clock, Copy, Ellipsis, LayoutGrid, Layers, Library, List, Plus, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { InstructorCourseDto, Visibility } from "@/lib/api/types";
 import { VISIBILITY_META } from "@/lib/constants";
@@ -22,6 +22,31 @@ import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CourseActiveSwitch } from "@/components/builder/course-active-switch";
+import { CloneCourseDialog } from "@/components/builder/clone-course-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
+/** Row/tile menu with "Clone course"; owns the dialog. */
+function CourseMenu({ course }: { course: InstructorCourseDto }) {
+  const t = useTranslations();
+  const [open, setOpen] = React.useState(false);
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon-xs" aria-label={t("clone.menu", { title: course.title })}>
+            <Ellipsis />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => setOpen(true)}>
+            <Copy /> {t("clone.action")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <CloneCourseDialog course={course} open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
 
 function CourseTile({ course }: { course: InstructorCourseDto }) {
   const t = useTranslations();
@@ -65,6 +90,7 @@ function CourseTile({ course }: { course: InstructorCourseDto }) {
             </Link>
           </Button>
           <CourseActiveSwitch course={course} />
+          <CourseMenu course={course} />
         </div>
       </div>
     </div>
@@ -177,7 +203,7 @@ export function InstructorCourseList() {
                   <TableHead className="hidden md:table-cell">{t("instructor.content")}</TableHead>
                   <TableHead className="text-right">{t("instructor.learners")}</TableHead>
                   <TableHead className="hidden text-right lg:table-cell">{t("instructor.updatedCol")}</TableHead>
-                  <TableHead className="w-10"><span className="sr-only">{t("reports.dashboard.view")}</span></TableHead>
+                  <TableHead className="w-20"><span className="sr-only">{t("reports.dashboard.view")}</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -208,12 +234,13 @@ export function InstructorCourseList() {
                       {c.pendingCount > 0 && <Badge variant="info" className="ml-2">{t("instructor.pendingCount", { count: c.pendingCount })}</Badge>}
                     </TableCell>
                     <TableCell className="hidden text-right text-muted-foreground lg:table-cell">{fmt.relative(c.updatedAt)}</TableCell>
-                    <TableCell className="w-10 text-right">
+                    <TableCell className="w-20 text-right whitespace-nowrap">
                       <Button variant="ghost" size="icon-xs" asChild>
                         <Link href={`/instructor/courses/${c.id}?tab=reports`} aria-label={t("reports.dashboard.viewFor", { title: c.title })} title={t("reports.dashboard.view")}>
                           <BarChart3 />
                         </Link>
                       </Button>
+                      <CourseMenu course={c} />
                     </TableCell>
                   </TableRow>
                 ))}

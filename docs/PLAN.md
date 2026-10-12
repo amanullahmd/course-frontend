@@ -151,9 +151,15 @@ Client mistakes are always 4xx with a stable `code`; a 500 has `code=INTERNAL_ER
 | POST | `/enrollments/bulk` | `{ids:[],action:"APPROVE"\|"REJECT"\|"REVOKE",reason?,courseId?}` → EnrollmentDto[]; all or nothing (409 `INVALID_STATUS`/`CAPACITY_REACHED` changes nothing); with `courseId` every id must belong to it (400 `errors["ids[i]"]`) |
 | POST | `/courses/{id}/enrollments/add` | `{emails:[1–200],message?,invite?}` → `{added:EnrollmentDto[],alreadyEnrolled:[email],invited:[email],notFound:[email],skipped:[{email,code}]}` (owner/admin; addresses trimmed, de-duplicated, lower-cased; invalid → 400 `errors["emails[i]"]`) |
 | GET | `/schedule?from=&to=&courseId=` | `ScheduleEventDto[]` |
+| POST | `/courses/{id}/clone` | `{title, shiftDays?, keepSchedule}` → 201 CourseDto: independent DRAFT copy owned by the caller (modules, items, attachments by reference, quizzes with questions/options, release rules; `clonedFromId` set). `keepSchedule=false` drops publication and assessment dates, otherwise they move by `shiftDays`. Enrollments, progress, attempts and certificates are not copied |
+| POST | `/modules/{id}/duplicate` | → 201 ModuleDto (DRAFT, title suffix "(copy)"/"(Kopie)", inserted after the source; rules inside the module are remapped) |
+| POST | `/items/{id}/duplicate` | `{targetModuleId?}` → 201 ContentItemDto (DRAFT; same module: directly after the source, other module of the course: appended) |
+| PUT | `/items/{id}/release` | `{required?, releaseOffsetDays?:0–3650, prerequisites:[{itemId, minPercent?:0–100}]}` → ContentItemDto |
+| PUT | `/modules/{id}/release` | `{releaseOffsetDays?, prerequisites:[…]}` → ModuleDto (applies to every item in the module) |
 
 ```
-CourseUpsert       = {title, subtitle, description, level, tags[], coverImageId?, enrollmentMode, capacity?}
+CourseUpsert       = {title, subtitle, description, level, tags[], coverImageId?, enrollmentMode, capacity?,
+                      progression?:"FREE"|"SEQUENTIAL_MODULES"|"SEQUENTIAL_ITEMS"}
 PublicationRequest = {publishStatus:"DRAFT"|"PUBLISHED", publishAt?, unpublishAt?}
 Visibility         = "DRAFT"|"SCHEDULED"|"LIVE"|"EXPIRED"   (computed)
 CourseDto          = {id, slug, title, subtitle, description, level, tags, coverImage:MediaDto?, enrollmentMode, capacity,
@@ -161,11 +167,12 @@ CourseDto          = {id, slug, title, subtitle, description, level, tags, cover
                       modules: ModuleDto[], createdAt, updatedAt}
 InstructorCourseDto= {id, slug, title, subtitle, level, coverImageUrl, publishStatus, publishAt, unpublishAt, visibility,
                       studentCount, pendingCount, moduleCount, itemCount, updatedAt}
-ModuleDto          = {id, courseId, title, description, position, publishStatus, publishAt, unpublishAt, visibility, items: ContentItemDto[]}
+ModuleDto          = {id, courseId, title, description, position, publishStatus, publishAt, unpublishAt, visibility,
+                      releaseOffsetDays?, prerequisites:[{itemId,title,type,minPercent?}], items: ContentItemDto[]}
 ItemUpsert         = {type, title, summary, body, externalUrl, durationMinutes, attachmentIds[]}
 ContentItemDto     = {id, moduleId, courseId, type, title, summary, body, externalUrl, durationMinutes, position,
                       publishStatus, publishAt, unpublishAt, visibility, attachments: MediaDto[],
-                      assessment: {questionCount,totalPoints,timeLimitMinutes}? , createdAt, updatedAt}
+                      assessment: {questionCount,totalPoints,timeLimitMinutes}? , required, releaseOffsetDays?, prerequisites[], createdAt, updatedAt}
 AssessmentDto      = {itemId, instructions, timeLimitMinutes?, maxAttempts (0 = unlimited), passingScore (0-100),
                       shuffleQuestions, showCorrectAnswers, availableFrom?, availableUntil?, questions: QuestionDto[]}
 QuestionDto        = {id?, type, prompt, explanation, points, position, caseSensitive, acceptedAnswers[], mediaId?, media?: MediaDto,
@@ -180,6 +187,19 @@ AttemptSummaryDto  = {id, student:{id,fullName,email,avatarUrl}, status, started
 AttemptResultDto   = AttemptSummaryDto + {itemId, itemTitle, deadline, answers:[{questionId, type, prompt, points, selectedOptionIds[], textAnswer,
                       correct?, pointsAwarded?, feedback, options?:[{id,text,correct?}], acceptedAnswers?[]}]}
 ```
+
+#### Release rules (per learner)
+A live item can still be **locked** for a learner: `GET /student/items/{id}`, `POST/DELETE …/complete` and attempt endpoints answer
+403 `ITEM_LOCKED` with `{lockReason:"DATE"|"PREREQUISITE"|"SEQUENCE", unlockAt?, prerequisites:[{itemId,title,minPercent?}]}`
+(not-live content stays 404, a missing enrollment 403 `NOT_ENROLLED`, owners/admins are never locked). Rules, evaluated by the pure
+`ReleasePolicy`: drip = enrollment approval (`decidedAt`) + the later of module and item `releaseOffsetDays`; prerequisites on a
+module or item (AND; `minPercent` = best graded attempt of a quiz/exam, otherwise completed is enough; prerequisites on items that are
+not live are ignored); course `progression`: `SEQUENTIAL_MODULES` = every required item of the earlier modules done, `SEQUENTIAL_ITEMS` =
+the previous required item done ("done" = completed and, for assessments, passed). Reason priority DATE, PREREQUISITE, SEQUENCE.
+Optional items (`required=false`) never gate anything. Validation: prerequisites in the same course, no self reference, no cycle (module
+rules count for each of their items; 400 `PREREQUISITE_CYCLE`), `minPercent` 0–100 and only for quizzes/exams, `releaseOffsetDays` 0–3650.
+Progress (learner outline, enrollment lists, reports) and the certificate criteria count **required live items only**; a course
+without any required item counts all items.
 
 #### Reports `/api/instructor` (owner or admin; foreign courses/items → 404, students → 403)
 | Method | Path | Notes |
@@ -243,8 +263,8 @@ activity, else `IN_PROGRESS`. A quiz/exam counts as *taken* with at least one su
 | GET | `/courses/{courseId}/enrollment` | EnrollmentDto or 404 |
 | GET | `/enrollments` | `StudentEnrollmentDto[] = {id,status,message,decisionReason,appliedAt,decidedAt,waitlistPosition,progressPercent,course:CourseSummaryDto}` |
 | POST | `/enrollments/{id}/withdraw` | EnrollmentDto |
-| GET | `/courses/{courseId}/learn` | `LearnCourseDto = {course:CourseSummaryDto+description, progressPercent, modules:[{id,title,description,items:[{id,title,type,durationMinutes,completed}]}]}` (live only, APPROVED only) |
-| GET | `/items/{itemId}` | `LearnItemDto = {id,courseId,moduleId,type,title,summary,body,externalUrl,durationMinutes,attachments:MediaDto[],completed,prevItemId,nextItemId,assessment?:{instructions,timeLimitMinutes,maxAttempts,passingScore,questionCount,totalPoints,availableFrom,availableUntil,attemptsUsed,bestPercent,inProgressAttemptId}}` |
+| GET | `/courses/{courseId}/learn` | `LearnCourseDto = {course:CourseSummaryDto+description, progressPercent, progression, requiredCount, completedRequiredCount, modules:[{id,title,description,items:[{id,title,type,durationMinutes,completed,required,lock?:{reason:"DATE"\|"PREREQUISITE"\|"SEQUENCE",unlockAt?,prerequisites:[{itemId,title,minPercent?}]}}]}]}` (live only, APPROVED only; `progressPercent` counts required items only, all items if none is required; owners/admins never see locks) |
+| GET | `/items/{itemId}` | `LearnItemDto = {id,courseId,moduleId,type,title,summary,body,externalUrl,durationMinutes,attachments:MediaDto[],completed,required,prevItemId,nextItemId,assessment?:{instructions,timeLimitMinutes,maxAttempts,passingScore,questionCount,totalPoints,availableFrom,availableUntil,attemptsUsed,bestPercent,inProgressAttemptId}}` |
 | POST/DELETE | `/items/{itemId}/complete` | 204 |
 | GET | `/items/{itemId}/attempts` | AttemptSummaryDto[] (mine) |
 | POST | `/items/{itemId}/attempts` | → `AttemptSessionDto = {id,status,startedAt,deadline,timeLimitMinutes,availableUntil,serverTime,questions:[{id,type,prompt,points,media?,options:[{id,text}]}],savedAnswers:[{questionId,selectedOptionIds[],textAnswer}]}` (resumes the in-progress attempt with its saved answers; an expired one is auto-submitted first, then a new attempt starts or 403/409; `deadline` = time limit capped at `availableUntil`, or `availableUntil` alone) |

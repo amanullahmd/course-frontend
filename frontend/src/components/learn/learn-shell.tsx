@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Check, ChevronDown, Eye, ListTree, Lock, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ArrowLeft, CalendarClock, Check, ChevronDown, Eye, ListTree, Lock, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { isApiError } from "@/lib/api/client";
 import type { LearnCourseDto } from "@/lib/api/types";
@@ -23,9 +23,12 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import { Skeleton } from "@/components/ui/skeleton";
 import { CertificateOutlineLink } from "@/components/certificates/certificate-outline-link";
 import { CourseSidebarLinks } from "@/components/announcements/course-sidebar-links";
+import { useLockText } from "./locked-item";
 
 function Outline({ data, activeItemId, onNavigate }: { data: LearnCourseDto; activeItemId?: string; onNavigate?: () => void }) {
   const t = useTranslations("learn");
+  const tr = useTranslations("release");
+  const lockText = useLockText();
   const minutes = useMinutes();
   return (
     <nav aria-label={t("outline")} className="grid gap-1">
@@ -47,31 +50,51 @@ function Outline({ data, activeItemId, onNavigate }: { data: LearnCourseDto; act
               <ul className="mt-0.5 mb-2 grid gap-0.5">
                 {m.items.map((item) => {
                   const active = item.id === activeItemId;
+                  const lock = item.lock;
+                  const reason = lock ? lockText(lock) : null;
                   return (
                     <li key={item.id}>
                       <Link
                         href={`/learn/${data.course.id}/${item.id}`}
                         onClick={onNavigate}
                         aria-current={active ? "page" : undefined}
+                        aria-description={reason ? tr("lockedAria", { reason }) : undefined}
                         className={cn(
                           "flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
                           active && "bg-card font-medium text-foreground shadow-xs ring-1 ring-border",
+                          lock && "opacity-80",
                         )}
                       >
-                        <ItemTypeIcon type={item.type} className="size-6 rounded-md [&_svg]:size-3.5" />
-                        <span className="min-w-0 flex-1 truncate">{item.title}</span>
-                        {item.durationMinutes ? (
+                        <ItemTypeIcon type={item.type} className={cn("size-6 rounded-md [&_svg]:size-3.5", lock && "grayscale")} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate">{item.title}</span>
+                          {reason && (
+                            <span className="block truncate text-[11px] text-muted-foreground" title={reason}>
+                              {reason}
+                            </span>
+                          )}
+                          {!lock && !item.required && (
+                            <span className="block text-[11px] text-muted-foreground">{tr("optional")}</span>
+                          )}
+                        </span>
+                        {item.durationMinutes && !lock ? (
                           <span className="shrink-0 text-[11px] tabular-nums">{minutes(item.durationMinutes)}</span>
                         ) : null}
-                        <span
-                          className={cn(
-                            "grid size-4 shrink-0 place-items-center rounded-full border",
-                            item.completed ? "border-success bg-success text-white" : "border-input",
-                          )}
-                          aria-label={item.completed ? t("completed") : t("notCompleted")}
-                        >
-                          {item.completed && <Check className="size-2.5" strokeWidth={3} />}
-                        </span>
+                        {lock ? (
+                          <span className="grid size-4 shrink-0 place-items-center text-muted-foreground" aria-hidden>
+                            {lock.reason === "DATE" ? <CalendarClock className="size-3.5" /> : <Lock className="size-3.5" />}
+                          </span>
+                        ) : (
+                          <span
+                            className={cn(
+                              "grid size-4 shrink-0 place-items-center rounded-full border",
+                              item.completed ? "border-success bg-success text-white" : "border-input",
+                            )}
+                            aria-label={item.completed ? t("completed") : t("notCompleted")}
+                          >
+                            {item.completed && <Check className="size-2.5" strokeWidth={3} />}
+                          </span>
+                        )}
                       </Link>
                     </li>
                   );
@@ -88,6 +111,9 @@ function Outline({ data, activeItemId, onNavigate }: { data: LearnCourseDto; act
 
 function SidebarHeader({ data }: { data: LearnCourseDto }) {
   const t = useTranslations("learn");
+  const tr = useTranslations("release");
+  const totalItems = data.modules.reduce((n, m) => n + m.items.length, 0);
+  const hasOptional = data.requiredCount > 0 && data.requiredCount < totalItems;
   return (
     <div className="grid gap-3 border-b p-4">
       <Link href="/dashboard" className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -103,6 +129,11 @@ function SidebarHeader({ data }: { data: LearnCourseDto }) {
           <span className="font-medium text-foreground tabular-nums">{Math.round(data.progressPercent)}%</span>
         </div>
         <Progress value={data.progressPercent} indicatorClassName={data.progressPercent >= 100 ? "bg-success" : undefined} />
+        {hasOptional && (
+          <p className="text-[11px] text-muted-foreground" title={tr("optionalNote")}>
+            {tr("requiredProgress", { done: data.completedRequiredCount, total: data.requiredCount })}
+          </p>
+        )}
       </div>
     </div>
   );

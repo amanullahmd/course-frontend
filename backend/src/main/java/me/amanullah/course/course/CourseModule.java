@@ -47,6 +47,10 @@ public class CourseModule extends AuditedEntity implements Publishable {
     @Column(name = "unpublish_at")
     private Instant unpublishAt;
 
+    /** Drip: opens this many days after the learner's enrollment was approved (null = no drip). */
+    @Column(name = "release_offset_days")
+    private Integer releaseOffsetDays;
+
     @OneToMany(mappedBy = "module")
     @OrderBy("position ASC")
     private List<ContentItem> items = new ArrayList<>();
@@ -74,5 +78,7 @@ public class CourseModule extends AuditedEntity implements Publishable {
     @Override public void setPublishAt(Instant publishAt) { this.publishAt = publishAt; }
     @Override public Instant getUnpublishAt() { return unpublishAt; }
     @Override public void setUnpublishAt(Instant unpublishAt) { this.unpublishAt = unpublishAt; }
+    public Integer getReleaseOffsetDays() { return releaseOffsetDays; }
+    public void setReleaseOffsetDays(Integer releaseOffsetDays) { this.releaseOffsetDays = releaseOffsetDays; }
     public List<ContentItem> getItems() { return items; }
 }

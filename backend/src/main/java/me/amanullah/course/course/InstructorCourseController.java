@@ -2,7 +2,10 @@ package me.amanullah.course.course;
 
 import me.amanullah.course.common.publication.PublicationRequest;
 import me.amanullah.course.common.web.IdsRequest;
+import me.amanullah.course.course.CourseDtos.CloneRequest;
 import me.amanullah.course.course.CourseDtos.ContentItemDto;
+import me.amanullah.course.course.CourseDtos.DuplicateItemRequest;
+import me.amanullah.course.course.CourseDtos.ReleaseRulesRequest;
 import me.amanullah.course.course.CourseDtos.CourseDto;
 import me.amanullah.course.course.CourseDtos.CourseUpsert;
 import me.amanullah.course.course.CourseDtos.InstructorCourseDto;
@@ -35,10 +38,15 @@ public class InstructorCourseController {
 
     private final CourseService courseService;
     private final ContentService contentService;
+    private final ReleaseRulesService releaseRules;
+    private final CourseCloner cloner;
 
-    public InstructorCourseController(CourseService courseService, ContentService contentService) {
+    public InstructorCourseController(CourseService courseService, ContentService contentService,
+                                      ReleaseRulesService releaseRules, CourseCloner cloner) {
         this.courseService = courseService;
         this.contentService = contentService;
+        this.releaseRules = releaseRules;
+        this.cloner = cloner;
     }
 
     // ----- courses -----
@@ -75,6 +83,12 @@ public class InstructorCourseController {
         return courseService.publish(CurrentUser.get(), id, request);
     }
 
+    @PostMapping("/courses/{id}/clone")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CourseDto cloneCourse(@PathVariable UUID id, @Valid @RequestBody CloneRequest request) {
+        return cloner.cloneCourse(CurrentUser.get(), id, request);
+    }
+
     // ----- modules -----
 
     @PostMapping("/courses/{id}/modules")
@@ -103,6 +117,17 @@ public class InstructorCourseController {
     @PutMapping("/modules/{id}/publication")
     public ModuleDto publishModule(@PathVariable UUID id, @Valid @RequestBody PublicationRequest request) {
         return contentService.publishModule(CurrentUser.get(), id, request);
+    }
+
+    @PostMapping("/modules/{id}/duplicate")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ModuleDto duplicateModule(@PathVariable UUID id) {
+        return cloner.duplicateModule(CurrentUser.get(), id);
+    }
+
+    @PutMapping("/modules/{id}/release")
+    public ModuleDto moduleRelease(@PathVariable UUID id, @Valid @RequestBody ReleaseRulesRequest request) {
+        return releaseRules.updateModule(CurrentUser.get(), id, request);
     }
 
     // ----- items -----
@@ -138,5 +163,17 @@ public class InstructorCourseController {
     @PutMapping("/items/{id}/publication")
     public ContentItemDto publishItem(@PathVariable UUID id, @Valid @RequestBody PublicationRequest request) {
         return contentService.publishItem(CurrentUser.get(), id, request);
+    }
+
+    @PostMapping("/items/{id}/duplicate")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ContentItemDto duplicateItem(@PathVariable UUID id,
+                                        @Valid @RequestBody(required = false) DuplicateItemRequest request) {
+        return cloner.duplicateItem(CurrentUser.get(), id, request == null ? null : request.targetModuleId());
+    }
+
+    @PutMapping("/items/{id}/release")
+    public ContentItemDto itemRelease(@PathVariable UUID id, @Valid @RequestBody ReleaseRulesRequest request) {
+        return releaseRules.updateItem(CurrentUser.get(), id, request);
     }
 }

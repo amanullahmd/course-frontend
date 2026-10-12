@@ -77,7 +77,7 @@ public class Attempt extends BaseEntity {
     }
 
     public boolean needsManualGrading() {
-        return answers.stream().anyMatch(a -> a.getQuestionType() == QuestionType.ESSAY && a.getPointsAwarded() == null);
+        return answers.stream().anyMatch(a -> a.getQuestionType().isManual() && a.getPointsAwarded() == null);
     }
 
     public void recomputeScore() {

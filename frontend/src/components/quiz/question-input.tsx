@@ -9,19 +9,15 @@ import { AudioPlayer } from "@/components/learn/audio-player";
 import { InlineHtml } from "@/components/course/rich-content";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import type { DraftAnswer } from "@/lib/exercises";
+import { ClozeInput } from "./inputs/cloze-input";
+import { DictationInput } from "./inputs/dictation-input";
+import { MatchingInput } from "./inputs/matching-input";
+import { OrderingInput } from "./inputs/ordering-input";
+import { SpeakingInput } from "./inputs/speaking-input";
+import { WordBankInput } from "./inputs/word-bank-input";
 
-export interface DraftAnswer {
-  selectedOptionIds: string[];
-  textAnswer: string;
-}
-
-export const emptyAnswer: DraftAnswer = { selectedOptionIds: [], textAnswer: "" };
-
-export function isAnswered(q: SessionQuestion, a: DraftAnswer | undefined): boolean {
-  if (!a) return false;
-  if (q.type === "SINGLE_CHOICE" || q.type === "MULTIPLE_CHOICE" || q.type === "TRUE_FALSE") return a.selectedOptionIds.length > 0;
-  return a.textAnswer.trim().length > 0;
-}
+export { emptyAnswer, isAnswered, type DraftAnswer } from "@/lib/exercises";
 
 export function QuestionMedia({ media }: { media: SessionQuestion["media"] }) {
   const t = useTranslations();
@@ -49,6 +45,8 @@ const escapeHtml = (text: string) =>
  */
 export function QuestionPrompt({ prompt, type }: { prompt: string; type: SessionQuestion["type"] }) {
   const t = useTranslations("quiz");
+  // cloze and word bank render the prompt themselves, with the blanks inline
+  if (type === "CLOZE" || type === "WORD_BANK") return null;
   if (type !== "FILL_BLANK" || !/_{3,}/.test(prompt)) {
     return (
       <p className="text-lg leading-relaxed font-medium">
@@ -137,6 +135,18 @@ export function QuestionInput({
           aria-labelledby={`${id}-prompt`}
         />
       );
+    case "CLOZE":
+      return <ClozeInput question={question} value={value} onChange={onChange} />;
+    case "WORD_BANK":
+      return <WordBankInput question={question} value={value} onChange={onChange} />;
+    case "MATCHING":
+      return <MatchingInput question={question} value={value} onChange={onChange} />;
+    case "ORDERING":
+      return <OrderingInput question={question} value={value} onChange={onChange} />;
+    case "DICTATION":
+      return <DictationInput question={question} value={value} onChange={onChange} />;
+    case "SPEAKING":
+      return <SpeakingInput question={question} value={value} onChange={onChange} />;
     case "ESSAY": {
       const words = value.textAnswer.trim() ? value.textAnswer.trim().split(/\s+/).length : 0;
       return (

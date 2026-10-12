@@ -48,6 +48,14 @@ export function useWithdraw(courseId?: string) {
   });
 }
 
+/** Progress counts required items only (all items when none is required), like the server. */
+function percentOfRequired(items: { completed: boolean; required: boolean }[]): number {
+  const required = items.filter((i) => i.required);
+  const counted = required.length > 0 ? required : items;
+  const done = counted.filter((i) => i.completed).length;
+  return counted.length ? Math.round((done / counted.length) * 100) : 0;
+}
+
 export function useLearnCourse(courseId: string) {
   return useQuery({ queryKey: qk.student.learn(courseId), queryFn: () => studentApi.learnCourse(courseId) });
 }
@@ -70,11 +78,10 @@ export function useToggleComplete(courseId: string, itemId: string) {
           items: m.items.map((i) => (i.id === itemId ? { ...i, completed } : i)),
         }));
         const all = modules.flatMap((m) => m.items);
-        const done = all.filter((i) => i.completed).length;
         qc.setQueryData<LearnCourseDto>(qk.student.learn(courseId), {
           ...prevCourse,
           modules,
-          progressPercent: all.length ? Math.round((done / all.length) * 100) : 0,
+          progressPercent: percentOfRequired(all),
         });
       }
       if (prevItem) qc.setQueryData<LearnItemDto>(qk.student.item(itemId), { ...prevItem, completed });
@@ -87,6 +94,8 @@ export function useToggleComplete(courseId: string, itemId: string) {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: qk.student.learn(courseId) });
       void qc.invalidateQueries({ queryKey: qk.student.enrollments });
+      // finishing an item can unlock others (prerequisites, step by step)
+      void qc.invalidateQueries({ queryKey: ["student", "item"] });
     },
   });
 }
@@ -109,7 +118,7 @@ export function useSubmitAttempt(itemId: string, courseId: string) {
     onSuccess: (result) => {
       qc.setQueryData(qk.student.attempt(result.id), result);
       void qc.invalidateQueries({ queryKey: qk.student.attempts(itemId) });
-      void qc.invalidateQueries({ queryKey: qk.student.item(itemId) });
+      void qc.invalidateQueries({ queryKey: ["student", "item"] });
       void qc.invalidateQueries({ queryKey: qk.student.learn(courseId) });
       void qc.invalidateQueries({ queryKey: qk.student.enrollments });
     },

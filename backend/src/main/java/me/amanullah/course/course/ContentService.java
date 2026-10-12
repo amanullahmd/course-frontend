@@ -38,11 +38,13 @@ public class ContentService {
     private final CourseStats stats;
     private final MediaService mediaService;
     private final AssessmentService assessmentService;
+    private final ReleasePrerequisiteRepository prerequisites;
     private final Clock clock;
 
     public ContentService(CourseModuleRepository modules, ContentItemRepository items, CourseAccess access,
                           CourseMapper mapper, CourseStats stats, MediaService mediaService,
-                          AssessmentService assessmentService, Clock clock) {
+                          AssessmentService assessmentService, ReleasePrerequisiteRepository prerequisites,
+                          Clock clock) {
         this.modules = modules;
         this.items = items;
         this.access = access;
@@ -50,6 +52,7 @@ public class ContentService {
         this.stats = stats;
         this.mediaService = mediaService;
         this.assessmentService = assessmentService;
+        this.prerequisites = prerequisites;
         this.clock = clock;
     }
 
@@ -79,6 +82,12 @@ public class ContentService {
         CourseModule module = access.module(id, me);
         UUID courseId = module.getCourse().getId();
         module.getCourse().touch();
+        Set<UUID> itemIds = new HashSet<>();
+        items.findByModuleIdOrderByPositionAsc(module.getId()).forEach(i -> itemIds.add(i.getId()));
+        prerequisites.deleteByTargets(ReleaseTarget.MODULE, Set.of(module.getId()));
+        if (!itemIds.isEmpty()) {
+            prerequisites.deleteByTargets(ReleaseTarget.ITEM, itemIds);
+        }
         modules.deleteModuleById(module.getId());
         List<CourseModule> rest = modules.findByCourseIdOrderByPositionAsc(courseId);
         for (int i = 0; i < rest.size(); i++) {
@@ -133,6 +142,7 @@ public class ContentService {
         ContentItem item = access.item(id, me);
         UUID moduleId = item.getModule().getId();
         item.getModule().getCourse().touch();
+        prerequisites.deleteByTargets(ReleaseTarget.ITEM, Set.of(item.getId()));
         items.deleteItemById(item.getId());
         compact(moduleId);
     }
@@ -228,20 +238,24 @@ public class ContentService {
         }
     }
 
-    private ModuleDto moduleDto(CourseModule module) {
+    public ModuleDto moduleDto(CourseModule module) {
         List<ContentItem> list = items.findByModuleIdOrderByPositionAsc(module.getId());
         var summaries = stats.assessmentSummaries(list.stream().map(ContentItem::getId).toList());
         Instant now = Instant.now(clock);
         UUID courseId = module.getCourse().getId();
+        var prereqs = mapper.prerequisiteIndex(courseId);
         return new CourseDtos.ModuleDto(module.getId(), courseId, module.getTitle(), module.getDescription(),
                 module.getPosition(), module.getPublishStatus(), module.getPublishAt(), module.getUnpublishAt(),
-                me.amanullah.course.common.publication.Visibility.of(module, now),
-                list.stream().map(i -> mapper.toItemDto(i, module.getId(), courseId, summaries.get(i.getId()), now)).toList());
+                me.amanullah.course.common.publication.Visibility.of(module, now), module.getReleaseOffsetDays(),
+                prereqs.getOrDefault(module.getId(), List.of()),
+                list.stream().map(i -> mapper.toItemDto(i, module.getId(), courseId, summaries.get(i.getId()), prereqs, now))
+                        .toList());
     }
 
     public ContentItemDto itemDto(ContentItem item) {
         var summaries = stats.assessmentSummaries(List.of(item.getId()));
-        return mapper.toItemDto(item, item.getModule().getId(), item.getModule().getCourse().getId(),
-                summaries.get(item.getId()), Instant.now(clock));
+        UUID courseId = item.getModule().getCourse().getId();
+        return mapper.toItemDto(item, item.getModule().getId(), courseId, summaries.get(item.getId()),
+                mapper.prerequisiteIndex(courseId), Instant.now(clock));
     }
 }

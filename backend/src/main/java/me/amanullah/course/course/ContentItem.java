@@ -64,6 +64,14 @@ public class ContentItem extends AuditedEntity implements Publishable {
     @Column(name = "unpublish_at")
     private Instant unpublishAt;
 
+    /** Drip: opens this many days after the learner's enrollment was approved (null = no drip). */
+    @Column(name = "release_offset_days")
+    private Integer releaseOffsetDays;
+
+    /** Optional items do not count towards progress, certificates or sequential gates. */
+    @Column(name = "required", nullable = false)
+    private boolean required = true;
+
     @ManyToMany
     @JoinTable(name = "content_item_attachments",
             joinColumns = @JoinColumn(name = "item_id"),
@@ -102,6 +110,11 @@ public class ContentItem extends AuditedEntity implements Publishable {
     @Override public void setPublishAt(Instant publishAt) { this.publishAt = publishAt; }
     @Override public Instant getUnpublishAt() { return unpublishAt; }
     @Override public void setUnpublishAt(Instant unpublishAt) { this.unpublishAt = unpublishAt; }
+
+    public Integer getReleaseOffsetDays() { return releaseOffsetDays; }
+    public void setReleaseOffsetDays(Integer releaseOffsetDays) { this.releaseOffsetDays = releaseOffsetDays; }
+    public boolean isRequired() { return required; }
+    public void setRequired(boolean required) { this.required = required; }
 
     /** Attachments in order; gaps left by deleted media rows are skipped. */
     public List<MediaAsset> getAttachments() {

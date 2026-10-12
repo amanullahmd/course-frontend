@@ -6,6 +6,7 @@ import type {
   AssessmentDto,
   AddStudentsRequest,
   BulkEnrollmentRequest,
+  CloneRequest,
   ContentItemDto,
   CourseDto,
   CourseUpsert,
@@ -15,6 +16,7 @@ import type {
   ModuleDto,
   ModuleUpsert,
   PublicationRequest,
+  ReleaseRulesRequest,
   ScheduleQuery,
 } from "@/lib/api/types";
 import { computeVisibility } from "@/lib/dates";
@@ -392,5 +394,65 @@ export function useSchedule(query: ScheduleQuery) {
     queryKey: qk.instructor.schedule(query),
     queryFn: () => instructorApi.schedule(query),
     placeholderData: (prev) => prev,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Release rules, duplication and cloning
+// ---------------------------------------------------------------------------
+export function useSetItemRelease(courseId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: ReleaseRulesRequest }) => instructorApi.setItemRelease(id, body),
+    meta: { suppressErrorToast: true },
+    onSuccess: (item) => {
+      qc.setQueryData(qk.instructor.item(item.id), item);
+      updateCourse(qc, courseId, (c) => replaceItem(c, item));
+    },
+  });
+}
+
+export function useSetModuleRelease(courseId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: ReleaseRulesRequest }) => instructorApi.setModuleRelease(id, body),
+    meta: { suppressErrorToast: true },
+    onSuccess: (module) => updateCourse(qc, courseId, (c) => replaceModule(c, module)),
+  });
+}
+
+export function useDuplicateItem(courseId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, targetModuleId }: { id: string; targetModuleId?: string | null }) =>
+      instructorApi.duplicateItem(id, { targetModuleId: targetModuleId ?? null }),
+    onSuccess: (item) => {
+      qc.setQueryData(qk.instructor.item(item.id), item);
+      void qc.invalidateQueries({ queryKey: qk.instructor.course(courseId) });
+      invalidateOverview(qc);
+    },
+  });
+}
+
+export function useDuplicateModule(courseId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => instructorApi.duplicateModule(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.instructor.course(courseId) });
+      invalidateOverview(qc);
+    },
+  });
+}
+
+export function useCloneCourse() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: CloneRequest }) => instructorApi.cloneCourse(id, body),
+    meta: { suppressErrorToast: true },
+    onSuccess: (course) => {
+      qc.setQueryData(qk.instructor.course(course.id), course);
+      invalidateOverview(qc);
+    },
   });
 }

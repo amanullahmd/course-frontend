@@ -68,6 +68,15 @@ public class Course extends AuditedEntity implements Publishable {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(name = "progression", nullable = false, length = 20)
+    private CourseProgression progression = CourseProgression.FREE;
+
+    /** The course this one was cloned from (null for originals or when the original was deleted). */
+    @Column(name = "cloned_from_id")
+    private java.util.UUID clonedFromId;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "publish_status", nullable = false, length = 20)
     private PublishStatus publishStatus = PublishStatus.DRAFT;
 
@@ -122,6 +131,10 @@ public class Course extends AuditedEntity implements Publishable {
     public User getInstructor() { return instructor; }
     public EnrollmentMode getEnrollmentMode() { return enrollmentMode; }
     public void setEnrollmentMode(EnrollmentMode enrollmentMode) { this.enrollmentMode = enrollmentMode; }
+    public CourseProgression getProgression() { return progression; }
+    public void setProgression(CourseProgression progression) { this.progression = progression; }
+    public java.util.UUID getClonedFromId() { return clonedFromId; }
+    public void setClonedFromId(java.util.UUID clonedFromId) { this.clonedFromId = clonedFromId; }
     public Integer getCapacity() { return capacity; }
     public void setCapacity(Integer capacity) { this.capacity = capacity; }
     @Override public PublishStatus getPublishStatus() { return publishStatus; }

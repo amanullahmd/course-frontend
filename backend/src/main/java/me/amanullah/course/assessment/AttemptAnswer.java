@@ -16,6 +16,8 @@ import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.Set;
 import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -68,8 +70,30 @@ public class AttemptAnswer extends BaseEntity {
     @ElementCollection
     @CollectionTable(name = "attempt_answer_accepted", joinColumns = @JoinColumn(name = "answer_id"))
     @OrderColumn(name = "sort_order")
-    @Column(name = "answer", nullable = false, length = 500)
-    private List<String> acceptedAnswers = new ArrayList<>();
+    private List<AcceptedAnswer> accepted = new ArrayList<>();
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, length = 20)
+    private Scoring scoring = Scoring.ALL_OR_NOTHING;
+
+    @Column(name = "shuffle_options", nullable = false)
+    private boolean shuffleOptions;
+
+    @Column(name = "lenient_spelling", nullable = false)
+    private boolean lenientSpelling;
+
+    @Column(name = "max_recording_seconds")
+    private Integer maxRecordingSeconds;
+
+    /** Structured response of CLOZE, WORD_BANK, MATCHING and ORDERING answers, see {@link AnswerResponse}. */
+    @Column(name = "response_json", length = 20000)
+    private String responseJson;
+
+    /** SPEAKING: the learner's recording. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "response_media_id")
+    private MediaAsset responseMedia;
 
     @ElementCollection
     @CollectionTable(name = "attempt_answer_selections", joinColumns = @JoinColumn(name = "answer_id"))
@@ -101,8 +125,13 @@ public class AttemptAnswer extends BaseEntity {
         a.position = position;
         a.caseSensitive = q.isCaseSensitive();
         a.media = q.getMedia();
-        q.getOptions().forEach(o -> a.options.add(new AnswerOptionSnapshot(o.getId(), o.getText(), o.isCorrect())));
-        a.acceptedAnswers.addAll(q.getAcceptedAnswers());
+        q.getOptions().forEach(o -> a.options.add(new AnswerOptionSnapshot(o.getId(), o.getText(), o.isCorrect(),
+                o.getMatchText(), o.getBlankIndex())));
+        q.getAccepted().forEach(x -> a.accepted.add(new AcceptedAnswer(x.getAnswer(), x.getBlankIndex())));
+        a.scoring = q.getScoring();
+        a.shuffleOptions = q.isShuffleOptions();
+        a.lenientSpelling = q.isLenientSpelling();
+        a.maxRecordingSeconds = q.getMaxRecordingSeconds();
         return a;
     }
 
@@ -116,7 +145,30 @@ public class AttemptAnswer extends BaseEntity {
     public boolean isCaseSensitive() { return caseSensitive; }
     public MediaAsset getMedia() { return media; }
     public List<AnswerOptionSnapshot> getOptions() { return options; }
-    public List<String> getAcceptedAnswers() { return acceptedAnswers; }
+    public List<AcceptedAnswer> getAccepted() { return accepted; }
+
+    /** The single list of accepted answers (blank 0) of text and dictation questions. */
+    public List<String> getAcceptedAnswers() {
+        return accepted.stream().filter(a -> a.getBlankIndex() == 0).map(AcceptedAnswer::getAnswer).toList();
+    }
+
+    /** CLOZE: accepted answers per blank index (ascending). */
+    public Map<Integer, List<String>> getBlankAnswers() {
+        Map<Integer, List<String>> byBlank = new TreeMap<>();
+        accepted.stream().filter(a -> a.getBlankIndex() > 0)
+                .forEach(a -> byBlank.computeIfAbsent(a.getBlankIndex(), k -> new ArrayList<>()).add(a.getAnswer()));
+        return byBlank;
+    }
+
+    public Scoring getScoring() { return scoring; }
+    public boolean isShuffleOptions() { return shuffleOptions; }
+    public boolean isLenientSpelling() { return lenientSpelling; }
+    public Integer getMaxRecordingSeconds() { return maxRecordingSeconds; }
+    public String getResponseJson() { return responseJson; }
+    public void setResponseJson(String responseJson) { this.responseJson = responseJson; }
+    public AnswerResponse getResponse() { return AnswerResponse.parse(responseJson); }
+    public MediaAsset getResponseMedia() { return responseMedia; }
+    public void setResponseMedia(MediaAsset responseMedia) { this.responseMedia = responseMedia; }
     public Set<UUID> getSelectedOptionIds() { return selectedOptionIds; }
     public void setSelectedOptionIds(Set<UUID> ids) { selectedOptionIds.clear(); selectedOptionIds.addAll(ids); }
     public String getTextAnswer() { return textAnswer; }

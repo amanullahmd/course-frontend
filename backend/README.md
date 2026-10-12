@@ -235,10 +235,10 @@ me.amanullah.course
 ├── auth          register/verify/login/refresh/logout/forgot/reset, refresh tokens (SHA-256 hashed, rotating)
 ├── user          /api/users/me
 ├── media         uploads (local disk), HMAC-signed URLs, Range streaming
-├── course        courses, modules, items, publication, ordering, public catalog
+├── course        courses, modules, items, publication, ordering, public catalog, release rules (drip, prerequisites, required/optional), duplication and course cloning (CourseCloner)
 ├── assessment    quizzes/exams, attempts, auto-grading, manual grading
 ├── enrollment    applications, waiting list, approve/reject/remove (revoke)/restore, bulk, add learners by e-mail + invitations
-├── learning      learner access gate, player endpoints, progress
+├── learning      learner access gate, player endpoints, progress (required items only), ReleasePolicy (pure lock evaluation)
 ├── notification  in-app notifications, e-mail templates and async delivery
 ├── schedule      publish/unpublish calendar, instructor dashboard
 ├── report        instructor reports: overview, gradebook, learner report, assessment analytics, CSV exports
@@ -254,6 +254,13 @@ Key rules:
 * **Visibility** is computed at request time: `live(x) = PUBLISHED && (publishAt == null || publishAt <= now) &&
   (unpublishAt == null || unpublishAt > now)`. Learners see an item only if course, module and item are live and
   they have an APPROVED enrollment (course owner/admin may preview). Non-live content → 404, not enrolled → 403.
+* **Release rules** (`course`/`learning`, migration `V8`): an item can be live but locked for one learner (drip N days after
+  enrollment approval, prerequisites with an optional minimum quiz score, course progression `FREE` /
+  `SEQUENTIAL_MODULES` / `SEQUENTIAL_ITEMS`). Locked → 403 `ITEM_LOCKED` with `lockReason`, `unlockAt`, `prerequisites`
+  (hidden/draft content stays 404, owners and admins are never locked). Optional items (`required=false`) are ignored
+  by progress, reports and certificate criteria. Extra problem properties come from `ApiException.property(name, value)`.
+  Cloning (`CourseCloner`) copies columns through the JPA metamodel (`EntityCopier`), so new plain columns on
+  assessments/questions are cloned automatically; item types that own rows elsewhere implement `ItemCopyContributor`.
 * **Ownership**: instructors manage only their own courses (others' resources return 404); admins manage all.
 * **Errors** are localized `application/problem+json` with `type`, `title`, `status`, `detail`, `code`, an `errors`
   map (`field → message`) for validation failures, and a `traceId` for 500s (see [Error responses](#error-responses)).

@@ -39,6 +39,9 @@ public class Problems {
                     ? messages.get(locale, ref.key(), ref.args()) : String.valueOf(msg)));
             pd.setProperty("errors", errors);
         }
+        if (c.properties() != null) {
+            c.properties().forEach(pd::setProperty);
+        }
         return pd;
     }
 

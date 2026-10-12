@@ -11,6 +11,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public final class AssessmentDtos {
@@ -20,12 +21,22 @@ public final class AssessmentDtos {
 
     // ---------- instructor: builder ----------
 
-    public record OptionDto(UUID id, String text, boolean correct, int position) {
+    /** {@code matchText}: right side of a MATCHING pair; {@code blankIndex}: blank a WORD_BANK chip belongs to. */
+    public record OptionDto(UUID id, String text, boolean correct, int position, String matchText, Integer blankIndex) {
     }
 
+    /** Accepted answers of one numbered blank of a CLOZE question. */
+    public record BlankDto(int index, List<String> acceptedAnswers) {
+    }
+
+    /**
+     * {@code scoring}, {@code shuffleOptions}, {@code lenientSpelling}, {@code maxRecordingSeconds} and
+     * {@code blanks} belong to the language question types.
+     */
     public record QuestionDto(UUID id, QuestionType type, String prompt, String explanation, int points, int position,
                               boolean caseSensitive, List<String> acceptedAnswers, UUID mediaId, MediaDto media,
-                              List<OptionDto> options) {
+                              List<OptionDto> options, Scoring scoring, boolean shuffleOptions, boolean lenientSpelling,
+                              Integer maxRecordingSeconds, List<BlankDto> blanks) {
     }
 
     public record AssessmentDto(UUID itemId, String instructions, Integer timeLimitMinutes, int maxAttempts,
@@ -33,7 +44,12 @@ public final class AssessmentDtos {
                                 Instant availableFrom, Instant availableUntil, List<QuestionDto> questions) {
     }
 
-    public record OptionUpsert(UUID id, @NotBlank @Size(max = 2000) String text, Boolean correct, Integer position) {
+    public record OptionUpsert(UUID id, @NotBlank @Size(max = 2000) String text, Boolean correct, Integer position,
+                               @Size(max = 2000) String matchText, @Min(1) @Max(20) Integer blankIndex) {
+    }
+
+    public record BlankUpsert(@NotNull @Min(1) @Max(20) Integer index,
+                              @Size(max = 50) List<@NotBlank @Size(max = 500) String> acceptedAnswers) {
     }
 
     public record QuestionUpsert(UUID id,
@@ -45,7 +61,12 @@ public final class AssessmentDtos {
                                  Boolean caseSensitive,
                                  @Size(max = 50) List<@NotBlank @Size(max = 500) String> acceptedAnswers,
                                  UUID mediaId,
-                                 @Size(max = 20) List<@Valid @NotNull OptionUpsert> options) {
+                                 @Size(max = 20) List<@Valid @NotNull OptionUpsert> options,
+                                 Scoring scoring,
+                                 Boolean shuffleOptions,
+                                 Boolean lenientSpelling,
+                                 @Min(1) @Max(3600) Integer maxRecordingSeconds,
+                                 @Size(max = 20) List<@Valid @NotNull BlankUpsert> blanks) {
     }
 
     public record AssessmentUpsert(@Size(max = 20000) String instructions,
@@ -64,8 +85,14 @@ public final class AssessmentDtos {
     public record SessionOption(UUID id, String text) {
     }
 
+    /**
+     * {@code options}: choices, word-bank chips (without blank assignment), MATCHING left items or ORDERING items in
+     * display order. {@code blankCount} (CLOZE, WORD_BANK), {@code matchTargets} (MATCHING right-hand texts, shuffled)
+     * and {@code maxRecordingSeconds} (SPEAKING) never reveal the solution.
+     */
     public record SessionQuestion(UUID id, QuestionType type, String prompt, int points, MediaDto media,
-                                  List<SessionOption> options) {
+                                  List<SessionOption> options, Integer blankCount, List<SessionOption> matchTargets,
+                                  Integer maxRecordingSeconds) {
     }
 
     /**
@@ -76,11 +103,26 @@ public final class AssessmentDtos {
      */
     public record AttemptSessionDto(UUID id, AttemptStatus status, Instant startedAt, Instant deadline,
                                     Integer timeLimitMinutes, Instant availableUntil, Instant serverTime,
-                                    List<SessionQuestion> questions, List<SubmittedAnswer> savedAnswers) {
+                                    List<SessionQuestion> questions, List<SavedAnswer> savedAnswers) {
     }
 
+    /**
+     * An answer sheet entry. {@code blanks} (CLOZE: text, WORD_BANK: chip option id, keyed by blank index),
+     * {@code pairs} (MATCHING: left option id to right option id), {@code order} (ORDERING: option ids) and
+     * {@code responseMediaId} (SPEAKING: the learner's own audio upload) are additions for the language types.
+     */
     public record SubmittedAnswer(@NotNull UUID questionId, @Size(max = 50) List<@NotNull UUID> selectedOptionIds,
-                                  @Size(max = 20000) String textAnswer) {
+                                  @Size(max = 20000) String textAnswer,
+                                  @Size(max = 50) Map<@NotBlank @Size(max = 10) String, @Size(max = 500) String> blanks,
+                                  @Size(max = 50) Map<@NotBlank @Size(max = 40) String, @Size(max = 40) String> pairs,
+                                  @Size(max = 50) List<@NotNull @Size(max = 40) String> order,
+                                  UUID responseMediaId) {
+    }
+
+    /** A saved draft as returned when resuming; {@code responseMedia} carries a signed URL to replay the recording. */
+    public record SavedAnswer(UUID questionId, List<UUID> selectedOptionIds, String textAnswer,
+                              Map<String, String> blanks, Map<String, String> pairs, List<String> order,
+                              UUID responseMediaId, MediaDto responseMedia) {
     }
 
     public record SubmitRequest(@NotNull @Size(max = 500) List<@Valid @NotNull SubmittedAnswer> answers) {
@@ -106,14 +148,27 @@ public final class AssessmentDtos {
                                     boolean pendingManualGrading, boolean late, boolean autoSubmitted) {
     }
 
-    public record ResultOption(UUID id, String text, Boolean correct) {
+    /** {@code correct}, {@code matchText} and {@code blankIndex} are only set when the solution may be shown. */
+    public record ResultOption(UUID id, String text, Boolean correct, String matchText, Integer blankIndex) {
+    }
+
+    /** One blank of a CLOZE/WORD_BANK answer; {@code expected} (accepted answers) only when the solution may be shown. */
+    public record BlankResult(int index, String given, boolean correct, List<String> expected) {
+    }
+
+    /** One pair of a MATCHING answer; {@code expectedRight} only when the solution may be shown. */
+    public record PairResult(UUID leftId, String left, UUID rightId, String right, boolean correct,
+                             String expectedRight) {
     }
 
     /** {@code explanation} and {@code media} are additions to the contract. */
     public record AnswerResult(UUID questionId, QuestionType type, String prompt, int points,
                                List<UUID> selectedOptionIds, String textAnswer, Boolean correct, Double pointsAwarded,
                                String feedback, List<ResultOption> options, List<String> acceptedAnswers,
-                               String explanation, MediaDto media) {
+                               String explanation, MediaDto media, Scoring scoring, Map<String, String> blanks,
+                               Map<String, String> pairs, List<String> order, List<BlankResult> blankResults,
+                               List<PairResult> pairResults, List<UUID> correctOrder, MediaDto responseMedia,
+                               Integer maxRecordingSeconds) {
     }
 
     public record AttemptResultDto(UUID id, UserSummaryDto student, AttemptStatus status, Instant startedAt,

@@ -16,6 +16,9 @@ import me.amanullah.course.course.ContentItem;
 import me.amanullah.course.course.Course;
 import me.amanullah.course.course.CourseAccess;
 import me.amanullah.course.learning.LearnerAccess;
+import me.amanullah.course.media.MediaAsset;
+import me.amanullah.course.media.MediaKind;
+import me.amanullah.course.media.MediaRepository;
 import me.amanullah.course.notification.EmailTemplates;
 import me.amanullah.course.notification.NotificationService;
 import me.amanullah.course.notification.NotificationType;
@@ -29,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,11 +54,16 @@ public class AttemptService {
     private final EmailTemplates templates;
     private final AttemptFinalizer finalizer;
     private final Clock clock;
+    private final MediaRepository mediaAssets;
+
+    /** Largest accepted recording. */
+    static final long MAX_RECORDING_BYTES = 25L * 1024 * 1024;
 
     public AttemptService(AssessmentRepository assessments, AttemptRepository attempts, UserRepository users,
                           LearnerAccess learnerAccess, CourseAccess courseAccess, AttemptMapper mapper,
                           NotificationService notifications, EmailTemplates templates, AttemptFinalizer finalizer,
-                          Clock clock) {
+                          Clock clock, MediaRepository mediaAssets) {
+        this.mediaAssets = mediaAssets;
         this.assessments = assessments;
         this.attempts = attempts;
         this.users = users;
@@ -167,12 +176,18 @@ public class AttemptService {
 
     /**
      * Copies answers onto the attempt's answer rows. With {@code replaceAll}, questions missing from the list are
-     * cleared (a submission is the complete answer sheet); otherwise only the listed questions change.
+     * cleared (a submission is the complete answer sheet); otherwise only the listed questions change. Structured
+     * responses are reduced to what belongs to the question (unknown blanks and option ids are dropped); a recording
+     * must be the learner's own audio upload (400 otherwise).
      */
-    private static void applyAnswers(Attempt attempt, List<SubmittedAnswer> given, boolean replaceAll) {
+    private void applyAnswers(Attempt attempt, List<SubmittedAnswer> given, boolean replaceAll) {
         Map<UUID, SubmittedAnswer> byQuestion = new HashMap<>();
+        Map<UUID, Integer> indexOf = new HashMap<>();
         if (given != null) {
-            given.forEach(s -> byQuestion.put(s.questionId(), s));
+            for (int i = 0; i < given.size(); i++) {
+                byQuestion.put(given.get(i).questionId(), given.get(i));
+                indexOf.put(given.get(i).questionId(), i);
+            }
         }
         for (AttemptAnswer answer : attempt.getAnswers()) {
             SubmittedAnswer s = byQuestion.get(answer.getQuestionId());
@@ -187,7 +202,84 @@ public class AttemptService {
             }
             answer.setSelectedOptionIds(selected);
             answer.setTextAnswer(s == null || s.textAnswer() == null || s.textAnswer().isBlank() ? null : s.textAnswer());
+            answer.setResponseJson(s == null ? null : cleanResponse(answer, s).toJson());
+            if (answer.getQuestionType() == QuestionType.SPEAKING) {
+                answer.setResponseMedia(s == null || s.responseMediaId() == null ? null
+                        : requireRecording(answer, s.responseMediaId(), attempt.getStudent().getId(),
+                        "answers[" + indexOf.get(answer.getQuestionId()) + "].responseMediaId"));
+            }
         }
+    }
+
+    /** Keeps only the part of a structured response that fits the question snapshot. */
+    static AnswerResponse cleanResponse(AttemptAnswer answer, SubmittedAnswer s) {
+        Set<String> optionIds = new HashSet<>();
+        answer.getOptions().forEach(o -> optionIds.add(o.getOptionId().toString()));
+        switch (answer.getQuestionType()) {
+            case CLOZE -> {
+                Set<String> blanks = new HashSet<>();
+                answer.getBlankAnswers().keySet().forEach(i -> blanks.add(String.valueOf(i)));
+                Map<String, String> out = new LinkedHashMap<>();
+                if (s.blanks() != null) {
+                    s.blanks().forEach((k, v) -> {
+                        if (blanks.contains(k) && v != null && !v.isBlank()) {
+                            out.put(k, v.strip());
+                        }
+                    });
+                }
+                return new AnswerResponse(out, null, null);
+            }
+            case WORD_BANK -> {
+                Set<String> blanks = new HashSet<>();
+                answer.getOptions().forEach(o -> {
+                    if (o.getBlankIndex() != null) {
+                        blanks.add(String.valueOf(o.getBlankIndex()));
+                    }
+                });
+                Map<String, String> out = new LinkedHashMap<>();
+                if (s.blanks() != null) {
+                    s.blanks().forEach((k, v) -> {
+                        if (blanks.contains(k) && v != null && optionIds.contains(v)) {
+                            out.put(k, v);
+                        }
+                    });
+                }
+                return new AnswerResponse(out, null, null);
+            }
+            case MATCHING -> {
+                Map<String, String> out = new LinkedHashMap<>();
+                if (s.pairs() != null) {
+                    s.pairs().forEach((k, v) -> {
+                        if (optionIds.contains(k) && v != null && optionIds.contains(v)) {
+                            out.put(k, v);
+                        }
+                    });
+                }
+                return new AnswerResponse(null, out, null);
+            }
+            case ORDERING -> {
+                List<String> out = new ArrayList<>();
+                if (s.order() != null) {
+                    s.order().stream().filter(optionIds::contains).distinct().forEach(out::add);
+                }
+                return new AnswerResponse(null, null, out);
+            }
+            default -> {
+                return AnswerResponse.EMPTY;
+            }
+        }
+    }
+
+    private MediaAsset requireRecording(AttemptAnswer answer, UUID mediaId, UUID studentId, String field) {
+        if (answer.getResponseMedia() != null && answer.getResponseMedia().getId().equals(mediaId)) {
+            return answer.getResponseMedia();
+        }
+        MediaAsset media = mediaAssets.findById(mediaId).orElse(null);
+        if (media == null || !media.getOwner().getId().equals(studentId) || media.getKind() != MediaKind.AUDIO
+                || media.getSizeBytes() > MAX_RECORDING_BYTES) {
+            throw ValidationException.field(field, "question.invalid.responseMedia");
+        }
+        return media;
     }
 
     private Attempt requireOwnAttempt(CurrentUser me, UUID attemptId) {

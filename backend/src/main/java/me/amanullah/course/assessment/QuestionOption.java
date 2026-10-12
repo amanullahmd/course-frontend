@@ -22,6 +22,14 @@ public class QuestionOption extends BaseEntity {
     @Column(nullable = false)
     private boolean correct;
 
+    /** MATCHING: the right-hand side that belongs to {@link #text}. */
+    @Column(name = "match_text", length = 2000)
+    private String matchText;
+
+    /** WORD_BANK: the blank this chip is the correct answer for; null for a distractor. */
+    @Column(name = "blank_index")
+    private Integer blankIndex;
+
     @Column(name = "sort_order", nullable = false)
     private int position;
 
@@ -37,6 +45,10 @@ public class QuestionOption extends BaseEntity {
     public void setText(String text) { this.text = text; }
     public boolean isCorrect() { return correct; }
     public void setCorrect(boolean correct) { this.correct = correct; }
+    public String getMatchText() { return matchText; }
+    public void setMatchText(String matchText) { this.matchText = matchText; }
+    public Integer getBlankIndex() { return blankIndex; }
+    public void setBlankIndex(Integer blankIndex) { this.blankIndex = blankIndex; }
     public int getPosition() { return position; }
     public void setPosition(int position) { this.position = position; }
 }

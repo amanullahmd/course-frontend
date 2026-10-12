@@ -49,11 +49,24 @@ public class Question extends BaseEntity {
     @Column(name = "case_sensitive", nullable = false)
     private boolean caseSensitive;
 
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, length = 20)
+    private Scoring scoring = Scoring.ALL_OR_NOTHING;
+
+    @Column(name = "shuffle_options", nullable = false)
+    private boolean shuffleOptions;
+
+    @Column(name = "lenient_spelling", nullable = false)
+    private boolean lenientSpelling;
+
+    @Column(name = "max_recording_seconds")
+    private Integer maxRecordingSeconds;
+
     @ElementCollection
     @CollectionTable(name = "question_accepted_answers", joinColumns = @JoinColumn(name = "question_id"))
     @OrderColumn(name = "sort_order")
-    @Column(name = "answer", nullable = false, length = 500)
-    private List<String> acceptedAnswers = new ArrayList<>();
+    private List<AcceptedAnswer> accepted = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "media_id")
@@ -83,8 +96,38 @@ public class Question extends BaseEntity {
     public void setPosition(int position) { this.position = position; }
     public boolean isCaseSensitive() { return caseSensitive; }
     public void setCaseSensitive(boolean caseSensitive) { this.caseSensitive = caseSensitive; }
-    public List<String> getAcceptedAnswers() { return acceptedAnswers; }
-    public void setAcceptedAnswers(List<String> answers) { acceptedAnswers.clear(); acceptedAnswers.addAll(answers); }
+    public Scoring getScoring() { return scoring; }
+    public void setScoring(Scoring scoring) { this.scoring = scoring; }
+    public boolean isShuffleOptions() { return shuffleOptions; }
+    public void setShuffleOptions(boolean shuffleOptions) { this.shuffleOptions = shuffleOptions; }
+    public boolean isLenientSpelling() { return lenientSpelling; }
+    public void setLenientSpelling(boolean lenientSpelling) { this.lenientSpelling = lenientSpelling; }
+    public Integer getMaxRecordingSeconds() { return maxRecordingSeconds; }
+    public void setMaxRecordingSeconds(Integer maxRecordingSeconds) { this.maxRecordingSeconds = maxRecordingSeconds; }
+    public List<AcceptedAnswer> getAccepted() { return accepted; }
+
+    /** The single list of accepted answers (blank 0) of SHORT_ANSWER, FILL_BLANK and DICTATION questions. */
+    public List<String> getAcceptedAnswers() {
+        return accepted.stream().filter(a -> a.getBlankIndex() == 0).map(AcceptedAnswer::getAnswer).toList();
+    }
+
+    public void setAcceptedAnswers(List<String> answers) {
+        accepted.clear();
+        answers.forEach(a -> accepted.add(new AcceptedAnswer(a, 0)));
+    }
+
+    /** Replaces the accepted answers by the given answers per blank index (CLOZE). */
+    public void setBlankAnswers(java.util.Map<Integer, List<String>> byBlank) {
+        accepted.clear();
+        byBlank.forEach((blank, answers) -> answers.forEach(a -> accepted.add(new AcceptedAnswer(a, blank))));
+    }
+
+    public java.util.Map<Integer, List<String>> getBlankAnswers() {
+        java.util.Map<Integer, List<String>> byBlank = new java.util.TreeMap<>();
+        accepted.stream().filter(a -> a.getBlankIndex() > 0)
+                .forEach(a -> byBlank.computeIfAbsent(a.getBlankIndex(), k -> new ArrayList<>()).add(a.getAnswer()));
+        return byBlank;
+    }
     public MediaAsset getMedia() { return media; }
     public void setMedia(MediaAsset media) { this.media = media; }
     public List<QuestionOption> getOptions() { return options; }

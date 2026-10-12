@@ -6,7 +6,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { BarChart3, ChevronRight, ClipboardList, Eye, FileText, Inbox, Info, Save, Trash } from "lucide-react";
+import { BarChart3, ChevronRight, ClipboardList, Eye, FileText, Inbox, Info, Lock, Save, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -39,6 +39,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AssessmentEditor } from "./assessment-editor";
 import { AttachmentsManager } from "./attachments-manager";
 import { PublicationForm } from "./publication-control";
+import { ItemReleasePanel } from "./release-rules-panel";
 import { RichTextEditor } from "./rich-text-editor";
 import { SubmissionsPanel } from "./submissions-panel";
 import { AssessmentAnalytics } from "@/components/reports/assessment-analytics";
@@ -100,7 +101,7 @@ function EditorSkeleton() {
   );
 }
 
-type EditorTab = "content" | "assessment" | "submissions" | "analytics";
+type EditorTab = "content" | "release" | "assessment" | "submissions" | "analytics";
 
 function ItemEditorLoaded({
   item,
@@ -123,7 +124,7 @@ function ItemEditorLoaded({
   const update = useUpdateItem(item.courseId);
   const publish = usePublishItem(item.courseId);
   const del = useDeleteItem(item.courseId);
-  const [tab, setTab] = React.useState<EditorTab>(isAssessmentType(item.type) ? initialTab : "content");
+  const [tab, setTab] = React.useState<EditorTab>(isAssessmentType(item.type) || initialTab === "release" ? initialTab : "content");
   const [assessmentDirty, setAssessmentDirty] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
 
@@ -209,6 +210,9 @@ function ItemEditorLoaded({
           <TabsList variant="underline">
             <TabsTrigger value="content">
               <FileText /> {t("itemEditor.content")} {isDirty && <span className="size-1.5 rounded-full bg-brand" aria-label={t("itemEditor.unsaved")} />}
+            </TabsTrigger>
+            <TabsTrigger value="release">
+              <Lock /> {t("release.tab")}
             </TabsTrigger>
             {isAssessmentType(type) && (
               <>
@@ -337,6 +341,10 @@ function ItemEditorLoaded({
             </form>
           </TabsContent>
 
+          <TabsContent value="release" className="mt-6">
+            <ItemReleasePanel item={item} />
+          </TabsContent>
+
           {isAssessmentType(type) && (
             <>
               <TabsContent value="assessment" className="mt-6">
@@ -432,7 +440,7 @@ export function ItemEditor() {
   const t = useTranslations("itemEditor");
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const initialTab: EditorTab = tabParam === "assessment" || tabParam === "submissions" || tabParam === "analytics" ? tabParam : "content";
+  const initialTab: EditorTab = tabParam === "assessment" || tabParam === "submissions" || tabParam === "analytics" || tabParam === "release" ? tabParam : "content";
   const initialAttemptId = searchParams.get("attempt");
 
   if (item.isPending) return <EditorSkeleton />;

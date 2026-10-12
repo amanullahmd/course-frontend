@@ -45,7 +45,12 @@ public final class ErrorClassifier {
      *               {@link MessageRef}s that are resolved in the request locale
      */
     public record Classification(HttpStatus status, String code, String messageKey, Object[] args,
-                                 Map<String, Object> errors) {
+                                 Map<String, Object> errors, Map<String, Object> properties) {
+
+        public Classification(HttpStatus status, String code, String messageKey, Object[] args,
+                              Map<String, Object> errors) {
+            this(status, code, messageKey, args, errors, null);
+        }
 
         static Classification of(HttpStatus status, String code) {
             return new Classification(status, code, null, new Object[0], null);
@@ -56,7 +61,7 @@ public final class ErrorClassifier {
         }
 
         Classification withErrors(Map<String, Object> errors) {
-            return new Classification(status, code, messageKey, args, errors);
+            return new Classification(status, code, messageKey, args, errors, properties);
         }
     }
 
@@ -72,7 +77,8 @@ public final class ErrorClassifier {
                     new LinkedHashMap<>(v.getErrors()));
         }
         if (ex instanceof ApiException a) {
-            return new Classification(a.getStatus(), a.getCode(), a.getMessageKey(), a.getArgs(), null);
+            return new Classification(a.getStatus(), a.getCode(), a.getMessageKey(), a.getArgs(), null,
+                    a.getProperties());
         }
         if (ex instanceof MethodArgumentNotValidException m) {
             return validation(m.getBindingResult());

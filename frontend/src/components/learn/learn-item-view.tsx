@@ -19,6 +19,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Kbd } from "@/components/ui/kbd";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LockedItem, lockFromError } from "./locked-item";
 import { useLearnContext } from "./learn-shell";
 import { ExtraAttachments, ItemViewer, viewerHandledIds } from "./viewers";
 import { Lock } from "lucide-react";
@@ -62,6 +63,17 @@ export function LearnItemView() {
   if (item.isPending) return <ItemSkeleton />;
   if (item.isError) {
     const status = isApiError(item.error) ? item.error.status : 0;
+    if (isApiError(item.error) && item.error.code === "ITEM_LOCKED") {
+      return (
+        <LockedItem
+          courseId={courseId}
+          title={all[position]?.title}
+          lock={lockFromError(item.error)}
+          onRetry={item.refetch}
+          checking={item.isFetching}
+        />
+      );
+    }
     return (
       <div className="mx-auto max-w-xl px-4 py-20">
         {status === 403 || status === 404 ? (

@@ -17,7 +17,10 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Progress = completed live items / live items (0–100, rounded). */
+/**
+ * Progress = completed <b>required</b> live items / required live items (0–100, rounded). If a course has no required
+ * item at all, every live item counts. Reports and certificates build on this rule.
+ */
 @Service
 public class ProgressService {
 
@@ -47,6 +50,12 @@ public class ProgressService {
         return result;
     }
 
+    /** The items that count towards progress: the required ones, or all if none is required. */
+    public static List<ContentItem> counted(List<ContentItem> live) {
+        List<ContentItem> required = live.stream().filter(ContentItem::isRequired).toList();
+        return required.isEmpty() ? live : required;
+    }
+
     @Transactional(readOnly = true)
     public Set<UUID> completedItemIds(UUID studentId, Collection<UUID> itemIds) {
         Set<UUID> done = new HashSet<>();
@@ -66,7 +75,8 @@ public class ProgressService {
         if (studentIds.isEmpty()) {
             return result;
         }
-        List<ContentItem> live = liveItems(List.of(courseId), Instant.now(clock)).getOrDefault(courseId, List.of());
+        List<ContentItem> live = counted(liveItems(List.of(courseId), Instant.now(clock))
+                .getOrDefault(courseId, List.of()));
         Map<UUID, Integer> done = new HashMap<>();
         if (!live.isEmpty()) {
             for (Object[] row : progress.findCompleted(studentIds, live.stream().map(ContentItem::getId).toList())) {
@@ -83,10 +93,10 @@ public class ProgressService {
         Map<UUID, Integer> result = new HashMap<>();
         Map<UUID, List<ContentItem>> live = liveItems(courseIds, Instant.now(clock));
         Set<UUID> all = new HashSet<>();
-        live.values().forEach(l -> l.forEach(i -> all.add(i.getId())));
+        live.values().forEach(l -> counted(l).forEach(i -> all.add(i.getId())));
         Set<UUID> done = completedItemIds(studentId, all);
         for (UUID courseId : courseIds) {
-            List<ContentItem> l = live.getOrDefault(courseId, List.of());
+            List<ContentItem> l = counted(live.getOrDefault(courseId, List.of()));
             int completed = (int) l.stream().filter(i -> done.contains(i.getId())).count();
             result.put(courseId, percent(completed, l.size()));
         }

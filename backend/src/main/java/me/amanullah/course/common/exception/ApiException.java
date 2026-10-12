@@ -14,6 +14,7 @@ public abstract class ApiException extends RuntimeException {
     private final String code;
     private String messageKey;
     private Object[] args = new Object[0];
+    private java.util.Map<String, Object> properties;
 
     protected ApiException(HttpStatus status, String code, String message) {
         super(message);
@@ -26,6 +27,19 @@ public abstract class ApiException extends RuntimeException {
         this.messageKey = messageKey;
         this.args = args;
         return this;
+    }
+
+    /** Adds an extra machine-readable property to the problem body (e.g. {@code unlockAt}). */
+    public ApiException property(String name, Object value) {
+        if (properties == null) {
+            properties = new java.util.LinkedHashMap<>();
+        }
+        properties.put(name, value);
+        return this;
+    }
+
+    public java.util.Map<String, Object> getProperties() {
+        return properties;
     }
 
     public HttpStatus getStatus() {

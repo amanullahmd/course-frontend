@@ -20,7 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Checks a learner's completion criteria for a course:
  * <ul>
- *   <li><b>PROGRESS</b>: completed live items / live items (same rule as the course progress) ≥ the required percent;</li>
+ *   <li><b>PROGRESS</b>: completed required live items / required live items (same rule as the course progress) ≥ the
+ *       required percent;</li>
  *   <li><b>ASSESSMENTS_PASSED</b> (optional): every live quiz/exam with questions has a graded attempt whose percent
  *       reaches the assessment's passing score (essays therefore have to be graded first);</li>
  *   <li><b>AVERAGE_SCORE</b> (optional): the average of the best graded percent per quiz/exam (over those with a graded
@@ -45,7 +46,9 @@ public class CompletionEvaluator {
 
     @Transactional(readOnly = true)
     public Evaluation evaluate(CertificateSettings settings, UUID courseId, UUID studentId, Instant now) {
-        List<ContentItem> live = progress.liveItems(List.of(courseId), now).getOrDefault(courseId, List.of());
+        // optional items are ignored (unless nothing is required, then everything counts)
+        List<ContentItem> live = ProgressService.counted(
+                progress.liveItems(List.of(courseId), now).getOrDefault(courseId, List.of()));
         List<UUID> itemIds = live.stream().map(ContentItem::getId).toList();
         Set<UUID> done = progress.completedItemIds(studentId, itemIds);
         int percent = ProgressService.percent((int) itemIds.stream().filter(done::contains).count(), itemIds.size());

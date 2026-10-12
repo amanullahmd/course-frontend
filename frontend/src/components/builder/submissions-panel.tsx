@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 import { useGradeAttempt, useInstructorAttempt, useItemAttempts } from "@/hooks/queries/instructor";
 import { UserAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { InlineHtml } from "@/components/course/rich-content";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -21,8 +20,9 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { AnswerDetail, AnswerPrompt, isLanguageType } from "@/components/quiz/answer-detail";
 
-const needsGrading = (a: AttemptAnswerResult) => a.type === "ESSAY" || a.pointsAwarded == null;
+const needsGrading = (a: AttemptAnswerResult) => a.type === "ESSAY" || a.type === "SPEAKING" || a.pointsAwarded == null;
 
 type Grades = Record<string, { points: string; feedback: string }>;
 
@@ -77,7 +77,7 @@ function GradingForm({ result, itemId, onDone }: { result: AttemptResultDto; ite
                       {t("submissions.questionHeader", { n: i + 1, type: t(`questionTypes.${a.type}.label`), points: a.points })}
                     </p>
                     <p className="mt-1 text-sm font-medium">
-                      <InlineHtml html={a.prompt} />
+                      <AnswerPrompt answer={a} />
                     </p>
                   </div>
                   {!editable &&
@@ -85,14 +85,17 @@ function GradingForm({ result, itemId, onDone }: { result: AttemptResultDto; ite
                       <Badge variant="success">
                         <Check /> {a.pointsAwarded ?? a.points}
                       </Badge>
+                    ) : (a.pointsAwarded ?? 0) > 0 ? (
+                      <Badge variant="warning">{a.pointsAwarded}</Badge>
                     ) : (
                       <Badge variant="destructive">
                         <X /> {a.pointsAwarded ?? 0}
                       </Badge>
                     ))}
                 </div>
-                <div className="mt-3 rounded-lg bg-card px-3 py-2 text-sm ring-1 ring-border">
-                  {a.options && a.options.length > 0 ? (
+                {isLanguageType(a.type) && <AnswerDetail answer={a} />}
+                <div className={cn("mt-3 rounded-lg bg-card px-3 py-2 text-sm ring-1 ring-border", isLanguageType(a.type) && "hidden")}>
+                  {a.options && a.options.length > 0 && !isLanguageType(a.type) ? (
                     <ul className="grid gap-1">
                       {a.options.map((o) => (
                         <li key={o.id} className={cn("flex items-center gap-2", a.selectedOptionIds.includes(o.id) ? "font-medium" : "text-muted-foreground")}>

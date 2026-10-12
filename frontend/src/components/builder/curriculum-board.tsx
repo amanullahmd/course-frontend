@@ -15,7 +15,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Layers, Plus } from "lucide-react";
+import { Layers, Plus, Route } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { ContentItemDto, CourseDto, ModuleDto } from "@/lib/api/types";
@@ -23,6 +23,8 @@ import {
   useCreateModule,
   useDeleteItem,
   useDeleteModule,
+  useDuplicateItem,
+  useDuplicateModule,
   useOrderItems,
   useOrderModules,
   usePublishItem,
@@ -38,6 +40,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ItemRowContent, type ItemRowActions } from "./item-row";
 import { ModuleCardBody, SortableModuleCard, type ModuleActions } from "./module-card";
+import { ModuleReleaseForm } from "./release-rules-panel";
 
 type DragKind = "module" | "item";
 const parseId = (id: string | number) => {
@@ -122,6 +125,7 @@ export function CurriculumBoard({ course }: { course: CourseDto }) {
   const [editing, setEditing] = React.useState<ModuleDto | null>(null);
   const [deletingModule, setDeletingModule] = React.useState<ModuleDto | null>(null);
   const [deletingItem, setDeletingItem] = React.useState<ContentItemDto | null>(null);
+  const [releasing, setReleasing] = React.useState<ModuleDto | null>(null);
 
   const orderModules = useOrderModules(course.id);
   const orderItems = useOrderItems(course.id);
@@ -130,6 +134,8 @@ export function CurriculumBoard({ course }: { course: CourseDto }) {
   const updateModule = useUpdateModule(course.id);
   const deleteModule = useDeleteModule(course.id);
   const deleteItem = useDeleteItem(course.id);
+  const duplicateItem = useDuplicateItem(course.id);
+  const duplicateModule = useDuplicateModule(course.id);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -163,11 +169,18 @@ export function CurriculumBoard({ course }: { course: CourseDto }) {
     modules,
     onPublish: (id, body) => publishItem.mutateAsync({ id, body }),
     onMove: moveItem,
+    onDuplicate: (itemId, targetModuleId) =>
+      duplicateItem.mutate(
+        { id: itemId, targetModuleId },
+        { onSuccess: (copy) => toast.success(t("release.itemDuplicated", { title: copy.title })) },
+      ),
     onDelete: setDeletingItem,
   };
   const moduleActions: ModuleActions = {
     onPublish: (id, body) => publishModule.mutateAsync({ id, body }),
     onEdit: setEditing,
+    onRelease: setReleasing,
+    onDuplicate: (m) => duplicateModule.mutate(m.id, { onSuccess: () => toast.success(t("release.moduleDuplicated")) }),
     onDelete: setDeletingModule,
   };
 
@@ -277,6 +290,12 @@ export function CurriculumBoard({ course }: { course: CourseDto }) {
 
   return (
     <div className="grid gap-4">
+      {course.progression !== "FREE" && (
+        <p role="note" className="flex items-start gap-2 rounded-lg border border-info/25 bg-info-soft/50 px-3 py-2 text-[13px] text-info">
+          <Route className="mt-0.5 size-4 shrink-0" aria-hidden />
+          {t(course.progression === "SEQUENTIAL_MODULES" ? "release.boardNoteSEQUENTIAL_MODULES" : "release.boardNoteSEQUENTIAL_ITEMS")}
+        </p>
+      )}
       <DndContext
         sensors={sensors}
         collisionDetection={collision}
@@ -356,6 +375,23 @@ export function CurriculumBoard({ course }: { course: CourseDto }) {
                 </Button>
               </DialogFooter>
             </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!releasing} onOpenChange={(o) => !o && setReleasing(null)}>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{t("release.moduleDialogTitle", { title: releasing?.title ?? "" })}</DialogTitle>
+            <DialogDescription>{t("release.moduleDescription")}</DialogDescription>
+          </DialogHeader>
+          {releasing && (
+            <ModuleReleaseForm
+              key={releasing.id}
+              module={course.modules.find((m) => m.id === releasing.id) ?? releasing}
+              course={course}
+              onDone={() => setReleasing(null)}
+            />
           )}
         </DialogContent>
       </Dialog>

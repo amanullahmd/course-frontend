@@ -125,6 +125,12 @@ public class MediaService {
         return mapper.toDto(requireUsable(id, userId, admin));
     }
 
+    /** The kind of a media asset, or {@code null} when it does not exist (used to validate question definitions). */
+    @Transactional(readOnly = true)
+    public MediaKind kindOf(UUID id) {
+        return repository.findById(id).map(MediaAsset::getKind).orElse(null);
+    }
+
     /** Returns a media asset the user owns (or any asset for admins); 404 otherwise. */
     @Transactional(readOnly = true)
     public MediaAsset requireUsable(UUID id, UUID userId, boolean admin) {

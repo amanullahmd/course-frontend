@@ -61,6 +61,10 @@ public class User extends AuditedEntity {
     @Column(name = "deleted_at")
     private java.time.Instant deletedAt;
 
+    /** Secret of the personal iCal feed ({@code /api/calendar/{token}.ics}); rotatable, null until first requested. */
+    @Column(name = "calendar_token", length = 64)
+    private String calendarToken;
+
     protected User() {
     }
 
@@ -104,6 +108,8 @@ public class User extends AuditedEntity {
     public void setTermsAcceptedAt(java.time.Instant termsAcceptedAt) { this.termsAcceptedAt = termsAcceptedAt; }
     public java.time.Instant getDeletedAt() { return deletedAt; }
     public boolean isDeleted() { return deletedAt != null; }
+    public String getCalendarToken() { return calendarToken; }
+    public void setCalendarToken(String calendarToken) { this.calendarToken = calendarToken; }
 
     /** True for instructors that may create and manage courses (admins always may). */
     public boolean canTeach() {
@@ -124,6 +130,7 @@ public class User extends AuditedEntity {
         this.avatar = null;
         this.instructorStatus = role == Role.INSTRUCTOR ? InstructorStatus.REJECTED : null;
         this.termsAcceptedAt = null;
+        this.calendarToken = null;
         this.deletedAt = now;
     }
 }

@@ -17,6 +17,8 @@ import { useNow } from "@/hooks/use-now";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Progress } from "@/components/ui/progress";
+import { draftFromSaved, normalizeDraft, toSubmitAnswer } from "@/lib/exercises";
+import { usePendingUploads } from "@/lib/upload-tracker";
 import { emptyAnswer, isAnswered, QuestionInput, QuestionMedia, QuestionPrompt, type DraftAnswer } from "./question-input";
 
 type Answers = Record<string, DraftAnswer>;
@@ -64,20 +66,17 @@ function removeStored(key: string) {
 function initialAnswers(session: AttemptSessionDto, key: string): { answers: Answers; pending: boolean } {
   const server: Answers = {};
   for (const a of session.savedAnswers ?? []) {
-    server[a.questionId] = { selectedOptionIds: a.selectedOptionIds ?? [], textAnswer: a.textAnswer ?? "" };
+    server[a.questionId] = draftFromSaved(a);
   }
   const local = typeof window === "undefined" ? null : readStored(key);
+  if (local) local.answers = Object.fromEntries(Object.entries(local.answers).map(([id, a]) => [id, normalizeDraft(a)]));
   if (local?.pending) return { answers: { ...server, ...local.answers }, pending: true };
   if (local && Object.keys(server).length === 0) return { answers: local.answers, pending: Object.keys(local.answers).length > 0 };
   return { answers: server, pending: false };
 }
 
 function toPayload(questions: AttemptSessionDto["questions"], answers: Answers): SubmitAnswer[] {
-  return questions.map((x) => ({
-    questionId: x.id,
-    selectedOptionIds: answers[x.id]?.selectedOptionIds ?? [],
-    textAnswer: answers[x.id]?.textAnswer?.trim() ? answers[x.id].textAnswer : null,
-  }));
+  return questions.map((x) => toSubmitAnswer(x, answers[x.id]));
 }
 
 function formatRemaining(ms: number): string {
@@ -178,6 +177,8 @@ export function QuizPlayer({
   const [saveState, setSaveState] = React.useState<SaveState>({ kind: "idle" });
   const [finishing, setFinishing] = React.useState(false);
   const submit = useSubmitAttempt(itemId, courseId);
+  const uploads = usePendingUploads();
+  const te = useTranslations("exercises.recorder");
   const questions = session.questions;
   const q = questions[index];
   const answeredCount = questions.filter((x) => isAnswered(x, answers[x.id])).length;
@@ -282,6 +283,8 @@ export function QuizPlayer({
     writeStored(storageKey, { answers: next, pending: true });
     setAnswersState(next);
   };
+  // Always merges into the latest answers: a recording may finish uploading after the learner moved to another question.
+  const updateAnswer = (questionId: string, value: DraftAnswer) => setAnswers({ ...answersRef.current, [questionId]: value });
 
   // debounced save after changes
   React.useEffect(() => {
@@ -348,7 +351,7 @@ export function QuizPlayer({
   }, [save, doSubmit]);
 
   if (!q) return null;
-  const setAnswer = (value: DraftAnswer) => setAnswers({ ...answers, [q.id]: value });
+  const setAnswer = (value: DraftAnswer) => updateAnswer(q.id, value);
 
   return (
     <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
@@ -396,6 +399,11 @@ export function QuizPlayer({
             <QuestionMedia media={q.media} />
             <QuestionInput question={q} value={answers[q.id] ?? emptyAnswer} onChange={setAnswer} />
           </div>
+          {uploads > 0 && (
+            <p role="status" className="mt-4 text-xs text-muted-foreground">
+              {te("uploadPending")}
+            </p>
+          )}
           <div className="mt-8 flex items-center justify-between gap-3 border-t pt-5">
             <Button variant="ghost" disabled={index === 0} onClick={() => setIndex(index - 1)}>
               <ArrowLeft /> {tc("back")}
@@ -405,7 +413,7 @@ export function QuizPlayer({
                 {tc("next")} <ArrowRight />
               </Button>
             ) : (
-              <Button variant="brand" onClick={() => setConfirmOpen(true)} loading={finishing}>
+              <Button variant="brand" onClick={() => setConfirmOpen(true)} loading={finishing} disabled={uploads > 0}>
                 <Send /> {t("submitAnswers")}
               </Button>
             )}
@@ -436,7 +444,7 @@ export function QuizPlayer({
               );
             })}
           </div>
-          <Button variant="outline" size="sm" className="mt-4 w-full" onClick={() => setConfirmOpen(true)} disabled={finishing}>
+          <Button variant="outline" size="sm" className="mt-4 w-full" onClick={() => setConfirmOpen(true)} disabled={finishing || uploads > 0}>
             {t("finish")}
           </Button>
         </aside>

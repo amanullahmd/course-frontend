@@ -13,11 +13,13 @@ import me.amanullah.course.course.CourseDtos.InstructorRef;
 import me.amanullah.course.course.CourseDtos.ModuleDto;
 import me.amanullah.course.course.CourseDtos.OutlineItem;
 import me.amanullah.course.course.CourseDtos.OutlineModule;
+import me.amanullah.course.course.CourseDtos.PrerequisiteDto;
 import me.amanullah.course.media.MediaMapper;
 import me.amanullah.course.media.MediaUrlSigner;
 import me.amanullah.course.user.User;
 import me.amanullah.course.user.UserMapper;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,11 +31,38 @@ public class CourseMapper {
     private final MediaMapper mediaMapper;
     private final UserMapper userMapper;
     private final MediaUrlSigner signer;
+    private final ReleasePrerequisiteRepository prerequisites;
+    private final ContentItemRepository itemRepository;
 
-    public CourseMapper(MediaMapper mediaMapper, UserMapper userMapper, MediaUrlSigner signer) {
+    public CourseMapper(MediaMapper mediaMapper, UserMapper userMapper, MediaUrlSigner signer,
+                        ReleasePrerequisiteRepository prerequisites, ContentItemRepository itemRepository) {
         this.mediaMapper = mediaMapper;
         this.userMapper = userMapper;
         this.signer = signer;
+        this.prerequisites = prerequisites;
+        this.itemRepository = itemRepository;
+    }
+
+    /** Prerequisites of a course keyed by their target (module or item id), with the required items' titles. */
+    public Map<UUID, List<PrerequisiteDto>> prerequisiteIndex(UUID courseId) {
+        List<ReleasePrerequisite> rows = prerequisites.findByCourse(courseId);
+        Map<UUID, List<PrerequisiteDto>> result = new HashMap<>();
+        if (rows.isEmpty()) {
+            return result;
+        }
+        Map<UUID, ContentItem> required = new HashMap<>();
+        itemRepository.findAllById(rows.stream().map(ReleasePrerequisite::getRequiresItemId).distinct().toList())
+                .forEach(i -> required.put(i.getId(), i));
+        for (ReleasePrerequisite p : rows) {
+            ContentItem i = required.get(p.getRequiresItemId());
+            if (i != null) {
+                result.computeIfAbsent(p.getTargetId(), k -> new java.util.ArrayList<>())
+                        .add(new PrerequisiteDto(i.getId(), i.getTitle(), i.getType(), p.getMinPercent()));
+            }
+        }
+        result.values().forEach(l -> l.sort(java.util.Comparator.comparing(PrerequisiteDto::title)
+                .thenComparing(PrerequisiteDto::itemId)));
+        return result;
     }
 
     /** Rich text with embedded media URLs re-signed. */
@@ -99,25 +128,31 @@ public class CourseMapper {
 
     public CourseDto toCourseDto(Course c, long students, long pending, Map<UUID, AssessmentSummaryDto> summaries,
                                  Instant now) {
+        Map<UUID, List<PrerequisiteDto>> prereqs = prerequisiteIndex(c.getId());
         return new CourseDto(c.getId(), c.getSlug(), c.getTitle(), c.getSubtitle(), html(c.getDescription()), c.getLevel(),
                 List.copyOf(c.getTags()), mediaMapper.toDto(c.getCoverImage()), c.getEnrollmentMode(), c.getCapacity(),
                 c.getPublishStatus(), c.getPublishAt(), c.getUnpublishAt(), Visibility.of(c, now), students, pending,
-                c.getModules().stream().map(m -> toModuleDto(m, c.getId(), summaries, now)).toList(),
+                c.getProgression(), c.getClonedFromId(),
+                c.getModules().stream().map(m -> toModuleDto(m, c.getId(), summaries, prereqs, now)).toList(),
                 c.getCreatedAt(), c.getUpdatedAt());
     }
 
-    public ModuleDto toModuleDto(CourseModule m, UUID courseId, Map<UUID, AssessmentSummaryDto> summaries, Instant now) {
+    public ModuleDto toModuleDto(CourseModule m, UUID courseId, Map<UUID, AssessmentSummaryDto> summaries,
+                                 Map<UUID, List<PrerequisiteDto>> prereqs, Instant now) {
         return new ModuleDto(m.getId(), courseId, m.getTitle(), m.getDescription(), m.getPosition(),
                 m.getPublishStatus(), m.getPublishAt(), m.getUnpublishAt(), Visibility.of(m, now),
-                m.getItems().stream().map(i -> toItemDto(i, m.getId(), courseId, summaries.get(i.getId()), now)).toList());
+                m.getReleaseOffsetDays(), prereqs.getOrDefault(m.getId(), List.of()),
+                m.getItems().stream().map(i -> toItemDto(i, m.getId(), courseId, summaries.get(i.getId()), prereqs, now))
+                        .toList());
     }
 
     public ContentItemDto toItemDto(ContentItem i, UUID moduleId, UUID courseId, AssessmentSummaryDto summary,
-                                    Instant now) {
+                                    Map<UUID, List<PrerequisiteDto>> prereqs, Instant now) {
         return new ContentItemDto(i.getId(), moduleId, courseId, i.getType(), i.getTitle(), i.getSummary(), html(i.getBody()),
                 i.getExternalUrl(), i.getDurationMinutes(), i.getPosition(), i.getPublishStatus(), i.getPublishAt(),
                 i.getUnpublishAt(), Visibility.of(i, now),
                 i.getAttachments().stream().map(mediaMapper::toDto).toList(),
-                i.getType().isAssessment() ? summary : null, i.getCreatedAt(), i.getUpdatedAt());
+                i.getType().isAssessment() ? summary : null, i.isRequired(), i.getReleaseOffsetDays(),
+                prereqs.getOrDefault(i.getId(), List.of()), i.getCreatedAt(), i.getUpdatedAt());
     }
 }

@@ -33,6 +33,10 @@ app:
   messaging:
     mail-job:
       enabled: false
+  # tests call LiveReminderJob.sendDue(now) directly
+  live:
+    reminders:
+      enabled: false
 
 logging:
   level:

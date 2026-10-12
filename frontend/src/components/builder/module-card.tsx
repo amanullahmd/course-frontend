@@ -4,7 +4,7 @@ import * as React from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronDown, Ellipsis, GripVertical, Inbox, Pencil, Trash } from "lucide-react";
+import { ChevronDown, Copy, Ellipsis, GripVertical, Inbox, Lock, Pencil, Trash } from "lucide-react";
 import type { ModuleDto, PublicationRequest } from "@/lib/api/types";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -21,10 +21,13 @@ import {
 import { AddContentMenu } from "./add-content";
 import { SortableItemRow, type ItemRowActions } from "./item-row";
 import { PublicationPopover, PublishSwitch } from "./publication-control";
+import { ReleaseBadges } from "./release-rules-panel";
 
 export interface ModuleActions {
   onPublish: (id: string, body: PublicationRequest) => Promise<unknown>;
   onEdit: (module: ModuleDto) => void;
+  onRelease: (module: ModuleDto) => void;
+  onDuplicate: (module: ModuleDto) => void;
   onDelete: (module: ModuleDto) => void;
 }
 
@@ -80,6 +83,7 @@ export function ModuleCardBody({
                 {t("course.itemsCount", { count: module.items.length })}
                 {minutes > 0 && ` · ${minutesLabel(minutes)}`}
               </span>
+              <ReleaseBadges offsetDays={module.releaseOffsetDays} prerequisites={module.prerequisites} />
               {moduleActions && (module.visibility === "SCHEDULED" || module.visibility === "EXPIRED") && (
                 <VisibilityBadge
                   visibility={module.visibility}
@@ -107,6 +111,12 @@ export function ModuleCardBody({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onSelect={() => moduleActions.onEdit(module)}>
                   <Pencil /> {t("builder.renameDescribe")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => moduleActions.onRelease(module)}>
+                  <Lock /> {t("release.rulesMenu")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => moduleActions.onDuplicate(module)}>
+                  <Copy /> {t("release.duplicate")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem destructive onSelect={() => moduleActions.onDelete(module)}>

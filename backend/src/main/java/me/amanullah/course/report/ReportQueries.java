@@ -50,7 +50,8 @@ public class ReportQueries {
     }
 
     public record AnswerRow(UUID answerId, UUID attemptId, UUID questionId, QuestionType type, String prompt, int points,
-                            int position, Boolean correct, Double pointsAwarded, String textAnswer) {
+                            int position, Boolean correct, Double pointsAwarded, String textAnswer,
+                            String responseJson, boolean hasRecording) {
     }
 
     public record SelectionRow(UUID answerId, UUID optionId) {
@@ -128,7 +129,8 @@ public class ReportQueries {
     public List<AnswerRow> answersOfAssessment(UUID assessmentId) {
         return em.createQuery("""
                         select ans.id, a.id, ans.questionId, ans.questionType, ans.prompt, ans.points, ans.position,
-                               ans.correct, ans.pointsAwarded, ans.textAnswer
+                               ans.correct, ans.pointsAwarded, ans.textAnswer, ans.responseJson,
+                               case when ans.responseMedia is null then false else true end
                         from AttemptAnswer ans join ans.attempt a
                         where a.assessment.id = :assessmentId and a.status <> :inProgress
                         """, Object[].class)
@@ -136,7 +138,8 @@ public class ReportQueries {
                 .getResultList().stream()
                 .map(r -> new AnswerRow((UUID) r[0], (UUID) r[1], (UUID) r[2], (QuestionType) r[3], (String) r[4],
                         ((Number) r[5]).intValue(), ((Number) r[6]).intValue(), (Boolean) r[7],
-                        r[8] == null ? null : ((Number) r[8]).doubleValue(), (String) r[9]))
+                        r[8] == null ? null : ((Number) r[8]).doubleValue(), (String) r[9], (String) r[10],
+                        Boolean.TRUE.equals(r[11])))
                 .toList();
     }
 

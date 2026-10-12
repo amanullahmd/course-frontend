@@ -7,14 +7,16 @@ import { useFormat } from "@/hooks/use-format";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { InlineHtml } from "@/components/course/rich-content";
+import { AnswerDetail, AnswerPrompt, isLanguageType } from "./answer-detail";
 import { ScoreRing } from "./score-ring";
 
 function AnswerReview({ answer, index }: { answer: AttemptAnswerResult; index: number }) {
   const t = useTranslations();
   const choice = answer.type === "SINGLE_CHOICE" || answer.type === "MULTIPLE_CHOICE" || answer.type === "TRUE_FALSE";
   const graded = answer.pointsAwarded != null;
+  const partial = graded && answer.correct === false && (answer.pointsAwarded ?? 0) > 0 && (answer.pointsAwarded ?? 0) < answer.points;
   const status =
-    answer.correct === true ? "correct" : answer.correct === false ? "wrong" : graded ? "graded" : "pending";
+    answer.correct === true ? "correct" : partial ? "partial" : answer.correct === false ? "wrong" : graded ? "graded" : "pending";
   return (
     <li className="rounded-xl border bg-card p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
@@ -23,7 +25,7 @@ function AnswerReview({ answer, index }: { answer: AttemptAnswerResult; index: n
             {t("quiz.questionN", { n: index + 1, type: t(`questionTypes.${answer.type}.label`) })}
           </p>
           <p className="mt-1 font-medium">
-            <InlineHtml html={answer.prompt} />
+            <AnswerPrompt answer={answer} />
           </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
@@ -32,6 +34,7 @@ function AnswerReview({ answer, index }: { answer: AttemptAnswerResult; index: n
               <Check /> {t("quiz.correct")}
             </Badge>
           )}
+          {status === "partial" && <Badge variant="warning">{t("exercises.review.partial")}</Badge>}
           {status === "wrong" && (
             <Badge variant="destructive">
               <X /> {t("quiz.incorrect")}
@@ -79,7 +82,9 @@ function AnswerReview({ answer, index }: { answer: AttemptAnswerResult; index: n
         </ul>
       )}
 
-      {!choice && (
+      {isLanguageType(answer.type) && <AnswerDetail answer={answer} />}
+
+      {!choice && !isLanguageType(answer.type) && (
         <div className="mt-4 grid gap-2 text-sm">
           <div className="rounded-lg bg-muted/60 px-3 py-2">
             <p className="text-xs text-muted-foreground">{t("quiz.yourAnswer")}</p>

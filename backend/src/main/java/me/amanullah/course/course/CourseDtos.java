@@ -28,7 +28,33 @@ public final class CourseDtos {
             @Size(max = 20) List<@NotBlank @Size(max = 50) String> tags,
             UUID coverImageId,
             @NotNull EnrollmentMode enrollmentMode,
-            @Min(1) @Max(100000) Integer capacity) {
+            @Min(1) @Max(100000) Integer capacity,
+            /** Null keeps the current value (FREE for new courses). */
+            CourseProgression progression) {
+    }
+
+    /** A prerequisite as sent by the client: complete this item (optionally with at least {@code minPercent}). */
+    public record PrerequisiteRef(@NotNull UUID itemId, @Min(0) @Max(100) Integer minPercent) {
+    }
+
+    /** Release rules of an item or module; {@code required} is ignored for modules, null means true for items. */
+    public record ReleaseRulesRequest(
+            Boolean required,
+            @Min(0) @Max(3650) Integer releaseOffsetDays,
+            @Size(max = 50) List<@NotNull @jakarta.validation.Valid PrerequisiteRef> prerequisites) {
+    }
+
+    /** {@code shiftDays} moves all dates of the copy (publication windows, assessment windows) when kept. */
+    public record CloneRequest(
+            @NotBlank @Size(max = 200) String title,
+            @Min(-3650) @Max(3650) Integer shiftDays,
+            boolean keepSchedule) {
+    }
+
+    public record DuplicateItemRequest(UUID targetModuleId) {
+    }
+
+    public record PrerequisiteDto(UUID itemId, String title, ItemType type, Integer minPercent) {
     }
 
     public record ModuleUpsert(@NotBlank @Size(max = 200) String title, @Size(max = 5000) String description) {
@@ -87,19 +113,21 @@ public final class CourseDtos {
                                  String body, String externalUrl, Integer durationMinutes, int position,
                                  PublishStatus publishStatus, Instant publishAt, Instant unpublishAt,
                                  Visibility visibility, List<MediaDto> attachments, AssessmentSummaryDto assessment,
+                                 boolean required, Integer releaseOffsetDays, List<PrerequisiteDto> prerequisites,
                                  Instant createdAt, Instant updatedAt) {
     }
 
     public record ModuleDto(UUID id, UUID courseId, String title, String description, int position,
                             PublishStatus publishStatus, Instant publishAt, Instant unpublishAt, Visibility visibility,
+                            Integer releaseOffsetDays, List<PrerequisiteDto> prerequisites,
                             List<ContentItemDto> items) {
     }
 
     public record CourseDto(UUID id, String slug, String title, String subtitle, String description, CefrLevel level,
                             List<String> tags, MediaDto coverImage, EnrollmentMode enrollmentMode, Integer capacity,
                             PublishStatus publishStatus, Instant publishAt, Instant unpublishAt, Visibility visibility,
-                            long studentCount, long pendingCount, List<ModuleDto> modules, Instant createdAt,
-                            Instant updatedAt) {
+                            long studentCount, long pendingCount, CourseProgression progression, UUID clonedFromId,
+                            List<ModuleDto> modules, Instant createdAt, Instant updatedAt) {
     }
 
     public record InstructorCourseDto(UUID id, String slug, String title, String subtitle, CefrLevel level,

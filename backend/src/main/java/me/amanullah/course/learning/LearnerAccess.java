@@ -20,7 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Gatekeeper for learner endpoints: a learner may only see content when they have an APPROVED enrollment (or own the
  * course / are admin, for preview) AND {@code live(course) && live(module) && live(item)}. Non-live content is
- * reported as 404, a missing enrollment as 403.
+ * reported as 404, a missing enrollment as 403, an item that is live but not yet released (drip, prerequisites,
+ * sequence) as 403 {@code ITEM_LOCKED}; owners and admins are never locked.
  */
 @Component
 public class LearnerAccess {
@@ -28,11 +29,14 @@ public class LearnerAccess {
     private final CourseRepository courses;
     private final ContentItemRepository items;
     private final EnrollmentRepository enrollments;
+    private final ReleaseService release;
 
-    public LearnerAccess(CourseRepository courses, ContentItemRepository items, EnrollmentRepository enrollments) {
+    public LearnerAccess(CourseRepository courses, ContentItemRepository items, EnrollmentRepository enrollments,
+                         ReleaseService release) {
         this.courses = courses;
         this.items = items;
         this.enrollments = enrollments;
+        this.release = release;
     }
 
     @Transactional(readOnly = true)
@@ -53,6 +57,7 @@ public class LearnerAccess {
             throw NotFoundException.of("Item");
         }
         requireAccess(course, me);
+        release.requireUnlocked(course, item.getId(), me, now);
         return item;
     }
 

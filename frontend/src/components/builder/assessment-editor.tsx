@@ -31,7 +31,8 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { newKey, newQuestion, QuestionEditor, validateQuestion, type DraftQuestion } from "./question-editor";
+import { QuestionEditor } from "./question-editor";
+import { newKey, newQuestion, toQuestionPayload, validateQuestion, type DraftQuestion } from "./question-model";
 import { RichTextEditor } from "./rich-text-editor";
 
 interface Draft extends Omit<AssessmentDto, "questions"> {
@@ -47,6 +48,10 @@ function toDraft(dto: AssessmentDto): Draft {
         ...q,
         key: q.id ?? newKey(),
         acceptedAnswers: q.acceptedAnswers ?? [],
+        scoring: q.scoring ?? "ALL_OR_NOTHING",
+        shuffleOptions: q.shuffleOptions ?? false,
+        lenientSpelling: q.lenientSpelling ?? false,
+        blanks: q.blanks ?? [],
         options: [...(q.options ?? [])].sort((a, b) => a.position - b.position).map((o) => ({ ...o, key: o.id ?? newKey() })),
       })),
   };
@@ -63,18 +68,7 @@ function fromDraft(draft: Draft): AssessmentDto {
     showCorrectAnswers: draft.showCorrectAnswers,
     availableFrom: draft.availableFrom,
     availableUntil: draft.availableUntil,
-    questions: draft.questions.map((q, position) => ({
-      ...(q.id ? { id: q.id } : {}),
-      type: q.type,
-      prompt: q.prompt.trim(),
-      explanation: q.explanation?.trim() ? q.explanation : null,
-      points: q.points,
-      position,
-      caseSensitive: q.caseSensitive,
-      acceptedAnswers: q.acceptedAnswers,
-      mediaId: q.media?.id ?? q.mediaId ?? null,
-      options: q.options.map((o, i) => ({ ...(o.id ? { id: o.id } : {}), text: o.text.trim(), correct: o.correct, position: i })),
-    })),
+    questions: draft.questions.map((q, position) => toQuestionPayload(q, position)),
   };
 }
 
@@ -96,6 +90,7 @@ function AssessmentEditorInner({
   const baseline = React.useMemo(() => JSON.stringify(fromDraft(saved)), [saved]);
   const [expanded, setExpanded] = React.useState<Set<string>>(() => new Set(draft.questions.length <= 3 ? draft.questions.map((q) => q.key) : []));
   const [showErrors, setShowErrors] = React.useState(false);
+  const [serverErrors, setServerErrors] = React.useState<Record<string, string[]>>({});
   const save = useSaveAssessment(itemId, courseId);
   const t = useTranslations();
   const errorMessage = useErrorMessage();
@@ -112,7 +107,16 @@ function AssessmentEditorInner({
   const totalPoints = draft.questions.reduce((s, q) => s + (Number.isFinite(q.points) ? q.points : 0), 0);
 
   const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
-  const setQuestion = (key: string, q: DraftQuestion) => setDraft((d) => ({ ...d, questions: d.questions.map((x) => (x.key === key ? q : x)) }));
+  const setQuestion = (key: string, q: DraftQuestion) => {
+    setDraft((d) => ({ ...d, questions: d.questions.map((x) => (x.key === key ? q : x)) }));
+    if (serverErrors[key]) {
+      setServerErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
 
   const addQuestion = (type: QuestionType) => {
     const q = newQuestion(type);
@@ -148,7 +152,18 @@ function AssessmentEditorInner({
       },
       onError: (err) => {
         if (isApiError(err) && Object.keys(err.fieldErrors).length > 0) {
-          toast.error(Object.values(err.fieldErrors).join("\n"));
+          // "questions[3].options" belongs to the fourth question: show it there and open that question
+          const byQuestion: Record<string, string[]> = {};
+          const general: string[] = [];
+          for (const [field, message] of Object.entries(err.fieldErrors)) {
+            const m = /^questions\[(\d+)]/.exec(field);
+            const target = m ? draft.questions[Number(m[1])] : undefined;
+            if (target) (byQuestion[target.key] ??= []).push(message);
+            else general.push(message);
+          }
+          setServerErrors(byQuestion);
+          setExpanded((e) => new Set([...e, ...Object.keys(byQuestion)]));
+          toast.error([...general, ...(Object.keys(byQuestion).length ? [t("assessmentEditor.fixQuestions", { count: Object.keys(byQuestion).length })] : [])].join("\n"));
         } else toast.error(errorMessage(err));
       },
     });
@@ -182,20 +197,27 @@ function AssessmentEditorInner({
           <Plus /> {t("assessmentEditor.addQuestion")}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64">
-        <DropdownMenuLabel>{t("assessmentEditor.questionType")}</DropdownMenuLabel>
-        {QUESTION_TYPES.map((qt) => {
-          const Icon = QUESTION_TYPE_META[qt].icon;
-          return (
-            <DropdownMenuItem key={qt} onSelect={() => addQuestion(qt)} className="items-start py-2">
-              <Icon className="mt-0.5" />
-              <span className="grid">
-                <span className="font-medium">{t(`questionTypes.${qt}.label`)}</span>
-                <span className="text-xs text-muted-foreground">{t(`questionTypes.${qt}.description`)}</span>
-              </span>
-            </DropdownMenuItem>
-          );
-        })}
+      <DropdownMenuContent align="start" className="max-h-[min(32rem,70vh)] w-72 overflow-y-auto">
+        {[
+          { label: t("exercises.editor.groupBasic"), types: QUESTION_TYPES.slice(0, 6) },
+          { label: t("exercises.editor.groupLanguage"), types: QUESTION_TYPES.slice(6) },
+        ].map((group) => (
+          <React.Fragment key={group.label}>
+            <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
+            {group.types.map((qt) => {
+              const Icon = QUESTION_TYPE_META[qt].icon;
+              return (
+                <DropdownMenuItem key={qt} onSelect={() => addQuestion(qt)} className="items-start py-2">
+                  <Icon className="mt-0.5" />
+                  <span className="grid">
+                    <span className="font-medium">{t(`questionTypes.${qt}.label`)}</span>
+                    <span className="text-xs text-muted-foreground">{t(`questionTypes.${qt}.description`)}</span>
+                  </span>
+                </DropdownMenuItem>
+              );
+            })}
+          </React.Fragment>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -330,6 +352,7 @@ function AssessmentEditorInner({
                   <QuestionEditor
                     key={q.key}
                     question={q}
+                    serverErrors={serverErrors[q.key]}
                     index={i}
                     expanded={expanded.has(q.key)}
                     error={showErrors ? (errors.get(q.key) ?? null) : null}

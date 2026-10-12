@@ -66,6 +66,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByEmailIgnoreCase(String email);
 
+    Optional<User> findByCalendarToken(String calendarToken);
+
     boolean existsByEmailIgnoreCase(String email);
 
     long countByRole(Role role);

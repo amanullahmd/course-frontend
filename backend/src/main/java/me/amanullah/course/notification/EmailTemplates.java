@@ -71,6 +71,11 @@ public class EmailTemplates {
         return build(to, "mail.graded", link, null, itemTitle);
     }
 
+    /** An assignment submission was graded or returned for revision. */
+    public Email assignmentReviewed(User to, String itemTitle, boolean returned, String link) {
+        return build(to, returned ? "mail.assignmentReturned" : "mail.assignmentGraded", link, null, itemTitle);
+    }
+
     /** "Congratulations, your certificate is ready" with a link to the learner's certificate page. */
     public Email certificateIssued(User to, String courseTitle, String link) {
         return build(to, "mail.certificate", link, null, courseTitle);

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Award, BarChart3, ChevronRight, Ellipsis, ExternalLink, Eye, FileCog, Layers, Megaphone, Rocket, Trash, Users } from "lucide-react";
+import { Award, BarChart3, ChevronRight, Copy, Ellipsis, ExternalLink, Eye, FileCog, Layers, Megaphone, Rocket, Trash, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { isApiError } from "@/lib/api/client";
@@ -25,6 +25,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CloneCourseDialog } from "./clone-course-dialog";
 import { CourseForm } from "./course-form";
 import { CurriculumBoard } from "./curriculum-board";
 import { PublicationPopover } from "./publication-control";
@@ -67,6 +68,7 @@ export function CourseBuilder() {
   const publish = usePublishCourse(courseId);
   const del = useDeleteCourse();
   const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [cloneOpen, setCloneOpen] = React.useState(false);
 
   const setTab = (t: string) => {
     const sp = new URLSearchParams(searchParams.toString());
@@ -171,6 +173,9 @@ export function CourseBuilder() {
               <DropdownMenuItem onSelect={() => setTab("publishing")}>
                 <Rocket /> {t("builder.publishing")}
               </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setCloneOpen(true)}>
+                <Copy /> {t("clone.action")}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem destructive onSelect={() => setDeleteOpen(true)}>
                 <Trash /> {t("builder.deleteCourse")}
@@ -235,6 +240,8 @@ export function CourseBuilder() {
           <CertificatePanel courseId={c.id} courseSlug={c.slug} />
         </TabsContent>
       </Tabs>
+
+      <CloneCourseDialog course={c} open={cloneOpen} onOpenChange={setCloneOpen} />
 
       <ConfirmDialog
         open={deleteOpen}

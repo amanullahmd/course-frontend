@@ -3,15 +3,11 @@
 import * as React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronDown, Copy, GripVertical, ImagePlus, LoaderCircle, Plus, Trash, X } from "lucide-react";
-import { toast } from "sonner";
-import type { MediaDto, QuestionDto, QuestionOptionDto, QuestionType } from "@/lib/api/types";
+import { AlertTriangle, ChevronDown, Copy, GripVertical, Plus, Trash, X } from "lucide-react";
+import type { QuestionType } from "@/lib/api/types";
 import { useTranslations } from "next-intl";
-import { useErrorMessage } from "@/hooks/use-error-message";
-import { mediaApi } from "@/lib/api/media";
 import { QUESTION_TYPES, QUESTION_TYPE_META } from "@/lib/constants";
 import { cn, stripHtml } from "@/lib/utils";
-import { AudioPlayer } from "@/components/learn/audio-player";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -21,140 +17,38 @@ import { Switch } from "@/components/ui/switch";
 import { TagsInput } from "@/components/ui/tags-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
+import { BlankPrompt } from "./question-editors/blank-prompt";
+import { ClozeEditor } from "./question-editors/cloze-editor";
+import { DictationEditor } from "./question-editors/dictation-editor";
+import { MatchingEditor } from "./question-editors/matching-editor";
+import { MediaField } from "./question-editors/media-field";
+import { OrderingEditor } from "./question-editors/ordering-editor";
+import { QuestionPreview } from "./question-editors/preview";
+import { ScoringFields } from "./question-editors/scoring-fields";
+import { SpeakingEditor } from "./question-editors/speaking-editor";
+import { WordBankEditor } from "./question-editors/word-bank-editor";
+import {
+  convertType,
+  errorMessageKey,
+  hasBlanks,
+  isChoice,
+  newKey,
+  isTextType,
+  type DraftOption,
+  type DraftQuestion,
+  type QuestionError,
+} from "./question-model";
 
-export interface DraftOption extends QuestionOptionDto {
-  key: string;
-}
-export interface DraftQuestion extends Omit<QuestionDto, "options"> {
-  key: string;
-  options: DraftOption[];
-}
-
-let keyCounter = 0;
-export const newKey = () => `k${Date.now().toString(36)}${(keyCounter += 1)}`;
-
-const opt = (text: string, correct: boolean): DraftOption => ({ key: newKey(), text, correct, position: 0 });
-
-export function defaultOptions(type: QuestionType): DraftOption[] {
-  switch (type) {
-    case "TRUE_FALSE":
-      return [opt("Richtig", true), opt("Falsch", false)];
-    case "SINGLE_CHOICE":
-      return [opt("", true), opt("", false), opt("", false)];
-    case "MULTIPLE_CHOICE":
-      return [opt("", true), opt("", true), opt("", false), opt("", false)];
-    default:
-      return [];
-  }
-}
-
-export function newQuestion(type: QuestionType): DraftQuestion {
-  return {
-    key: newKey(),
-    type,
-    prompt: "",
-    explanation: null,
-    points: type === "ESSAY" ? 5 : 1,
-    position: 0,
-    caseSensitive: false,
-    acceptedAnswers: [],
-    mediaId: null,
-    media: null,
-    options: defaultOptions(type),
-  };
-}
-
-const isChoice = (t: QuestionType) => t === "SINGLE_CHOICE" || t === "MULTIPLE_CHOICE" || t === "TRUE_FALSE";
-
-export function convertType(q: DraftQuestion, type: QuestionType): DraftQuestion {
-  if (type === q.type) return q;
-  let options = q.options;
-  if (type === "TRUE_FALSE") options = defaultOptions("TRUE_FALSE");
-  else if (isChoice(type)) {
-    options = isChoice(q.type) && q.type !== "TRUE_FALSE" ? q.options : defaultOptions(type);
-    if (type === "SINGLE_CHOICE") {
-      const first = options.findIndex((o) => o.correct);
-      options = options.map((o, i) => ({ ...o, correct: i === (first < 0 ? 0 : first) }));
-    }
-  } else options = [];
-  return {
-    ...q,
-    type,
-    options,
-    acceptedAnswers: type === "SHORT_ANSWER" || type === "FILL_BLANK" ? q.acceptedAnswers : [],
-    points: type === "ESSAY" && q.points < 2 ? 5 : q.points,
-  };
-}
-
-export type QuestionError = "errPrompt" | "errPoints" | "errTwoOptions" | "errEmptyOption" | "errCorrect" | "errAccepted";
-
-export function validateQuestion(q: DraftQuestion): QuestionError | null {
-  if (!q.prompt.trim()) return "errPrompt";
-  if (!(q.points > 0)) return "errPoints";
-  if (isChoice(q.type)) {
-    if (q.options.length < 2) return "errTwoOptions";
-    if (q.options.some((o) => !o.text.trim())) return "errEmptyOption";
-    if (!q.options.some((o) => o.correct)) return "errCorrect";
-  }
-  if ((q.type === "SHORT_ANSWER" || q.type === "FILL_BLANK") && q.acceptedAnswers.length === 0) return "errAccepted";
-  return null;
-}
-
-function MediaField({ media, onChange }: { media: MediaDto | null | undefined; onChange: (m: MediaDto | null) => void }) {
-  const t = useTranslations("question");
-  const errorMessage = useErrorMessage();
-  const inputRef = React.useRef<HTMLInputElement>(null);
-  const [progress, setProgress] = React.useState<number | null>(null);
-  const upload = async (file: File) => {
-    setProgress(0);
-    try {
-      const m = await mediaApi.upload(file, { onProgress: setProgress });
-      onChange(m);
-    } catch (err) {
-      toast.error(errorMessage(err));
-    } finally {
-      setProgress(null);
-    }
-  };
-  return (
-    <div className="grid gap-2">
-      {media ? (
-        <div className="flex items-start gap-3 rounded-lg border bg-muted/30 p-2">
-          <div className="min-w-0 flex-1">
-            {media.kind === "IMAGE" ? (
-              // eslint-disable-next-line @next/next/no-img-element -- signed media URL
-              <img src={media.url} alt="" className="max-h-40 rounded-md border object-contain" />
-            ) : media.kind === "AUDIO" ? (
-              <AudioPlayer src={media.url} title={media.fileName} compact />
-            ) : (
-              <p className="truncate text-sm">{media.fileName}</p>
-            )}
-          </div>
-          <Button type="button" variant="ghost" size="icon-xs" onClick={() => onChange(null)} aria-label={t("removeMedia")}>
-            <X />
-          </Button>
-        </div>
-      ) : (
-        <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => inputRef.current?.click()} disabled={progress !== null}>
-          {progress !== null ? <LoaderCircle className="animate-spin" /> : <ImagePlus />}
-          {progress !== null ? t("uploading", { percent: progress }) : t("addMedia")}
-        </Button>
-      )}
-      <input
-        ref={inputRef}
-        type="file"
-        accept="audio/*,image/*"
-        className="sr-only"
-        tabIndex={-1}
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) void upload(file);
-          e.target.value = "";
-        }}
-      />
-    </div>
-  );
-}
+export {
+  convertType,
+  defaultOptions,
+  newKey,
+  newQuestion,
+  validateQuestion,
+  type DraftOption,
+  type DraftQuestion,
+  type QuestionError,
+} from "./question-model";
 
 export function QuestionEditor({
   question,
@@ -165,11 +59,13 @@ export function QuestionEditor({
   onChange,
   onDuplicate,
   onDelete,
+  serverErrors = [],
 }: {
   question: DraftQuestion;
   index: number;
   expanded: boolean;
   error: QuestionError | null;
+  serverErrors?: string[];
   onToggle: () => void;
   onChange: (q: DraftQuestion) => void;
   onDuplicate: () => void;
@@ -193,7 +89,7 @@ export function QuestionEditor({
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={cn("rounded-xl border bg-card shadow-xs", isDragging && "z-10 shadow-lg ring-2 ring-brand", error && !expanded && "border-destructive/40")}
+      className={cn("rounded-xl border bg-card shadow-xs", isDragging && "z-10 shadow-lg ring-2 ring-brand", (error || serverErrors.length > 0) && !expanded && "border-destructive/40")}
     >
       <div className="flex items-center gap-2 px-3 py-2.5">
         <button
@@ -213,7 +109,7 @@ export function QuestionEditor({
             <span className={cn("block truncate text-sm font-medium", !q.prompt && "text-muted-foreground italic")}>{stripHtml(q.prompt) || t("question.newQuestion")}</span>
             <span className="block text-xs text-muted-foreground">
               {t(`questionTypes.${q.type}.label`)} · {t("common.points", { count: Number.isFinite(q.points) ? q.points : 0 })}
-              {error && <span className="text-destructive"> · {t(`question.${error}`)}</span>}
+              {error && <span className="text-destructive"> · {t(errorMessageKey(error) as never)}</span>}
             </span>
           </span>
           <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", !expanded && "-rotate-90")} />
@@ -232,19 +128,36 @@ export function QuestionEditor({
 
       {expanded && (
         <div className="grid gap-5 border-t p-4 sm:p-5">
-          <div className="grid gap-4 sm:grid-cols-[1fr_200px_110px]">
-            <div className="grid gap-2 sm:col-span-1">
-              <Label htmlFor={`${id}-prompt`}>{t("question.prompt")}</Label>
-              <Textarea
-                id={`${id}-prompt`}
-                rows={3}
-                value={q.prompt}
-                onChange={(e) => set({ prompt: e.target.value })}
-                lang="de"
-                placeholder={q.type === "FILL_BLANK" ? t("question.promptFill") : t("question.promptDefault")}
-                aria-invalid={!!error && !q.prompt.trim()}
-              />
+          {serverErrors.length > 0 && (
+            <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive-soft/60 px-3 py-2 text-sm text-destructive">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+              <div>
+                <p className="font-medium">{t("exercises.editor.serverErrors")}</p>
+                <ul className="list-disc pl-4">
+                  {serverErrors.map((m) => (
+                    <li key={m}>{m}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
+          )}
+          <div className="grid gap-4 sm:grid-cols-[1fr_200px_110px]">
+            {hasBlanks(q.type) ? (
+              <BlankPrompt q={q} set={set} id={id} invalid={!!error && !q.prompt.trim()} />
+            ) : (
+              <div className="grid gap-2 sm:col-span-1">
+                <Label htmlFor={`${id}-prompt`}>{t("question.prompt")}</Label>
+                <Textarea
+                  id={`${id}-prompt`}
+                  rows={3}
+                  value={q.prompt}
+                  onChange={(e) => set({ prompt: e.target.value })}
+                  lang="de"
+                  placeholder={promptPlaceholder(q.type, t as unknown as Translate)}
+                  aria-invalid={!!error && !q.prompt.trim()}
+                />
+              </div>
+            )}
             <div className="grid content-start gap-2">
               <Label htmlFor={`${id}-type`}>{t("question.type")}</Label>
               <Select value={q.type} onValueChange={(t) => onChange(convertType(q, t as QuestionType))}>
@@ -273,10 +186,12 @@ export function QuestionEditor({
             </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label>{t("question.media")}</Label>
-            <MediaField media={q.media} onChange={(m) => set({ media: m, mediaId: m?.id ?? null })} />
-          </div>
+          {q.type !== "DICTATION" && (
+            <div className="grid gap-2">
+              <Label>{t("question.media")}</Label>
+              <MediaField media={q.media} onChange={(m) => set({ media: m, mediaId: m?.id ?? null })} />
+            </div>
+          )}
 
           {isChoice(q.type) && (
             <fieldset className="grid gap-2">
@@ -336,7 +251,14 @@ export function QuestionEditor({
             </fieldset>
           )}
 
-          {(q.type === "SHORT_ANSWER" || q.type === "FILL_BLANK") && (
+          {q.type === "CLOZE" && <ClozeEditor q={q} set={set} id={id} />}
+          {q.type === "WORD_BANK" && <WordBankEditor q={q} set={set} />}
+          {q.type === "MATCHING" && <MatchingEditor q={q} set={set} />}
+          {q.type === "ORDERING" && <OrderingEditor q={q} set={set} />}
+          {q.type === "DICTATION" && <DictationEditor q={q} set={set} id={id} showErrors={!!error} />}
+          {q.type === "SPEAKING" && <SpeakingEditor q={q} set={set} id={id} />}
+
+          {isTextType(q.type) && (
             <div className="grid gap-3">
               <div className="grid gap-2">
                 <Label htmlFor={`${id}-accepted`}>{t("question.accepted")}</Label>
@@ -356,6 +278,8 @@ export function QuestionEditor({
             </p>
           )}
 
+          <ScoringFields q={q} set={set} />
+
           <div className="grid gap-2">
             <Label htmlFor={`${id}-explanation`}>
               {t("question.explanation")} <span className="font-normal text-muted-foreground">{t("question.explanationHint")}</span>
@@ -368,8 +292,31 @@ export function QuestionEditor({
               lang="de"
             />
           </div>
+
+          <QuestionPreview key={q.type} q={q} />
         </div>
       )}
     </li>
   );
 }
+
+type Translate = (key: string, values?: Record<string, string>) => string;
+
+function promptPlaceholder(type: QuestionType, t: Translate): string {
+  switch (type) {
+    case "FILL_BLANK":
+      return t("question.promptFill");
+    case "MATCHING":
+      return t("exercises.editor.promptMatching");
+    case "ORDERING":
+      return t("exercises.editor.promptOrdering");
+    case "DICTATION":
+      return t("exercises.editor.promptDictation");
+    case "SPEAKING":
+      return t("exercises.editor.promptSpeaking");
+    default:
+      return t("question.promptDefault");
+  }
+}
+
+const opt = (text: string, correct: boolean): DraftOption => ({ key: newKey(), text, correct, position: 0 });

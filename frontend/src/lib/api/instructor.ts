@@ -6,9 +6,11 @@ import type {
   AttemptResultDto,
   AttemptSummaryDto,
   BulkEnrollmentRequest,
+  CloneRequest,
   ContentItemDto,
   CourseDto,
   CourseUpsert,
+  DuplicateItemRequest,
   EnrollmentDto,
   EnrollmentStatus,
   GradeRequest,
@@ -18,6 +20,7 @@ import type {
   ModuleDto,
   ModuleUpsert,
   PublicationRequest,
+  ReleaseRulesRequest,
   ScheduleEventDto,
   ScheduleQuery,
 } from "./types";
@@ -35,12 +38,16 @@ export const instructorApi = {
   deleteCourse: (id: string) => api.delete(`${base}/courses/${id}`),
   publishCourse: (id: string, body: PublicationRequest) => api.put<CourseDto>(`${base}/courses/${id}/publication`, body),
 
+  cloneCourse: (id: string, body: CloneRequest) => api.post<CourseDto>(`${base}/courses/${id}/clone`, body),
+
   // Modules
   createModule: (courseId: string, body: ModuleUpsert) => api.post<ModuleDto>(`${base}/courses/${courseId}/modules`, body),
   orderModules: (courseId: string, ids: string[]) => api.put<void>(`${base}/courses/${courseId}/modules/order`, { ids }),
   updateModule: (id: string, body: ModuleUpsert) => api.put<ModuleDto>(`${base}/modules/${id}`, body),
   deleteModule: (id: string) => api.delete(`${base}/modules/${id}`),
   publishModule: (id: string, body: PublicationRequest) => api.put<ModuleDto>(`${base}/modules/${id}/publication`, body),
+  duplicateModule: (id: string) => api.post<ModuleDto>(`${base}/modules/${id}/duplicate`),
+  setModuleRelease: (id: string, body: ReleaseRulesRequest) => api.put<ModuleDto>(`${base}/modules/${id}/release`, body),
 
   // Items
   createItem: (moduleId: string, body: ItemUpsert) => api.post<ContentItemDto>(`${base}/modules/${moduleId}/items`, body),
@@ -49,6 +56,9 @@ export const instructorApi = {
   updateItem: (id: string, body: ItemUpsert) => api.put<ContentItemDto>(`${base}/items/${id}`, body),
   deleteItem: (id: string) => api.delete(`${base}/items/${id}`),
   publishItem: (id: string, body: PublicationRequest) => api.put<ContentItemDto>(`${base}/items/${id}/publication`, body),
+  duplicateItem: (id: string, body: DuplicateItemRequest = {}) =>
+    api.post<ContentItemDto>(`${base}/items/${id}/duplicate`, body),
+  setItemRelease: (id: string, body: ReleaseRulesRequest) => api.put<ContentItemDto>(`${base}/items/${id}/release`, body),
 
   // Assessments
   assessment: (itemId: string) => api.get<AssessmentDto>(`${base}/items/${itemId}/assessment`),

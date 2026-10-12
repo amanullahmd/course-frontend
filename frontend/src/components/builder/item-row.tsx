@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowRightLeft, Clock, Ellipsis, GripVertical, ListChecks, Paperclip, Pencil, Trash } from "lucide-react";
+import { ArrowRightLeft, Clock, Copy, CopyPlus, Ellipsis, GripVertical, ListChecks, Lock, Paperclip, Pencil, Trash } from "lucide-react";
 import type { ContentItemDto, ModuleDto, PublicationRequest } from "@/lib/api/types";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -23,12 +23,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PublicationPopover, PublishSwitch } from "./publication-control";
+import { ReleaseBadges } from "./release-rules-panel";
 
 export interface ItemRowActions {
   courseId: string;
   modules: ModuleDto[];
   onPublish: (id: string, body: PublicationRequest) => Promise<unknown>;
   onMove: (itemId: string, toModuleId: string) => void;
+  onDuplicate: (itemId: string, targetModuleId?: string) => void;
   onDelete: (item: ContentItemDto) => void;
 }
 
@@ -69,6 +71,7 @@ export function ItemRowContent({
               className="md:hidden"
             />
           )}
+          <ReleaseBadges required={item.required} offsetDays={item.releaseOffsetDays} prerequisites={item.prerequisites} />
           {item.attachments.length > 0 && (
             <span className="flex items-center gap-1" title={t("builder.attachments")}>
               <Paperclip className="size-3" /> {item.attachments.length}
@@ -109,6 +112,30 @@ export function ItemRowContent({
                   <Pencil /> {t("common.edit")}
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`${href}?tab=release`}>
+                  <Lock /> {t("release.rulesLink")}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => actions.onDuplicate(item.id)}>
+                <Copy /> {t("release.duplicate")}
+              </DropdownMenuItem>
+              {actions.modules.length > 1 && (
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <CopyPlus /> {t("release.duplicateTo")}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-56">
+                    {actions.modules
+                      .filter((m) => !m.items.some((i) => i.id === item.id))
+                      .map((m) => (
+                        <DropdownMenuItem key={m.id} onSelect={() => actions.onDuplicate(item.id, m.id)}>
+                          <span className="truncate">{m.title}</span>
+                        </DropdownMenuItem>
+                      ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              )}
               {actions.modules.length > 1 && (
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>

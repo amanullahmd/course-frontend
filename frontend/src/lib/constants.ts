@@ -1,13 +1,20 @@
 import {
+  ArrowDownUp,
+  ArrowLeftRight,
   BookOpen,
   ClipboardCheck,
   FileText,
   GraduationCap,
   Headphones,
+  Layers,
+  PenLine,
   Image as ImageIcon,
   Link2,
+  LayoutList,
   ListChecks,
+  Mic,
   SquarePlay,
+  TextCursorInput,
   type LucideIcon,
 } from "lucide-react";
 import type {
@@ -48,7 +55,7 @@ export const CEFR_META: Record<CefrLevel, { className: string; dot: string }> = 
   },
 };
 
-export const ITEM_TYPES: ItemType[] = ["TEXT", "DOCUMENT", "VIDEO", "AUDIO", "IMAGE", "EMBED", "QUIZ", "EXAM"];
+export const ITEM_TYPES: ItemType[] = ["TEXT", "DOCUMENT", "VIDEO", "AUDIO", "IMAGE", "EMBED", "QUIZ", "EXAM", "FLASHCARDS", "ASSIGNMENT"];
 
 export const ITEM_TYPE_META: Record<ItemType, { icon: LucideIcon; className: string }> = {
   TEXT: {
@@ -82,6 +89,14 @@ export const ITEM_TYPE_META: Record<ItemType, { icon: LucideIcon; className: str
   EXAM: {
     icon: GraduationCap,
     className: "text-orange-600 bg-orange-500/10 dark:text-orange-300",
+  },
+  FLASHCARDS: {
+    icon: Layers,
+    className: "text-teal-600 bg-teal-500/10 dark:text-teal-300",
+  },
+  ASSIGNMENT: {
+    icon: PenLine,
+    className: "text-pink-600 bg-pink-500/10 dark:text-pink-300",
   },
 };
 
@@ -122,6 +137,12 @@ export const QUESTION_TYPES: QuestionType[] = [
   "SHORT_ANSWER",
   "FILL_BLANK",
   "ESSAY",
+  "CLOZE",
+  "WORD_BANK",
+  "MATCHING",
+  "ORDERING",
+  "DICTATION",
+  "SPEAKING",
 ];
 
 export const QUESTION_TYPE_META: Record<QuestionType, { icon: LucideIcon }> = {
@@ -131,6 +152,12 @@ export const QUESTION_TYPE_META: Record<QuestionType, { icon: LucideIcon }> = {
   SHORT_ANSWER: { icon: FileText },
   FILL_BLANK: { icon: FileText },
   ESSAY: { icon: BookOpen },
+  CLOZE: { icon: TextCursorInput },
+  WORD_BANK: { icon: LayoutList },
+  MATCHING: { icon: ArrowLeftRight },
+  ORDERING: { icon: ArrowDownUp },
+  DICTATION: { icon: Headphones },
+  SPEAKING: { icon: Mic },
 };
 
 export const ROLE_META: Record<Role, { className: string }> = {

@@ -96,6 +96,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**", "/api/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/media/*/content").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/calendar/*").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                         .requestMatchers("/error").permitAll()
@@ -120,6 +121,7 @@ public class SecurityConfig {
         return request -> {
             String path = request.getRequestURI().substring(request.getContextPath().length());
             if (path.startsWith("/api/auth/") || path.startsWith("/api/public/")
+                    || path.startsWith("/api/calendar/")
                     || (path.startsWith("/api/media/") && path.endsWith("/content"))) {
                 return null;
             }

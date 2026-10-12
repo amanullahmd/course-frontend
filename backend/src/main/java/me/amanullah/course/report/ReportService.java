@@ -4,6 +4,7 @@ import me.amanullah.course.assessment.Assessment;
 import me.amanullah.course.assessment.AssessmentRepository;
 import me.amanullah.course.assessment.AttemptStatus;
 import me.amanullah.course.assessment.Question;
+import me.amanullah.course.assessment.AnswerResponse;
 import me.amanullah.course.assessment.QuestionType;
 import me.amanullah.course.common.exception.NotFoundException;
 import me.amanullah.course.common.util.HtmlSanitizer;
@@ -116,6 +117,8 @@ public class ReportService {
         final List<ContentItem> outline;
         final List<ContentItem> liveItems;
         final Set<UUID> liveIds;
+        /** Items counting towards progress: the required live items (all live items if none is required). */
+        final Set<UUID> countedIds;
         final List<ContentItem> assessmentItems;
         final Map<UUID, AssessmentRow> assessmentByItem = new HashMap<>();
         final List<AttemptRow> attempts;
@@ -127,6 +130,8 @@ public class ReportService {
             this.liveItems = progressService.liveItems(List.of(course.getId()), now)
                     .getOrDefault(course.getId(), List.of());
             this.liveIds = liveItems.stream().map(ContentItem::getId).collect(Collectors.toSet());
+            this.countedIds = ProgressService.counted(liveItems).stream().map(ContentItem::getId)
+                    .collect(Collectors.toSet());
             queries.assessmentsOfCourse(course.getId()).forEach(a -> assessmentByItem.put(a.itemId(), a));
             this.attempts = studentId == null ? queries.attemptsOfCourse(course.getId())
                     : queries.attemptsOfStudent(course.getId(), studentId);
@@ -153,6 +158,11 @@ public class ReportService {
                 }
             }
             return result;
+        }
+
+        /** Number of completed items that count towards progress. */
+        int countedDone(Map<UUID, Instant> done) {
+            return (int) done.keySet().stream().filter(countedIds::contains).count();
         }
 
         /** Latest progress or attempt timestamp per student. */
@@ -201,9 +211,10 @@ public class ReportService {
 
         Map<UUID, Map<UUID, Instant>> completions = d.completions();
         int total = d.liveItems.size();
+        int counted = d.countedIds.size();
         List<Integer> percents = learners.stream()
-                .map(s -> ProgressService.percent(completions.getOrDefault(s, Map.of()).size(), total)).toList();
-        int completed = (int) percents.stream().filter(p -> total > 0 && p == 100).count();
+                .map(s -> ProgressService.percent(d.countedDone(completions.getOrDefault(s, Map.of())), counted)).toList();
+        int completed = (int) percents.stream().filter(p -> counted > 0 && p == 100).count();
 
         List<Bucket> distribution = List.of(
                 new Bucket("0-25", 0, 25, (int) percents.stream().filter(p -> p < 25).count()),
@@ -353,7 +364,7 @@ public class ReportService {
         Map<UUID, Map<UUID, Instant>> completions = d.completions();
         Map<UUID, Instant> lastActivity = d.lastActivity();
         Map<UUID, Map<UUID, List<AttemptRow>>> grouped = d.attemptsByStudentAndItem();
-        int total = d.liveItems.size();
+        int total = d.countedIds.size();
         List<ContentItem> lessons = d.liveItems.stream().filter(i -> !i.getType().isAssessment()).toList();
         int quizzesTotal = (int) d.assessmentItems.stream().filter(i -> i.getType() == ItemType.QUIZ).count();
         int examsTotal = (int) d.assessmentItems.stream().filter(i -> i.getType() == ItemType.EXAM).count();
@@ -372,7 +383,7 @@ public class ReportService {
             }
             List<Double> bests = cells.stream().map(GradebookCell::bestPercent).filter(Objects::nonNull).toList();
             Map<UUID, Instant> doneItems = completions.getOrDefault(u.getId(), Map.of());
-            int done = doneItems.size();
+            int done = d.countedDone(doneItems);
             int lessonsDone = (int) lessons.stream().filter(i -> doneItems.containsKey(i.getId())).count();
             int quizzesTaken = 0;
             int examsTaken = 0;
@@ -527,7 +538,8 @@ public class ReportService {
         return new StudentReportDto(d.ref(), d.now, userMapper.toSummary(student),
                 new StudentEnrollment(enrollment.getId(), enrollment.getStatus(), enrollment.getAppliedAt(),
                         enrollment.getDecidedAt()),
-                ProgressService.percent(done.size(), d.liveItems.size()), done.size(), d.liveItems.size(), last,
+                ProgressService.percent(d.countedDone(done), d.countedIds.size()), d.countedDone(done),
+                d.countedIds.size(), last,
                 modules, attempts, totals, (int) queries.feedbackCount(courseId, studentId));
     }
 
@@ -607,7 +619,8 @@ public class ReportService {
             Map<String, Integer> wrong = new LinkedHashMap<>();
             for (AnswerRow a : list) {
                 Set<UUID> selected = selections.getOrDefault(a.answerId(), Set.of());
-                boolean blank = selected.isEmpty() && (a.textAnswer() == null || a.textAnswer().isBlank());
+                boolean blank = selected.isEmpty() && (a.textAnswer() == null || a.textAnswer().isBlank())
+                        && AnswerResponse.parse(a.responseJson()).isEmpty() && !a.hasRecording();
                 if (blank) {
                     unanswered++;
                 }
@@ -630,7 +643,8 @@ public class ReportService {
                             wrong.merge(o.text(), 1, Integer::sum);
                         }
                     }
-                } else if (m.type().isText() && Boolean.FALSE.equals(a.correct())) {
+                } else if ((m.type().isText() || m.type() == QuestionType.DICTATION) && Boolean.FALSE.equals(a.correct())
+                        && a.textAnswer() != null) {
                     wrong.merge(a.textAnswer().strip().toLowerCase(Locale.ROOT), 1, Integer::sum);
                 }
             }
