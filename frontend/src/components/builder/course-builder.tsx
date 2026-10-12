@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { BarChart3, ChevronRight, Ellipsis, ExternalLink, Eye, FileCog, Layers, Megaphone, Rocket, Trash, Users } from "lucide-react";
+import { Award, BarChart3, ChevronRight, Ellipsis, ExternalLink, Eye, FileCog, Layers, Megaphone, Rocket, Trash, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { isApiError } from "@/lib/api/client";
@@ -33,8 +33,9 @@ import { CourseActiveSwitch } from "./course-active-switch";
 import { StudentsPanel } from "./students-panel";
 import { ReportsPanel } from "@/components/reports/reports-panel";
 import { AnnouncementsPanel } from "@/components/announcements/announcements-panel";
+import { CertificatePanel } from "@/components/certificates/certificate-panel";
 
-const TABS = ["curriculum", "details", "publishing", "students", "announcements", "reports"] as const;
+const TABS = ["curriculum", "details", "publishing", "students", "announcements", "reports", "certificate"] as const;
 type Tab = (typeof TABS)[number];
 
 function BuilderSkeleton() {
@@ -204,6 +205,9 @@ export function CourseBuilder() {
           <TabsTrigger value="reports">
             <BarChart3 /> {t("builder.tabs.reports")}
           </TabsTrigger>
+          <TabsTrigger value="certificate">
+            <Award /> {t("builder.tabs.certificate")}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="curriculum" className="mt-6">
           <CurriculumBoard course={c} />
@@ -226,6 +230,9 @@ export function CourseBuilder() {
         </TabsContent>
         <TabsContent value="reports" className="mt-6">
           <ReportsPanel courseId={c.id} courseTitle={c.title} />
+        </TabsContent>
+        <TabsContent value="certificate" className="mt-6">
+          <CertificatePanel courseId={c.id} courseSlug={c.slug} />
         </TabsContent>
       </Tabs>
 

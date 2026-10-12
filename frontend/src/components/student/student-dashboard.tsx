@@ -19,6 +19,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/ui/stat-card";
+import { CertificateCourseBadge, MyCertificatesSection } from "@/components/certificates/my-certificates";
 import { UnreadAnnouncementsHint } from "@/components/announcements/unread-hint";
 
 function ContinueCard({ enrollment }: { enrollment: StudentEnrollmentDto }) {
@@ -30,6 +31,7 @@ function ContinueCard({ enrollment }: { enrollment: StudentEnrollmentDto }) {
       <div className="relative aspect-[2.4/1] overflow-hidden">
         <CourseCover title={course.title} src={course.coverImageUrl} level={course.level} size="sm" />
         <LevelBadge level={course.level} className="absolute top-3 left-3 bg-white/90 dark:bg-black/60" />
+        <CertificateCourseBadge courseId={course.id} className="absolute top-3 right-3 bg-[#151C38] text-[#F2B544] shadow-sm ring-[#F2B544]/40" />
       </div>
       <div className="flex flex-1 flex-col gap-4 p-4">
         <div>
@@ -172,6 +174,8 @@ export function StudentDashboard() {
               )}
             </div>
           </section>
+
+          <MyCertificatesSection />
 
           {applications.length > 0 && (
             <section className="mt-12" aria-labelledby="applications">

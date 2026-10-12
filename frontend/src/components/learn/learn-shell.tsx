@@ -21,6 +21,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Progress } from "@/components/ui/progress";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CertificateOutlineLink } from "@/components/certificates/certificate-outline-link";
 import { CourseSidebarLinks } from "@/components/announcements/course-sidebar-links";
 
 function Outline({ data, activeItemId, onNavigate }: { data: LearnCourseDto; activeItemId?: string; onNavigate?: () => void }) {
@@ -80,6 +81,7 @@ function Outline({ data, activeItemId, onNavigate }: { data: LearnCourseDto; act
           </Collapsible>
         );
       })}
+      <CertificateOutlineLink courseId={data.course.id} progressPercent={data.progressPercent} onNavigate={onNavigate} />
     </nav>
   );
 }
