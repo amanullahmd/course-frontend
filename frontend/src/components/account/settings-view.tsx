@@ -21,6 +21,7 @@ import { makePasswordSchema } from "@/lib/validation";
 import { useAuth } from "@/providers/auth-provider";
 import { PageContainer, PageHeader } from "@/components/layout/page-header";
 import { PasswordInput, PasswordStrengthMeter } from "@/components/auth/password-input";
+import { PrivacyCard } from "@/components/privacy/privacy-card";
 import { UserAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -250,6 +251,7 @@ export function SettingsView() {
           </CardContent>
         </Card>
         <PasswordCard />
+        <PrivacyCard user={user} />
       </div>
     </PageContainer>
   );

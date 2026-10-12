@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, Bell, LogOut, Settings, ShieldCheck, LayoutDashboard } from "lucide-react";
+import { BookOpen, Bell, LogOut, Settings, ShieldCheck, LayoutDashboard, LockKeyhole } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/providers/auth-provider";
@@ -76,6 +76,11 @@ export function UserMenu() {
         <DropdownMenuItem asChild>
           <Link href="/settings">
             <Settings /> {t("userMenu.settings")}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/settings#privacy">
+            <LockKeyhole /> {t("privacy.menu")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

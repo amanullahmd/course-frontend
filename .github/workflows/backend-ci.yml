@@ -1,0 +1,543 @@
+# Backend CI (Spring Boot 4.1 · Java 25 · Maven)
+#
+#   check     migrations:lint · openapi:breaking · postman:check · scan:sast · scan:secrets   (parallel)
+#   build     build:test · coverage:nightly (schedule / manual only) · scan:dependencies · scan:spotbugs
+#   database  db:verify (PostgreSQL 17)
+#
+# Every job can be reproduced locally; see the "CI" section of the root README.md.
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "docs/PLAN.md"
+      - ".gitleaks.toml"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "docs/PLAN.md"
+      - ".gitleaks.toml"
+      - ".github/workflows/backend-ci.yml"
+  workflow_dispatch:
+  schedule:
+    - cron: "17 2 * * *" # nightly, 02:17 UTC (also runs coverage:nightly)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: backend
+    shell: bash
+
+env:
+  JAVA_VERSION: "25"
+  MAVEN_ARGS: -B -ntp
+  OASDIFF_VERSION: "1.11.7"
+  GITLEAKS_VERSION: "8.28.0"
+
+jobs:
+  # ───────────────────────────── stage: check ─────────────────────────────
+  migrations-lint:
+    name: "migrations:lint"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out (full history for the base-branch diff)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Lint Flyway migrations (naming, contiguous versions, no empty files)
+        if: github.event_name != 'pull_request'
+        run: python3 ci/lint-migrations.py
+
+      - name: Lint Flyway migrations and check that applied migrations were not changed
+        if: github.event_name == 'pull_request'
+        run: python3 ci/lint-migrations.py --base-ref "origin/${{ github.base_ref }}"
+
+  openapi-breaking:
+    name: "openapi:breaking"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out (full history to read the base snapshot)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Find the base snapshot
+        id: base
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          case "$EVENT" in
+            pull_request) base="origin/$BASE_REF" ;;
+            push)         base="$BEFORE" ;;
+            *)            base="" ;;
+          esac
+          if [ ! -f openapi/openapi.json ]; then
+            echo "::error::backend/openapi/openapi.json is missing. Generate it with: ./mvnw test -Dtest=OpenApiSnapshotTest -Dopenapi.update=true"
+            exit 1
+          fi
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            echo "No base revision for a '$EVENT' run; nothing to compare."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          elif git cat-file -e "$base:backend/openapi/openapi.json" 2>/dev/null; then
+            git show "$base:backend/openapi/openapi.json" > "$RUNNER_TEMP/openapi-base.json"
+            echo "Comparing with the snapshot of $base"
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice title=openapi:breaking::$base has no backend/openapi/openapi.json yet (first snapshot); skipping the breaking-change check."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install oasdiff ${{ env.OASDIFF_VERSION }}
+        if: steps.base.outputs.found == 'true'
+        run: |
+          curl -fsSL "https://github.com/oasdiff/oasdiff/releases/download/v${OASDIFF_VERSION}/oasdiff_${OASDIFF_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz -C "$RUNNER_TEMP" oasdiff
+          "$RUNNER_TEMP/oasdiff" --version
+
+      - name: Changelog (informational)
+        if: steps.base.outputs.found == 'true'
+        run: |
+          {
+            echo "## API changelog (oasdiff)"
+            echo '```'
+            "$RUNNER_TEMP/oasdiff" changelog "$RUNNER_TEMP/openapi-base.json" openapi/openapi.json || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail on breaking API changes (oasdiff breaking --fail-on ERR)
+        if: steps.base.outputs.found == 'true'
+        run: |
+          "$RUNNER_TEMP/oasdiff" breaking "$RUNNER_TEMP/openapi-base.json" openapi/openapi.json \
+            --fail-on ERR --format githubactions
+
+  postman-check:
+    name: "postman:check"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Set up Node.js (newman)
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Build the jar
+        run: mvn $MAVEN_ARGS -DskipTests package
+
+      - name: Start the API (dev profile, seeded H2, e-mails logged)
+        env:
+          SPRING_PROFILES_ACTIVE: dev
+          MAIL_ENABLED: "false"
+          PORT: "8080"
+        run: |
+          mkdir -p "$RUNNER_TEMP/api"
+          cp target/sprachweg-backend-*.jar "$RUNNER_TEMP/api/app.jar"
+          cd "$RUNNER_TEMP/api"
+          nohup java -jar app.jar > app.log 2>&1 &
+          for i in $(seq 1 90); do
+            if curl -fs http://localhost:8080/actuator/health > /dev/null; then echo "API is up"; exit 0; fi
+            sleep 2
+          done
+          echo "::error::API did not become healthy"; curl -s http://localhost:8080/actuator/health || true
+          tail -n 200 app.log; exit 1
+
+      - name: Run the Postman smoke suite (newman)
+        run: |
+          mkdir -p target/newman
+          npx --yes -p newman@6 -p newman-reporter-htmlextra@1 newman run postman/sprachweg.postman_collection.json \
+            -e postman/sprachweg.postman_environment.json \
+            --env-var baseUrl=http://localhost:8080 \
+            --reporters cli,junit,htmlextra \
+            --reporter-junit-export target/newman/junit.xml \
+            --reporter-htmlextra-export target/newman/report.html
+
+      - name: Upload newman report and API log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postman-report
+          path: |
+            backend/target/newman/
+            ${{ runner.temp }}/api/app.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+  scan-sast:
+    name: "scan:sast"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    container:
+      image: semgrep/semgrep
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Semgrep (p/java, p/owasp-top-ten, p/secrets)
+        env:
+          SEMGREP_SEND_METRICS: "off"
+        run: |
+          semgrep scan backend \
+            --config p/java --config p/owasp-top-ten --config p/secrets \
+            --exclude target \
+            --metrics off \
+            --sarif-output semgrep.sarif --json-output semgrep.json
+
+      - name: Upload SARIF to code scanning
+        if: always() && hashFiles('semgrep.sarif') != ''
+        continue-on-error: true # e.g. forks / missing security-events permission
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+
+      - name: Upload Semgrep results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-results
+          path: |
+            semgrep.sarif
+            semgrep.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Fail on ERROR-severity findings
+        env:
+          SEMGREP_SEND_METRICS: "off"
+        run: |
+          semgrep scan backend \
+            --config p/java --config p/owasp-top-ten --config p/secrets \
+            --exclude target \
+            --metrics off \
+            --severity ERROR --error
+
+  scan-secrets:
+    name: "scan:secrets"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Check out (full history)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install gitleaks ${{ env.GITLEAKS_VERSION }}
+        run: |
+          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" version
+
+      - name: Scan the whole git history
+        run: |
+          "$RUNNER_TEMP/gitleaks" git . --config .gitleaks.toml --redact --verbose --no-banner \
+            --report-format sarif --report-path gitleaks.sarif
+
+      - name: Upload SARIF to code scanning
+        if: always() && hashFiles('gitleaks.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: gitleaks.sarif
+          category: gitleaks
+
+  # ───────────────────────────── stage: build ─────────────────────────────
+  build-test:
+    name: "build:test"
+    needs: [migrations-lint, openapi-breaking, postman-check, scan-sast, scan-secrets]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Unit + integration tests, package (mvn verify)
+        run: mvn $MAVEN_ARGS verify
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: |
+            backend/target/surefire-reports/
+            backend/target/openapi/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload the jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target/sprachweg-backend-*.jar
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Build the Docker image (no push)
+        run: docker build --pull -t sprachweg-backend:ci .
+
+  coverage-nightly:
+    name: "coverage:nightly"
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: [migrations-lint, openapi-breaking, postman-check, scan-sast, scan-secrets]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Tests with JaCoCo (mvn -Pcoverage verify)
+        run: mvn $MAVEN_ARGS -Pcoverage verify
+
+      - name: Coverage summary
+        if: always() && hashFiles('backend/target/site/jacoco/jacoco.xml') != ''
+        run: python3 ci/coverage-summary.py target/site/jacoco/jacoco.xml >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend/target/site/jacoco/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  scan-dependencies:
+    name: "scan:dependencies"
+    needs: [migrations-lint, openapi-breaking, postman-check, scan-sast, scan-secrets]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Maven dependency tree
+        run: mvn $MAVEN_ARGS dependency:tree -DoutputFile=target/dependency-tree.txt
+
+      - name: Upload the dependency tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-tree
+          path: backend/target/dependency-tree.txt
+          retention-days: 14
+
+      - name: Trivy (SARIF for code scanning)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: backend
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: sarif
+          output: trivy.sarif
+          exit-code: "0"
+
+      - name: Upload SARIF to code scanning
+        if: always() && hashFiles('trivy.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy.sarif
+          category: trivy-backend
+
+      - name: Trivy (fail on fixable HIGH/CRITICAL vulnerabilities)
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_SKIP_DB_UPDATE: "true" # reuse the database downloaded by the previous step
+        with:
+          scan-type: fs
+          scan-ref: backend
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: table
+          exit-code: "1"
+
+  scan-spotbugs:
+    name: "scan:spotbugs"
+    needs: [migrations-lint, openapi-breaking, postman-check, scan-sast, scan-secrets]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: SpotBugs + FindSecBugs (spotbugs:check, threshold Medium)
+        run: mvn $MAVEN_ARGS -Pspotbugs -DskipTests verify
+
+      - name: Upload SARIF to code scanning
+        if: always() && hashFiles('backend/target/spotbugsSarif.json') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: backend/target/spotbugsSarif.json
+          category: spotbugs
+
+      - name: Upload the SpotBugs report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotbugs-report
+          path: |
+            backend/target/spotbugsXml.xml
+            backend/target/spotbugsSarif.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # ──────────────────────────── stage: database ───────────────────────────
+  db-verify:
+    name: "db:verify"
+    needs: [build-test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sprachweg_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Full test suite on PostgreSQL 17 (Flyway migrate + Hibernate validate)
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/sprachweg_test
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: postgres
+        run: mvn $MAVEN_ARGS test
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports-postgres
+          path: backend/target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Download the jar from build:test
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: ${{ runner.temp }}/prod
+
+      - name: Boot the prod profile against an empty database
+        working-directory: ${{ runner.temp }}/prod
+        env:
+          SPRING_PROFILES_ACTIVE: prod
+          PORT: "8080"
+          DB_URL: jdbc:postgresql://localhost:5432/sprachweg
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+          # Dummy values, only for this ephemeral CI database.
+          JWT_SECRET: ci-only-jwt-secret-not-used-anywhere-0123456789
+          MEDIA_SECRET: ci-only-media-secret-not-used-anywhere-0123456789
+          MAIL_ENABLED: "false"
+          STORAGE_LOCATION: ${{ runner.temp }}/prod/uploads
+        run: |
+          psql -c "CREATE DATABASE sprachweg"
+          nohup java -jar sprachweg-backend-*.jar > app.log 2>&1 &
+          pid=$!
+          for i in $(seq 1 90); do
+            if curl -fs http://localhost:8080/actuator/health | grep -q '"status":"UP"'; then
+              echo "prod profile is UP"
+              psql -d sprachweg -c "SELECT version, description, success FROM flyway_schema_history ORDER BY installed_rank"
+              curl -fs "http://localhost:8080/api/public/courses" > /dev/null
+              kill "$pid"; exit 0
+            fi
+            if ! kill -0 "$pid" 2>/dev/null; then break; fi
+            sleep 2
+          done
+          echo "::error::The prod profile did not become healthy"
+          tail -n 200 app.log; exit 1
+
+      - name: Upload the prod boot log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-boot-log
+          path: ${{ runner.temp }}/prod/app.log
+          if-no-files-found: ignore
+          retention-days: 14

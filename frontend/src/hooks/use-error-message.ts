@@ -25,6 +25,8 @@ export function useErrorMessage() {
       const withRef = (message: string) => (error.traceId ? `${message} ${t("reference", { id: error.traceId })}` : message);
       const retryAfter = error.problem?.retryAfterSeconds;
       if (code === "RATE_LIMITED" && typeof retryAfter === "number" && retryAfter > 0) {
+        if (retryAfter > 5400) return t("rateLimitedRetryHours", { hours: Math.ceil(retryAfter / 3600) });
+        if (retryAfter > 90) return t("rateLimitedRetryMinutes", { minutes: Math.ceil(retryAfter / 60) });
         return t("rateLimitedRetry", { seconds: Math.ceil(retryAfter) });
       }
       if (code && isCode(code)) return error.status >= 500 ? withRef(t(`codes.${code}`)) : t(`codes.${code}`);

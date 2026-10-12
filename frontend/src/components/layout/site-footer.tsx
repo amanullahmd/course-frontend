@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { CEFR_LEVELS } from "@/lib/constants";
 import { Logo } from "./logo";
+import { LegalLinks } from "@/components/legal/legal-links";
 
 export function SiteFooter() {
   const t = useTranslations("footer");
@@ -54,6 +55,7 @@ export function SiteFooter() {
       <div className="border-t">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
           <p>{t("copyright")}</p>
+          <LegalLinks className="justify-center" />
           <p>{t("spirit")}</p>
         </div>
       </div>

@@ -466,11 +466,14 @@ public class CertificateService {
     // ------------------------------------------------------------------------------------------------------------
 
     private CertificateDto toDto(Certificate c) {
+        CertificateSettings s = settingsOf(c.getCourse().getId());
         return new CertificateDto(c.getId(), c.getCode(), c.getCourse().getId(), c.getCourseTitle(),
                 c.getLearnerName(), c.getLevel(), c.getTitle(), c.getCompletedAt(), c.getIssuedAt(),
                 c.getFinalScore(), c.getInstructorName(), c.getOrganization(),
                 c.isRevoked() ? CertificateState.REVOKED : CertificateState.ACTIVE, c.getIssueType(),
-                c.getRevokedAt(), c.getRevokedReason(), verificationUrl(c.getCode()));
+                c.getRevokedAt(), c.getRevokedReason(), verificationUrl(c.getCode()), c.getSignerTitle(),
+                s.getCustomText(), s.isShowScore(), mediaMapper.url(s.getSignatureImage()),
+                locale(c, s, null).getLanguage());
     }
 
     private InstructorCertificateDto toInstructorDto(Certificate c, String issuedByName) {

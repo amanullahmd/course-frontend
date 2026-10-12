@@ -3,6 +3,7 @@ import { CircleCheck, Headphones } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { LocaleSwitcher } from "@/components/layout/locale-switcher";
 import { Logo } from "@/components/layout/logo";
+import { LegalLinks } from "@/components/legal/legal-links";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
 import { CEFR_LEVELS, CEFR_META } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -78,6 +79,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
             {t("home")}
           </Link>
         </p>
+        <LegalLinks separator className="mt-2 justify-center text-xs text-muted-foreground" />
       </div>
       <BrandPanel />
     </div>

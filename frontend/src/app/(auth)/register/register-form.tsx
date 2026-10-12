@@ -20,6 +20,7 @@ import { PasswordInput, PasswordStrengthMeter } from "@/components/auth/password
 import { Button } from "@/components/ui/button";
 import { Field, fieldA11y } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { RadioCard, RadioGroup } from "@/components/ui/radio-group";
 
 export function RegisterForm() {
@@ -39,15 +40,17 @@ export function RegisterForm() {
       fullName: z.string().trim().min(2, t("validation.fullName")).max(120, t("validation.tooLong")),
       email: makeEmailSchema(vt),
       password: makePasswordSchema(vt),
+      acceptTerms: z.boolean().refine((v) => v, t("legal.acceptTermsRequired")),
     });
   }, [t]);
   type Values = z.infer<typeof schema>;
   const form = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { role: params.get("role") === "INSTRUCTOR" ? "INSTRUCTOR" : "STUDENT", fullName: "", email: (params.get("email") ?? "").trim().slice(0, 254), password: "" },
+    defaultValues: { role: params.get("role") === "INSTRUCTOR" ? "INSTRUCTOR" : "STUDENT", fullName: "", email: (params.get("email") ?? "").trim().slice(0, 254), password: "", acceptTerms: false },
   });
   const { errors, isSubmitting } = form.formState;
   const password = useWatch({ control: form.control, name: "password" });
+  const role = useWatch({ control: form.control, name: "role" });
 
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null);
@@ -56,7 +59,7 @@ export function RegisterForm() {
       rememberNext(next);
       router.push(`/check-email?email=${encodeURIComponent(values.email)}${next ? `&next=${encodeURIComponent(next)}` : ""}`);
     } catch (err) {
-      const mapped = applyServerErrors(err, form.setError, ["fullName", "email", "password", "role"]);
+      const mapped = applyServerErrors(err, form.setError, ["fullName", "email", "password", "role", "acceptTerms"]);
       if (isApiError(err) && (err.status === 409 || err.code === "EMAIL_TAKEN")) {
         form.setError("email", { message: t("errors.codes.EMAIL_TAKEN") });
       } else if (!mapped) {
@@ -82,6 +85,7 @@ export function RegisterForm() {
               </RadioGroup>
             )}
           />
+          {role === "INSTRUCTOR" && <p className="text-xs text-muted-foreground">{t("security.review.registerHint")}</p>}
         </fieldset>
         <Field label={t("auth.register.fullName")} htmlFor="fullName" error={errors.fullName?.message}>
           <Input autoComplete="name" placeholder="Luca Bianchi" {...fieldA11y("fullName", errors.fullName?.message)} {...form.register("fullName")} />
@@ -93,6 +97,44 @@ export function RegisterForm() {
           <PasswordInput autoComplete="new-password" {...fieldA11y("password", errors.password?.message)} {...form.register("password")} />
           <PasswordStrengthMeter password={password} />
         </Field>
+        <div className="grid gap-1.5">
+          <div className="flex items-start gap-2.5">
+            <Controller
+              control={form.control}
+              name="acceptTerms"
+              render={({ field }) => (
+                <Checkbox
+                  id="acceptTerms"
+                  checked={field.value}
+                  onCheckedChange={(c) => field.onChange(c === true)}
+                  onBlur={field.onBlur}
+                  aria-invalid={errors.acceptTerms ? true : undefined}
+                  aria-describedby={errors.acceptTerms ? "acceptTerms-error" : undefined}
+                  className="mt-0.5"
+                />
+              )}
+            />
+            <label htmlFor="acceptTerms" className="text-sm leading-snug text-muted-foreground">
+              {t.rich("legal.acceptTerms", {
+                terms: (chunks) => (
+                  <Link href="/agb" target="_blank" className="font-medium text-foreground underline underline-offset-4">
+                    {chunks}
+                  </Link>
+                ),
+                privacy: (chunks) => (
+                  <Link href="/datenschutz" target="_blank" className="font-medium text-foreground underline underline-offset-4">
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            </label>
+          </div>
+          {errors.acceptTerms?.message && (
+            <p id="acceptTerms-error" role="alert" className="text-[13px] text-destructive">
+              {errors.acceptTerms.message}
+            </p>
+          )}
+        </div>
         <Button type="submit" size="lg" loading={isSubmitting} className="w-full">
           {t("auth.register.submit")}
         </Button>

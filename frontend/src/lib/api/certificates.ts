@@ -66,6 +66,13 @@ export interface CertificateDto {
   revokedAt: Instant | null;
   revokedReason: string | null;
   verificationUrl: string;
+  /** Fields that let the UI draw the same certificate as the PDF. */
+  signerTitle: string | null;
+  customText: string | null;
+  showScore: boolean;
+  signatureImageUrl: string | null;
+  /** Default language of the PDF ("en" | "de"). */
+  language: string;
 }
 
 export interface InstructorCertificateDto {

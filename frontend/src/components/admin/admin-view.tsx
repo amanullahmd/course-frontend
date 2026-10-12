@@ -4,7 +4,8 @@ import * as React from "react";
 import { BookCheck, GraduationCap, Library, Presentation, UserCheck, Users, UserX } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import type { AdminUserDto, Role } from "@/lib/api/types";
+import type { AdminUserDto, InstructorStatus, Role } from "@/lib/api/types";
+import { InstructorDecisionButtons, InstructorStatusBadge, PendingInstructorsBanner } from "./instructor-review";
 import { useFormat } from "@/hooks/use-format";
 import { useAdminStats, useAdminUsers, useUpdateUser } from "@/hooks/queries/admin";
 import { useDebouncedValue } from "@/hooks/use-debounce";
@@ -34,8 +35,16 @@ export function AdminView() {
   const [q, setQ] = React.useState("");
   const debouncedQ = useDebouncedValue(q.trim(), 300);
   const [role, setRole] = React.useState<Role | "ALL">("ALL");
+  const [status, setStatus] = React.useState<InstructorStatus | "ALL">("ALL");
   const [page, setPage] = React.useState(0);
-  const users = useAdminUsers({ q: debouncedQ || undefined, role: role === "ALL" ? undefined : role, page, size: SIZE });
+  const users = useAdminUsers({
+    q: debouncedQ || undefined,
+    role: role === "ALL" ? undefined : role,
+    instructorStatus: status === "ALL" ? undefined : status,
+    page,
+    size: SIZE,
+  });
+  const pendingCount = stats.data?.pendingInstructors ?? 0;
   const update = useUpdateUser();
   const s = stats.data;
 
@@ -75,12 +84,27 @@ export function AdminView() {
         <StatCard label={t("admin.enrollments")} value={s?.enrollments ?? 0} icon={UserCheck} loading={stats.isPending} />
       </div>
 
+      <PendingInstructorsBanner
+        count={pendingCount}
+        active={status === "PENDING"}
+        onShow={() => {
+          setStatus("PENDING");
+          setRole("ALL");
+          setPage(0);
+        }}
+      />
+
       <section className="mt-10" aria-labelledby="users-heading">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 id="users-heading" className="text-lg font-semibold tracking-tight">
+          <h2 id="users-heading" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
             {t("admin.users")}
+            {pendingCount > 0 && (
+              <Badge variant="warning" title={t("security.approval.pendingCount", { count: pendingCount })}>
+                {t("security.approval.pendingCount", { count: pendingCount })}
+              </Badge>
+            )}
           </h2>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <SearchInput
               value={q}
               onChange={(v) => {
@@ -107,6 +131,26 @@ export function AdminView() {
                     {t(`roles.${r}`)}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={status}
+              onValueChange={(v) => {
+                setStatus(v as InstructorStatus | "ALL");
+                setPage(0);
+              }}
+            >
+              <SelectTrigger className="w-48" aria-label={t("security.approval.filter")}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{t("security.approval.allStatuses")}</SelectItem>
+                <SelectItem value="PENDING">
+                  {t("security.approval.filterPending")}
+                  {pendingCount > 0 ? ` (${pendingCount})` : ""}
+                </SelectItem>
+                <SelectItem value="REJECTED">{t("security.approval.filterRejected")}</SelectItem>
+                <SelectItem value="APPROVED">{t("security.approval.filterApproved")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -136,8 +180,9 @@ export function AdminView() {
               <TableBody>
                 {users.data.content.map((u) => {
                   const self = u.id === me?.id;
+                  const locked = self || !!u.deleted;
                   const roleSelect = (
-                    <Select value={u.role} onValueChange={(r) => r !== u.role && request(u, { role: r as Role })} disabled={self}>
+                    <Select value={u.role} onValueChange={(r) => r !== u.role && request(u, { role: r as Role })} disabled={locked}>
                       <SelectTrigger size="sm" className="w-36" aria-label={t("admin.roleOf", { name: u.fullName })}>
                         <SelectValue />
                       </SelectTrigger>
@@ -153,7 +198,7 @@ export function AdminView() {
                   const activeSwitch = (
                     <Switch
                       checked={u.enabled}
-                      disabled={self}
+                      disabled={locked}
                       onCheckedChange={(c) => request(u, { enabled: c })}
                       aria-label={u.enabled ? t("admin.disable", { name: u.fullName }) : t("admin.enable", { name: u.fullName })}
                     />
@@ -168,6 +213,10 @@ export function AdminView() {
                               {u.fullName} {self && <span className="text-xs font-normal text-muted-foreground">({t("common.you")})</span>}
                             </p>
                             <p className="truncate text-xs text-muted-foreground">{u.email}</p>
+                            <div className="mt-1 flex flex-wrap items-center gap-2 empty:hidden">
+                              <InstructorStatusBadge user={u} />
+                              <InstructorDecisionButtons user={u} />
+                            </div>
                           </div>
                         </div>
                         <div className="mt-3 flex items-center justify-between gap-3 sm:hidden">

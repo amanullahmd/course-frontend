@@ -2,7 +2,6 @@ package me.amanullah.course.it;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -145,7 +144,7 @@ class AnnouncementTest extends CommunicationTestSupport {
                 .andExpect(jsonPath("$.content[0].title").value("Neue Ankündigung: Kein Unterricht am Montag"))
                 .andExpect(jsonPath("$.content[0].link").value("/learn/" + courseId + "/announcements"));
         mvc.perform(auth(get("/api/notifications"), s3))
-                .andExpect(jsonPath("$.content[0].type").value(not("ANNOUNCEMENT")));
+                .andExpect(jsonPath("$.content[?(@.type == 'ANNOUNCEMENT')]").isEmpty());
         mvc.perform(auth(post("/api/instructor/announcements/" + id + "/send"), teacher))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("INVALID_STATUS"));
 

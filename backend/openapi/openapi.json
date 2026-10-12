@@ -801,6 +801,9 @@
           "courseTitle": {
             "type": "string"
           },
+          "customText": {
+            "type": "string"
+          },
           "finalScore": {
             "format": "double",
             "type": "number"
@@ -821,6 +824,9 @@
           },
           "issuedAt": {
             "format": "date-time",
+            "type": "string"
+          },
+          "language": {
             "type": "string"
           },
           "learnerName": {
@@ -845,6 +851,15 @@
             "type": "string"
           },
           "revokedReason": {
+            "type": "string"
+          },
+          "showScore": {
+            "type": "boolean"
+          },
+          "signatureImageUrl": {
+            "type": "string"
+          },
+          "signerTitle": {
             "type": "string"
           },
           "status": {

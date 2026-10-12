@@ -72,6 +72,11 @@ src/
   speed control / images with lightbox / embeds, quiz player with timer, autosave and results review.
 * **Production** – frontend at `https://course.amanullah.me`, API at `https://api.course.amanullah.me`
   (the backend must allow that origin via CORS and set the refresh cookie for the shared parent domain).
+* **Reports** – course builder tab `?tab=reports` (`&view=overview|learners|gradebook`), learner report at
+  `/instructor/courses/[courseId]/reports/students/[studentId]` and an **Analytics** tab in the quiz/exam editor
+  (`components/reports/`, `hooks/queries/reports.ts`, `lib/api/reports.ts`). Charts are plain CSS/SVG on the app
+  tokens with hidden data tables; CSV exports are fetched with the bearer token and saved via a blob URL; a print
+  stylesheet (`reports-print.css`) gives clean A4 pages for "Print / Save as PDF".
 * **Notification links** – `/instructor/courses/{id}/enrollments` and `/instructor/attempts/{id}` redirect to the
   matching builder tab / grading drawer.
 

@@ -20,6 +20,7 @@ import { homeForRole } from "@/components/layout/nav-config";
 import { AuthHeading, FormAlert } from "@/components/auth/auth-card";
 import { PasswordInput } from "@/components/auth/password-input";
 import { ResendVerificationButton } from "@/components/auth/resend-verification";
+import { RateLimitAlert } from "@/components/auth/rate-limit-alert";
 import { Button } from "@/components/ui/button";
 import { Field, fieldA11y } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,10 @@ export function LoginForm() {
   const next = params.get("next");
   const expired = params.get("reason") === "expired";
   const [error, setError] = React.useState<{ message: string; unverified: boolean } | null>(null);
+  // 429 RATE_LIMITED: block the form and count down until the server accepts the next attempt.
+  const [lockedUntil, setLockedUntil] = React.useState<number | null>(null);
+  const locked = lockedUntil !== null;
+  const unlock = React.useCallback(() => setLockedUntil(null), []);
   const schema = React.useMemo(
     () => z.object({ email: makeEmailSchema((k) => t(`validation.${k}`)), password: z.string().min(1, t("validation.passwordRequired")) }),
     [t],
@@ -48,6 +53,7 @@ export function LoginForm() {
   }, [status, user, next, router]);
 
   const onSubmit = form.handleSubmit(async (values) => {
+    if (locked) return;
     setError(null);
     try {
       const u = await login(values.email, values.password);
@@ -61,6 +67,10 @@ export function LoginForm() {
       router.replace(safeNextPath(next, homeForRole(u.role)));
       if (adoptLocale) router.refresh();
     } catch (err) {
+      if (isApiError(err) && err.code === "RATE_LIMITED") {
+        setLockedUntil(Date.now() + Math.max(1, err.problem.retryAfterSeconds ?? 60) * 1000);
+        return;
+      }
       const unverified = isApiError(err) && err.code === "EMAIL_NOT_VERIFIED";
       const invalid = isApiError(err) && err.status === 401 && !err.code;
       setError({ message: invalid ? t("errors.codes.INVALID_CREDENTIALS") : errorMessage(err), unverified });
@@ -71,8 +81,9 @@ export function LoginForm() {
     <>
       <AuthHeading title={t("auth.login.title")} description={t("auth.login.subtitle")} />
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
-        {expired && !error && <FormAlert tone="info">{t("auth.login.sessionEnded")}</FormAlert>}
-        {error && (
+        {expired && !error && !locked && <FormAlert tone="info">{t("auth.login.sessionEnded")}</FormAlert>}
+        {lockedUntil !== null && <RateLimitAlert until={lockedUntil} onDone={unlock} />}
+        {error && !locked && (
           <FormAlert
             tone={error.unverified ? "warning" : "error"}
             action={
@@ -101,7 +112,7 @@ export function LoginForm() {
         >
           <PasswordInput autoComplete="current-password" {...fieldA11y("password", errors.password?.message)} {...form.register("password")} />
         </Field>
-        <Button type="submit" size="lg" loading={isSubmitting} className="w-full">
+        <Button type="submit" size="lg" loading={isSubmitting} disabled={locked} className="w-full">
           {t("auth.login.submit")}
         </Button>
       </form>

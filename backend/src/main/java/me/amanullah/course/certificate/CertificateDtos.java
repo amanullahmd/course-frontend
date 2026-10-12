@@ -45,11 +45,17 @@ public final class CertificateDtos {
 
     public enum CertificateState { ACTIVE, REVOKED }
 
+    /**
+     * A learner's certificate. {@code signerTitle}, {@code customText}, {@code showScore}, {@code signatureImageUrl}
+     * and {@code language} (the PDF's default language, "en"/"de") let the frontend draw the same certificate.
+     */
     public record CertificateDto(UUID id, String code, UUID courseId, String courseTitle, String learnerName,
                                  CefrLevel level, String title, Instant completedAt, Instant issuedAt,
                                  Double finalScore, String instructorName, String organization,
                                  CertificateState status, IssueType issueType, Instant revokedAt,
-                                 String revokedReason, String verificationUrl) {
+                                 String revokedReason, String verificationUrl, String signerTitle,
+                                 String customText, boolean showScore, String signatureImageUrl,
+                                 String language) {
     }
 
     /** Row of the instructor's certificate list. */
