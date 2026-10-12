@@ -9,7 +9,8 @@ spring:
 
 app:
   mail:
-    enabled: false
+    # Logs e-mails to the console unless MAIL_ENABLED=true (e.g. in backend/.env) — then they go out via Resend.
+    enabled: ${MAIL_ENABLED:false}
   seed:
     enabled: true
 

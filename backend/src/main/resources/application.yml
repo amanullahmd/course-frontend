@@ -1,6 +1,9 @@
 spring:
   application:
     name: sprachweg-backend
+  config:
+    # Local secrets (RESEND_API_KEY, MAIL_FROM, MAIL_ENABLED …) can live in a git-ignored backend/.env file.
+    import: optional:file:.env[.properties]
   profiles:
     default: dev
   threads:
@@ -38,7 +41,24 @@ spring:
   jackson:
     default-property-inclusion: always
   mail:
+    # Resend SMTP (https://resend.com/docs/send-with-smtp). Override MAIL_* for other providers / Mailpit.
     default-encoding: UTF-8
+    host: ${MAIL_HOST:smtp.resend.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:resend}
+    password: ${RESEND_API_KEY:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:true}
+            required: ${MAIL_SMTP_STARTTLS:true}
+          ssl:
+            enable: ${MAIL_SMTP_SSL:false}
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
 
 server:
   port: ${PORT:8080}
@@ -93,8 +113,8 @@ app:
   storage:
     location: ./data/uploads
   mail:
-    enabled: false
-    from: "Sprachweg <no-reply@sprachweg.local>"
+    enabled: ${MAIL_ENABLED:false}
+    from: "${MAIL_FROM:Sprachweg <no-reply@course.amanullah.me>}"
   cors:
     allowed-origins:
       - http://localhost:3000

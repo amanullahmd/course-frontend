@@ -83,6 +83,13 @@ or build the container: `docker build -t sprachweg-backend .` (multi-stage, `ecl
 uploads volume at `/data/uploads`). The repository root contains a `docker-compose.yml` with PostgreSQL 17,
 Mailpit, backend and frontend.
 
+### Sending real e-mail (Resend)
+
+E-mail goes through Resend SMTP (`smtp.resend.com:587`, user `resend`, password = API key).
+For local runs, copy `backend/.env.example` to `backend/.env` (git-ignored, loaded automatically) and set
+`RESEND_API_KEY`, `MAIL_FROM` and `MAIL_ENABLED=true`. For Docker Compose, copy the root `.env.example` to `.env`.
+The sender domain (`course.amanullah.me`) must be verified in Resend. Never commit the key.
+
 ### Environment variables (`prod` profile)
 
 | Variable | Required | Default | Description |

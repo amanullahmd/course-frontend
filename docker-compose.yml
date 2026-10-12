@@ -6,9 +6,9 @@
 #
 # E-mail: by default the backend delivers to Mailpit (no auth, no TLS). To send real mail through Resend instead:
 #   MAIL_HOST=smtp.resend.com MAIL_PORT=587 MAIL_USERNAME=resend RESEND_API_KEY=re_xxx \
-#   MAIL_SMTP_AUTH=true MAIL_SMTP_STARTTLS=true MAIL_FROM="Sprachweg <no-reply@your-verified-domain>" \
+#   MAIL_SMTP_AUTH=true MAIL_SMTP_STARTTLS=true MAIL_FROM="Sprachweg <no-reply@course.amanullah.me>" \
 #   docker compose up --build
-# (or put these variables into a .env file next to this compose file).
+# (or copy .env.example to .env next to this compose file and fill in your key).
 
 name: sprachweg
 
@@ -67,7 +67,7 @@ services:
       MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-false}
       MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS:-false}
       MAIL_SMTP_SSL: ${MAIL_SMTP_SSL:-false}
-      MAIL_FROM: ${MAIL_FROM:-Sprachweg <no-reply@sprachweg.local>}
+      MAIL_FROM: ${MAIL_FROM:-Sprachweg <no-reply@course.amanullah.me>}
       # Demo data on first start (empty database only).
       SEED_ENABLED: ${SEED_ENABLED:-true}
       STORAGE_LOCATION: /data/uploads
