@@ -21,43 +21,46 @@ import { SearchInput } from "@/components/ui/search-input";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CourseActiveSwitch } from "@/components/builder/course-active-switch";
 
 function CourseTile({ course }: { course: InstructorCourseDto }) {
   const t = useTranslations();
   const fmt = useFormat();
   return (
-    <Link
-      href={`/instructor/courses/${course.id}`}
-      className="group flex flex-col overflow-hidden rounded-xl border bg-card shadow-xs transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-    >
-      <div className="relative aspect-[2.2/1] overflow-hidden">
-        <CourseCover title={course.title} src={course.coverImageUrl} level={course.level} size="sm" />
-        <div className="absolute top-3 left-3 flex gap-1.5">
-          <LevelBadge level={course.level} className="bg-white/90 dark:bg-black/60" />
+    <div className="group flex flex-col overflow-hidden rounded-xl border bg-card shadow-xs transition-all focus-within:ring-2 focus-within:ring-ring hover:-translate-y-0.5 hover:shadow-md">
+      <Link href={`/instructor/courses/${course.id}`} className="flex flex-1 flex-col outline-none">
+        <div className="relative aspect-[2.2/1] overflow-hidden">
+          <CourseCover title={course.title} src={course.coverImageUrl} level={course.level} size="sm" />
+          <div className="absolute top-3 left-3 flex gap-1.5">
+            <LevelBadge level={course.level} className="bg-white/90 dark:bg-black/60" />
+          </div>
+          <div className="absolute top-3 right-3">
+            <VisibilityBadge visibility={course.visibility} publishAt={course.publishAt} compact className="bg-white/90 dark:bg-black/70" />
+          </div>
         </div>
-        <div className="absolute top-3 right-3">
-          <VisibilityBadge visibility={course.visibility} publishAt={course.publishAt} compact className="bg-white/90 dark:bg-black/70" />
+        <div className="flex flex-1 flex-col gap-3 p-4 pb-3">
+          <div>
+            <h3 className="line-clamp-1 font-semibold">{course.title}</h3>
+            <p className="line-clamp-1 text-sm text-muted-foreground">{course.subtitle || t("instructor.noSubtitle")}</p>
+          </div>
+          <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Layers className="size-3.5" /> {t("course.modulesCount", { count: course.moduleCount })} · {t("course.itemsCount", { count: course.itemCount })}
+            </span>
+            <span className="flex items-center gap-1">
+              <Users className="size-3.5" /> {course.studentCount}
+            </span>
+            {course.pendingCount > 0 && <Badge variant="info">{t("instructor.pendingCount", { count: course.pendingCount })}</Badge>}
+          </div>
         </div>
-      </div>
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <div>
-          <h3 className="line-clamp-1 font-semibold">{course.title}</h3>
-          <p className="line-clamp-1 text-sm text-muted-foreground">{course.subtitle || t("instructor.noSubtitle")}</p>
-        </div>
-        <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Layers className="size-3.5" /> {t("course.modulesCount", { count: course.moduleCount })} · {t("course.itemsCount", { count: course.itemCount })}
-          </span>
-          <span className="flex items-center gap-1">
-            <Users className="size-3.5" /> {course.studentCount}
-          </span>
-          {course.pendingCount > 0 && <Badge variant="info">{t("instructor.pendingCount", { count: course.pendingCount })}</Badge>}
-        </div>
-        <p className="flex items-center gap-1 border-t pt-3 text-xs text-muted-foreground">
+      </Link>
+      <div className="mx-4 flex items-center justify-between gap-2 border-t py-2.5">
+        <p className="flex items-center gap-1 text-xs text-muted-foreground">
           <Clock className="size-3" /> {t("instructor.updated", { when: fmt.relative(course.updatedAt) })}
         </p>
+        <CourseActiveSwitch course={course} />
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -184,7 +187,10 @@ export function InstructorCourseList() {
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <VisibilityBadge visibility={c.visibility} publishAt={c.publishAt} compact />
+                      <div className="flex flex-wrap items-center gap-3">
+                        <CourseActiveSwitch course={c} showLabel={false} />
+                        <VisibilityBadge visibility={c.visibility} publishAt={c.publishAt} compact />
+                      </div>
                     </TableCell>
                     <TableCell className="hidden text-muted-foreground md:table-cell">
                       {t("course.modulesCount", { count: c.moduleCount })} · {t("course.itemsCount", { count: c.itemCount })}

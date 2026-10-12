@@ -29,6 +29,7 @@ import { CourseForm } from "./course-form";
 import { CurriculumBoard } from "./curriculum-board";
 import { PublicationPopover } from "./publication-control";
 import { PublishingPanel } from "./publishing-panel";
+import { CourseActiveSwitch } from "./course-active-switch";
 import { StudentsPanel } from "./students-panel";
 
 const TABS = ["curriculum", "details", "publishing", "students"] as const;
@@ -131,6 +132,7 @@ export function CourseBuilder() {
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <CourseActiveSwitch course={c} className="mr-1 h-8 rounded-lg border bg-card px-2.5" />
           <Button variant="outline" size="sm" asChild>
             <Link href={`/learn/${c.id}`}>
               <Eye /> {t("builder.preview")}
