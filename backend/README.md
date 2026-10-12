@@ -271,9 +271,9 @@ Key rules:
   unverified and disabled accounts are skipped with a code; unknown addresses are reported in `notFound` and, with
   `invite=true`, e-mailed an invitation in the instructor's language linking to
   `/register?email=…&next=/courses/{slug}`. Invitations are recorded in `course_invitations`
-  (`V5__course_invitations.sql`) and repeated at most once per course and address within 24 h (`ALREADY_INVITED`).
+  (`V4__course_invitations.sql`) and repeated at most once per course and address within 24 h (`ALREADY_INVITED`).
 * **Assessments** store a snapshot of every question in each attempt, so editing a quiz never changes old results.
-* **Certificates** (`certificate` package, migration `V7__certificates.sql`, API in PLAN §6 "Certificates"): per-course
+* **Certificates** (`certificate` package, migration `V6__certificates.sql`, API in PLAN §6 "Certificates"): per-course
   settings in `certificate_settings` (no row = disabled defaults) and issued certificates in `certificates` with name /
   title / level snapshots. A unique constraint on `(course_id, active_student_id)` (the student id while valid, `NULL`
   once revoked) guarantees one valid certificate per learner and course. Criteria are re-checked **after commit** in a
