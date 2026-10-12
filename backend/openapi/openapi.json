@@ -1,0 +1,8096 @@
+{
+  "components": {
+    "schemas": {
+      "AddStudentsRequest": {
+        "properties": {
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "type": "array"
+          },
+          "invite": {
+            "type": "boolean"
+          },
+          "message": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "emails"
+        ],
+        "type": "object"
+      },
+      "AddStudentsResult": {
+        "properties": {
+          "added": {
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentDto"
+            },
+            "type": "array"
+          },
+          "alreadyEnrolled": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "invited": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "notFound": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/SkippedEmail"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "AdminUserDto": {
+        "properties": {
+          "avatarMediaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "email": {
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "instructorStatus": {
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "STUDENT",
+              "INSTRUCTOR",
+              "ADMIN"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AnnouncementDto": {
+        "properties": {
+          "audience": {
+            "enum": [
+              "ALL_APPROVED",
+              "SELECTED"
+            ],
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/AuthorDto"
+          },
+          "body": {
+            "type": "string"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "courseTitle": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "readCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "readPercent": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "recipientCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "recipientIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "scheduledAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "sendEmail": {
+            "type": "boolean"
+          },
+          "sentAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "SCHEDULED",
+              "SENT"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AnnouncementUpsert": {
+        "properties": {
+          "audience": {
+            "enum": [
+              "ALL_APPROVED",
+              "SELECTED"
+            ],
+            "type": "string"
+          },
+          "body": {
+            "maxLength": 40000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "recipientIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 500,
+            "minItems": 0,
+            "type": "array"
+          },
+          "scheduledAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "sendEmail": {
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "SCHEDULED",
+              "SENT"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "audience",
+          "body",
+          "title"
+        ],
+        "type": "object"
+      },
+      "AnswerResult": {
+        "properties": {
+          "acceptedAnswers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "correct": {
+            "type": "boolean"
+          },
+          "explanation": {
+            "type": "string"
+          },
+          "feedback": {
+            "type": "string"
+          },
+          "media": {
+            "$ref": "#/components/schemas/MediaDto"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/ResultOption"
+            },
+            "type": "array"
+          },
+          "points": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "pointsAwarded": {
+            "format": "double",
+            "type": "number"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "questionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "selectedOptionIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "textAnswer": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "SINGLE_CHOICE",
+              "MULTIPLE_CHOICE",
+              "TRUE_FALSE",
+              "SHORT_ANSWER",
+              "FILL_BLANK",
+              "ESSAY"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ApplyRequest": {
+        "properties": {
+          "message": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AssessmentAnalyticsDto": {
+        "properties": {
+          "attempts": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "averageDurationSeconds": {
+            "format": "double",
+            "type": "number"
+          },
+          "averagePercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "averageScore": {
+            "format": "double",
+            "type": "number"
+          },
+          "course": {
+            "$ref": "#/components/schemas/CourseRef"
+          },
+          "generatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "gradedAttempts": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "inProgress": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxScore": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "medianPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "passRate": {
+            "format": "double",
+            "type": "number"
+          },
+          "passingScore": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "pendingGrading": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionStats"
+            },
+            "type": "array"
+          },
+          "scoreDistribution": {
+            "items": {
+              "$ref": "#/components/schemas/Bucket"
+            },
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          },
+          "uniqueLearners": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "AssessmentDto": {
+        "properties": {
+          "availableFrom": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "availableUntil": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "instructions": {
+            "type": "string"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxAttempts": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "passingScore": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionDto"
+            },
+            "type": "array"
+          },
+          "showCorrectAnswers": {
+            "type": "boolean"
+          },
+          "shuffleQuestions": {
+            "type": "boolean"
+          },
+          "timeLimitMinutes": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "AssessmentSummaryDto": {
+        "properties": {
+          "questionCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "timeLimitMinutes": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalPoints": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "AssessmentUpsert": {
+        "properties": {
+          "availableFrom": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "availableUntil": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "instructions": {
+            "maxLength": 20000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "maxAttempts": {
+            "format": "int32",
+            "maximum": 1000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "passingScore": {
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionUpsert"
+            },
+            "maxItems": 200,
+            "minItems": 0,
+            "type": "array"
+          },
+          "showCorrectAnswers": {
+            "type": "boolean"
+          },
+          "shuffleQuestions": {
+            "type": "boolean"
+          },
+          "timeLimitMinutes": {
+            "format": "int32",
+            "maximum": 1440,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "AttemptResultDto": {
+        "properties": {
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/AnswerResult"
+            },
+            "type": "array"
+          },
+          "autoSubmitted": {
+            "type": "boolean"
+          },
+          "deadline": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "itemTitle": {
+            "type": "string"
+          },
+          "late": {
+            "type": "boolean"
+          },
+          "maxScore": {
+            "format": "double",
+            "type": "number"
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "pendingManualGrading": {
+            "type": "boolean"
+          },
+          "percent": {
+            "format": "double",
+            "type": "number"
+          },
+          "score": {
+            "format": "double",
+            "type": "number"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "IN_PROGRESS",
+              "SUBMITTED",
+              "GRADED"
+            ],
+            "type": "string"
+          },
+          "student": {
+            "$ref": "#/components/schemas/UserSummaryDto"
+          },
+          "submittedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AttemptSessionDto": {
+        "properties": {
+          "availableUntil": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deadline": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/SessionQuestion"
+            },
+            "type": "array"
+          },
+          "savedAnswers": {
+            "items": {
+              "$ref": "#/components/schemas/SubmittedAnswer"
+            },
+            "type": "array"
+          },
+          "serverTime": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "IN_PROGRESS",
+              "SUBMITTED",
+              "GRADED"
+            ],
+            "type": "string"
+          },
+          "timeLimitMinutes": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "AttemptSummaryDto": {
+        "properties": {
+          "autoSubmitted": {
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "late": {
+            "type": "boolean"
+          },
+          "maxScore": {
+            "format": "double",
+            "type": "number"
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "pendingManualGrading": {
+            "type": "boolean"
+          },
+          "percent": {
+            "format": "double",
+            "type": "number"
+          },
+          "score": {
+            "format": "double",
+            "type": "number"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "IN_PROGRESS",
+              "SUBMITTED",
+              "GRADED"
+            ],
+            "type": "string"
+          },
+          "student": {
+            "$ref": "#/components/schemas/UserSummaryDto"
+          },
+          "submittedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AuthResponse": {
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserDto"
+          }
+        },
+        "type": "object"
+      },
+      "AuthorDto": {
+        "properties": {
+          "avatarUrl": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Bucket": {
+        "properties": {
+          "count": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "from": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "label": {
+            "type": "string"
+          },
+          "to": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "BulkRequest": {
+        "properties": {
+          "action": {
+            "enum": [
+              "APPROVE",
+              "REJECT",
+              "REVOKE"
+            ],
+            "type": "string"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "type": "array"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "ids"
+        ],
+        "type": "object"
+      },
+      "CertificateDto": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "completedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "courseTitle": {
+            "type": "string"
+          },
+          "customText": {
+            "type": "string"
+          },
+          "finalScore": {
+            "format": "double",
+            "type": "number"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "instructorName": {
+            "type": "string"
+          },
+          "issueType": {
+            "enum": [
+              "AUTOMATIC",
+              "MANUAL"
+            ],
+            "type": "string"
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "learnerName": {
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "organization": {
+            "type": "string"
+          },
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "revokedReason": {
+            "type": "string"
+          },
+          "showScore": {
+            "type": "boolean"
+          },
+          "signatureImageUrl": {
+            "type": "string"
+          },
+          "signerTitle": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "REVOKED"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "verificationUrl": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CertificateSettingsDto": {
+        "properties": {
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "courseLevel": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "courseTitle": {
+            "type": "string"
+          },
+          "customText": {
+            "type": "string"
+          },
+          "defaultSignerName": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "issuedCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "language": {
+            "enum": [
+              "LEARNER",
+              "EN",
+              "DE"
+            ],
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "minAverageScore": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "minProgressPercent": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "organization": {
+            "type": "string"
+          },
+          "requireAssessmentsPassed": {
+            "type": "boolean"
+          },
+          "showScore": {
+            "type": "boolean"
+          },
+          "signatureImage": {
+            "$ref": "#/components/schemas/MediaDto"
+          },
+          "signerName": {
+            "type": "string"
+          },
+          "signerTitle": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CertificateSettingsUpdate": {
+        "properties": {
+          "customText": {
+            "maxLength": 400,
+            "minLength": 0,
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "language": {
+            "enum": [
+              "LEARNER",
+              "EN",
+              "DE"
+            ],
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "minAverageScore": {
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "minProgressPercent": {
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "organization": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
+          },
+          "requireAssessmentsPassed": {
+            "type": "boolean"
+          },
+          "showScore": {
+            "type": "boolean"
+          },
+          "signatureImageId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "signerName": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
+          },
+          "signerTitle": {
+            "maxLength": 80,
+            "minLength": 0,
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 80,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "language",
+          "minProgressPercent"
+        ],
+        "type": "object"
+      },
+      "CertificateStatusDto": {
+        "properties": {
+          "certificate": {
+            "$ref": "#/components/schemas/CertificateDto"
+          },
+          "criteria": {
+            "items": {
+              "$ref": "#/components/schemas/CriterionDto"
+            },
+            "type": "array"
+          },
+          "criteriaMet": {
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "NOT_ENABLED",
+              "IN_PROGRESS",
+              "ISSUED",
+              "REVOKED"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ChangePasswordRequest": {
+        "properties": {
+          "currentPassword": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          },
+          "newPassword": {
+            "minLength": 1,
+            "pattern": "^(?=.*\\p{L})(?=.*\\d).{8,64}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ],
+        "type": "object"
+      },
+      "ColumnStats": {
+        "properties": {
+          "attempts": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "average": {
+            "format": "double",
+            "type": "number"
+          },
+          "graded": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "max": {
+            "format": "double",
+            "type": "number"
+          },
+          "median": {
+            "format": "double",
+            "type": "number"
+          },
+          "min": {
+            "format": "double",
+            "type": "number"
+          },
+          "passRate": {
+            "format": "double",
+            "type": "number"
+          },
+          "pendingGrading": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ContentItemDto": {
+        "properties": {
+          "assessment": {
+            "$ref": "#/components/schemas/AssessmentSummaryDto"
+          },
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/MediaDto"
+            },
+            "type": "array"
+          },
+          "body": {
+            "type": "string"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "durationMinutes": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "externalUrl": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "moduleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "position": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "publishAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "publishStatus": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          },
+          "unpublishAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "visibility": {
+            "enum": [
+              "DRAFT",
+              "SCHEDULED",
+              "LIVE",
+              "EXPIRED"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ConversationDto": {
+        "properties": {
+          "course": {
+            "$ref": "#/components/schemas/CourseRefDto"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "lastMessage": {
+            "$ref": "#/components/schemas/LastMessageDto"
+          },
+          "lastMessageAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "other": {
+            "$ref": "#/components/schemas/ParticipantDto"
+          },
+          "unreadCount": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "CourseDetailDto": {
+        "properties": {
+          "coverImageUrl": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "enrollmentMode": {
+            "enum": [
+              "APPROVAL",
+              "OPEN"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "instructor": {
+            "$ref": "#/components/schemas/InstructorRef"
+          },
+          "itemCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "moduleCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "publishedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "studentCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CourseDto": {
+        "properties": {
+          "capacity": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "coverImage": {
+            "$ref": "#/components/schemas/MediaDto"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "enrollmentMode": {
+            "enum": [
+              "APPROVAL",
+              "OPEN"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "modules": {
+            "items": {
+              "$ref": "#/components/schemas/ModuleDto"
+            },
+            "type": "array"
+          },
+          "pendingCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "publishAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "publishStatus": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "studentCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          },
+          "unpublishAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "visibility": {
+            "enum": [
+              "DRAFT",
+              "SCHEDULED",
+              "LIVE",
+              "EXPIRED"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CoursePublicDto": {
+        "properties": {
+          "capacity": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "coverImageUrl": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "enrollmentMode": {
+            "enum": [
+              "APPROVAL",
+              "OPEN"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "instructor": {
+            "$ref": "#/components/schemas/InstructorProfile"
+          },
+          "itemCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "moduleCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "outline": {
+            "items": {
+              "$ref": "#/components/schemas/OutlineModule"
+            },
+            "type": "array"
+          },
+          "publishedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "studentCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CourseRef": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CourseRefDto": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CourseSummaryDto": {
+        "properties": {
+          "coverImageUrl": {
+            "type": "string"
+          },
+          "enrollmentMode": {
+            "enum": [
+              "APPROVAL",
+              "OPEN"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "instructor": {
+            "$ref": "#/components/schemas/InstructorRef"
+          },
+          "itemCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "moduleCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "publishedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "studentCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CourseUnreadDto": {
+        "properties": {
+          "count": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CourseUpsert": {
+        "properties": {
+          "capacity": {
+            "format": "int32",
+            "maximum": 100000,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "coverImageId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 200000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "enrollmentMode": {
+            "enum": [
+              "APPROVAL",
+              "OPEN"
+            ],
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "subtitle": {
+            "maxLength": 300,
+            "minLength": 0,
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "maxLength": 50,
+              "minLength": 0,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 0,
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrollmentMode",
+          "level",
+          "title"
+        ],
+        "type": "object"
+      },
+      "CriterionDto": {
+        "properties": {
+          "current": {
+            "format": "double",
+            "type": "number"
+          },
+          "key": {
+            "enum": [
+              "PROGRESS",
+              "ASSESSMENTS_PASSED",
+              "AVERAGE_SCORE"
+            ],
+            "type": "string"
+          },
+          "met": {
+            "type": "boolean"
+          },
+          "pending": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "target": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "DashboardDto": {
+        "properties": {
+          "courseCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "liveCourseCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "pendingCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "recentApplications": {
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentDto"
+            },
+            "type": "array"
+          },
+          "studentCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "upcoming": {
+            "items": {
+              "$ref": "#/components/schemas/ScheduleEventDto"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "DeleteAccountRequest": {
+        "properties": {
+          "confirm": {
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirm",
+          "password"
+        ],
+        "type": "object"
+      },
+      "EmailRequest": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "type": "object"
+      },
+      "EnrollmentDto": {
+        "properties": {
+          "appliedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "courseTitle": {
+            "type": "string"
+          },
+          "decidedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "decisionReason": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "progressPercent": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED",
+              "WITHDRAWN",
+              "REVOKED"
+            ],
+            "type": "string"
+          },
+          "student": {
+            "$ref": "#/components/schemas/UserSummaryDto"
+          },
+          "waitlistPosition": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "Funnel": {
+        "properties": {
+          "applied": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "approvalRate": {
+            "format": "double",
+            "type": "number"
+          },
+          "approved": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "pending": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "rejected": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "revoked": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "withdrawn": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "Grade": {
+        "properties": {
+          "feedback": {
+            "maxLength": 5000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "pointsAwarded": {
+            "format": "double",
+            "minimum": 0.0,
+            "type": "number"
+          },
+          "questionId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pointsAwarded",
+          "questionId"
+        ],
+        "type": "object"
+      },
+      "GradeRequest": {
+        "properties": {
+          "grades": {
+            "items": {
+              "$ref": "#/components/schemas/Grade"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "grades"
+        ],
+        "type": "object"
+      },
+      "GradebookCell": {
+        "properties": {
+          "attempts": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "bestPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "bestScore": {
+            "format": "double",
+            "type": "number"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "lastSubmittedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "latestAttemptId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "NOT_STARTED",
+              "IN_PROGRESS",
+              "SUBMITTED_PENDING",
+              "GRADED"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "GradebookColumn": {
+        "properties": {
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxScore": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "passingScore": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/ColumnStats"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "GradebookDto": {
+        "properties": {
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/GradebookColumn"
+            },
+            "type": "array"
+          },
+          "course": {
+            "$ref": "#/components/schemas/CourseRef"
+          },
+          "generatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/GradebookRow"
+            },
+            "type": "array"
+          },
+          "totalLiveItems": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "GradebookRow": {
+        "properties": {
+          "activity": {
+            "enum": [
+              "NOT_STARTED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "INACTIVE"
+            ],
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "averageExamPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "averagePercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "averageQuizPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/GradebookCell"
+            },
+            "type": "array"
+          },
+          "completedItems": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "email": {
+            "type": "string"
+          },
+          "enrolledAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "examsTaken": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "examsTotal": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "gradedAssessments": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "lastActivityAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lessonsCompleted": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "lessonsTotal": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "progressPercent": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "quizzesTaken": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "quizzesTotal": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalLiveItems": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "IdsRequest": {
+        "properties": {
+          "ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "type": "object"
+      },
+      "InstructorCertificateDto": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "completedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "courseTitle": {
+            "type": "string"
+          },
+          "finalScore": {
+            "format": "double",
+            "type": "number"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "issueType": {
+            "enum": [
+              "AUTOMATIC",
+              "MANUAL"
+            ],
+            "type": "string"
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "issuedByName": {
+            "type": "string"
+          },
+          "learnerName": {
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "revokedReason": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "REVOKED"
+            ],
+            "type": "string"
+          },
+          "student": {
+            "$ref": "#/components/schemas/UserSummaryDto"
+          },
+          "verificationUrl": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "InstructorCourseDto": {
+        "properties": {
+          "coverImageUrl": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "itemCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "moduleCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "pendingCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "publishAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "publishStatus": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "studentCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "unpublishAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "visibility": {
+            "enum": [
+              "DRAFT",
+              "SCHEDULED",
+              "LIVE",
+              "EXPIRED"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "InstructorDecisionRequest": {
+        "properties": {
+          "reason": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "InstructorProfile": {
+        "properties": {
+          "avatarUrl": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "InstructorRef": {
+        "properties": {
+          "avatarUrl": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "IssueRequest": {
+        "properties": {
+          "studentId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "studentId"
+        ],
+        "type": "object"
+      },
+      "ItemEngagement": {
+        "properties": {
+          "averagePercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "completed": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "completedPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "moduleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "moduleTitle": {
+            "type": "string"
+          },
+          "passed": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "taken": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "takenPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ItemProgressRow": {
+        "properties": {
+          "completedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ItemUpsert": {
+        "properties": {
+          "attachmentIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 0,
+            "type": "array"
+          },
+          "body": {
+            "maxLength": 500000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "durationMinutes": {
+            "format": "int32",
+            "maximum": 10000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "externalUrl": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "summary": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "type"
+        ],
+        "type": "object"
+      },
+      "Kpis": {
+        "properties": {
+          "activeLearners7d": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "approvedLearners": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "assessments": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "averageBestScore": {
+            "format": "double",
+            "type": "number"
+          },
+          "averageProgress": {
+            "format": "double",
+            "type": "number"
+          },
+          "completedLearners": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "completionRate": {
+            "format": "double",
+            "type": "number"
+          },
+          "medianProgress": {
+            "format": "double",
+            "type": "number"
+          },
+          "passRate": {
+            "format": "double",
+            "type": "number"
+          },
+          "pendingApplications": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "pendingGrading": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalLiveItems": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "LastMessageDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "mine": {
+            "type": "boolean"
+          },
+          "preview": {
+            "type": "string"
+          },
+          "senderId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "LearnAssessmentDto": {
+        "properties": {
+          "attemptsUsed": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "availableFrom": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "availableUntil": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "bestPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "inProgressAttemptId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "instructions": {
+            "type": "string"
+          },
+          "maxAttempts": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "passingScore": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "questionCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "timeLimitMinutes": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalPoints": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "LearnCourseDto": {
+        "properties": {
+          "course": {
+            "$ref": "#/components/schemas/CourseDetailDto"
+          },
+          "modules": {
+            "items": {
+              "$ref": "#/components/schemas/LearnModule"
+            },
+            "type": "array"
+          },
+          "progressPercent": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "LearnItemDto": {
+        "properties": {
+          "assessment": {
+            "$ref": "#/components/schemas/LearnAssessmentDto"
+          },
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/MediaDto"
+            },
+            "type": "array"
+          },
+          "body": {
+            "type": "string"
+          },
+          "completed": {
+            "type": "boolean"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "durationMinutes": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "externalUrl": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "moduleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nextItemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "prevItemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "LearnModule": {
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LearnOutlineItem"
+            },
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "LearnOutlineItem": {
+        "properties": {
+          "completed": {
+            "type": "boolean"
+          },
+          "durationMinutes": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "LearnerAnnouncementDto": {
+        "properties": {
+          "author": {
+            "$ref": "#/components/schemas/AuthorDto"
+          },
+          "body": {
+            "type": "string"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "edited": {
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "read": {
+            "type": "boolean"
+          },
+          "sentAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "LocaleRequest": {
+        "properties": {
+          "locale": {
+            "minLength": 1,
+            "pattern": "^(en|de)$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "locale"
+        ],
+        "type": "object"
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "MediaDto": {
+        "properties": {
+          "contentType": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "downloadUrl": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "ARCHIVE",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "sizeBytes": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "MessageDto": {
+        "properties": {
+          "body": {
+            "type": "string"
+          },
+          "conversationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "mine": {
+            "type": "boolean"
+          },
+          "read": {
+            "type": "boolean"
+          },
+          "senderId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "MessagePageDto": {
+        "properties": {
+          "hasMore": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MessageDto"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "MessageResponse": {
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ModuleCompletion": {
+        "properties": {
+          "completionPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "itemCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "moduleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ModuleDto": {
+        "properties": {
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ContentItemDto"
+            },
+            "type": "array"
+          },
+          "position": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "publishAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "publishStatus": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "unpublishAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "visibility": {
+            "enum": [
+              "DRAFT",
+              "SCHEDULED",
+              "LIVE",
+              "EXPIRED"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ModuleProgress": {
+        "properties": {
+          "completedItems": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ItemProgressRow"
+            },
+            "type": "array"
+          },
+          "moduleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "progressPercent": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "totalItems": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ModuleUpsert": {
+        "properties": {
+          "description": {
+            "maxLength": 5000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "type": "object"
+      },
+      "NotificationDto": {
+        "properties": {
+          "body": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          },
+          "read": {
+            "type": "boolean"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "ENROLLMENT_REQUESTED",
+              "ENROLLMENT_APPROVED",
+              "ENROLLMENT_REJECTED",
+              "ENROLLMENT_REVOKED",
+              "ENROLLMENT_WITHDRAWN",
+              "ATTEMPT_SUBMITTED",
+              "ATTEMPT_GRADED",
+              "CERTIFICATE_ISSUED",
+              "CERTIFICATE_REVOKED",
+              "ANNOUNCEMENT",
+              "MESSAGE"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "OptionDto": {
+        "properties": {
+          "correct": {
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "position": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "OptionUpsert": {
+        "properties": {
+          "correct": {
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "position": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "text": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      },
+      "OutlineItem": {
+        "properties": {
+          "durationMinutes": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "OutlineModule": {
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OutlineItem"
+            },
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "OverviewDto": {
+        "properties": {
+          "course": {
+            "$ref": "#/components/schemas/CourseRef"
+          },
+          "enrollmentTimeline": {
+            "items": {
+              "$ref": "#/components/schemas/WeekBucket"
+            },
+            "type": "array"
+          },
+          "funnel": {
+            "$ref": "#/components/schemas/Funnel"
+          },
+          "generatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ItemEngagement"
+            },
+            "type": "array"
+          },
+          "kpis": {
+            "$ref": "#/components/schemas/Kpis"
+          },
+          "modules": {
+            "items": {
+              "$ref": "#/components/schemas/ModuleCompletion"
+            },
+            "type": "array"
+          },
+          "progressDistribution": {
+            "items": {
+              "$ref": "#/components/schemas/Bucket"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "PageResponseAdminUserDto": {
+        "properties": {
+          "content": {
+            "items": {
+              "$ref": "#/components/schemas/AdminUserDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalElements": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalPages": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "PageResponseConversationDto": {
+        "properties": {
+          "content": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalElements": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalPages": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "PageResponseCourseSummaryDto": {
+        "properties": {
+          "content": {
+            "items": {
+              "$ref": "#/components/schemas/CourseSummaryDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalElements": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalPages": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "PageResponseNotificationDto": {
+        "properties": {
+          "content": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalElements": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalPages": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ParticipantDto": {
+        "properties": {
+          "avatarUrl": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "STUDENT",
+              "INSTRUCTOR",
+              "ADMIN"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ProblemDetail": {
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "format": "uri",
+            "type": "string"
+          },
+          "properties": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PublicationRequest": {
+        "properties": {
+          "publishAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "publishStatus": {
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "unpublishAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "publishStatus"
+        ],
+        "type": "object"
+      },
+      "QuestionDto": {
+        "properties": {
+          "acceptedAnswers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "caseSensitive": {
+            "type": "boolean"
+          },
+          "explanation": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "media": {
+            "$ref": "#/components/schemas/MediaDto"
+          },
+          "mediaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/OptionDto"
+            },
+            "type": "array"
+          },
+          "points": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "position": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "SINGLE_CHOICE",
+              "MULTIPLE_CHOICE",
+              "TRUE_FALSE",
+              "SHORT_ANSWER",
+              "FILL_BLANK",
+              "ESSAY"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "QuestionStats": {
+        "properties": {
+          "answered": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "averagePoints": {
+            "format": "double",
+            "type": "number"
+          },
+          "commonWrongAnswers": {
+            "items": {
+              "$ref": "#/components/schemas/WrongAnswer"
+            },
+            "type": "array"
+          },
+          "percentCorrect": {
+            "format": "double",
+            "type": "number"
+          },
+          "points": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "position": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "questionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "SINGLE_CHOICE",
+              "MULTIPLE_CHOICE",
+              "TRUE_FALSE",
+              "SHORT_ANSWER",
+              "FILL_BLANK",
+              "ESSAY"
+            ],
+            "type": "string"
+          },
+          "unanswered": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "QuestionUpsert": {
+        "properties": {
+          "acceptedAnswers": {
+            "items": {
+              "maxLength": 500,
+              "minLength": 0,
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 0,
+            "type": "array"
+          },
+          "caseSensitive": {
+            "type": "boolean"
+          },
+          "explanation": {
+            "maxLength": 20000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "mediaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/OptionUpsert"
+            },
+            "maxItems": 20,
+            "minItems": 0,
+            "type": "array"
+          },
+          "points": {
+            "format": "int32",
+            "maximum": 1000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "position": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "prompt": {
+            "maxLength": 20000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "SINGLE_CHOICE",
+              "MULTIPLE_CHOICE",
+              "TRUE_FALSE",
+              "SHORT_ANSWER",
+              "FILL_BLANK",
+              "ESSAY"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt",
+          "type"
+        ],
+        "type": "object"
+      },
+      "ReasonRequest": {
+        "properties": {
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RegisterRequest": {
+        "properties": {
+          "acceptTerms": {
+            "type": "boolean"
+          },
+          "email": {
+            "format": "email",
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "fullName": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
+          },
+          "locale": {
+            "pattern": "^(en|de)$",
+            "type": "string"
+          },
+          "password": {
+            "minLength": 1,
+            "pattern": "^(?=.*\\p{L})(?=.*\\d).{8,64}$",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "STUDENT",
+              "INSTRUCTOR",
+              "ADMIN"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "fullName",
+          "password",
+          "role"
+        ],
+        "type": "object"
+      },
+      "ResetPasswordRequest": {
+        "properties": {
+          "password": {
+            "minLength": 1,
+            "pattern": "^(?=.*\\p{L})(?=.*\\d).{8,64}$",
+            "type": "string"
+          },
+          "token": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "password",
+          "token"
+        ],
+        "type": "object"
+      },
+      "ResultOption": {
+        "properties": {
+          "correct": {
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RevokeRequest": {
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "type": "object"
+      },
+      "SaveAnswersRequest": {
+        "properties": {
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/SubmittedAnswer"
+            },
+            "maxItems": 500,
+            "minItems": 0,
+            "type": "array"
+          }
+        },
+        "required": [
+          "answers"
+        ],
+        "type": "object"
+      },
+      "ScheduleEventDto": {
+        "properties": {
+          "action": {
+            "enum": [
+              "PUBLISH",
+              "UNPUBLISH",
+              "OPENS",
+              "CLOSES"
+            ],
+            "type": "string"
+          },
+          "at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "courseTitle": {
+            "type": "string"
+          },
+          "entityId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "entityType": {
+            "enum": [
+              "COURSE",
+              "MODULE",
+              "ITEM"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "itemType": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SendMessageRequest": {
+        "properties": {
+          "body": {
+            "maxLength": 5000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "type": "object"
+      },
+      "SessionOption": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SessionQuestion": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "media": {
+            "$ref": "#/components/schemas/MediaDto"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/SessionOption"
+            },
+            "type": "array"
+          },
+          "points": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "SINGLE_CHOICE",
+              "MULTIPLE_CHOICE",
+              "TRUE_FALSE",
+              "SHORT_ANSWER",
+              "FILL_BLANK",
+              "ESSAY"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SkippedEmail": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "StartConversationRequest": {
+        "properties": {
+          "body": {
+            "maxLength": 5000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "recipientId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "recipientId"
+        ],
+        "type": "object"
+      },
+      "StatsDto": {
+        "properties": {
+          "courses": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "enrollments": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "instructors": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "liveCourses": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "pendingInstructors": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "students": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "users": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "StorageUsage": {
+        "properties": {
+          "quotaBytes": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "usedBytes": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "StudentAttempt": {
+        "properties": {
+          "autoSubmitted": {
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "itemTitle": {
+            "type": "string"
+          },
+          "itemType": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          },
+          "late": {
+            "type": "boolean"
+          },
+          "maxScore": {
+            "format": "double",
+            "type": "number"
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "pendingManualGrading": {
+            "type": "boolean"
+          },
+          "percent": {
+            "format": "double",
+            "type": "number"
+          },
+          "score": {
+            "format": "double",
+            "type": "number"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "IN_PROGRESS",
+              "SUBMITTED",
+              "GRADED"
+            ],
+            "type": "string"
+          },
+          "submittedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "StudentEnrollment": {
+        "properties": {
+          "appliedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "decidedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED",
+              "WITHDRAWN",
+              "REVOKED"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "StudentEnrollmentDto": {
+        "properties": {
+          "appliedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "course": {
+            "$ref": "#/components/schemas/CourseSummaryDto"
+          },
+          "decidedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "decisionReason": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "progressPercent": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED",
+              "WITHDRAWN",
+              "REVOKED"
+            ],
+            "type": "string"
+          },
+          "waitlistPosition": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "StudentReportDto": {
+        "properties": {
+          "attempts": {
+            "items": {
+              "$ref": "#/components/schemas/StudentAttempt"
+            },
+            "type": "array"
+          },
+          "completedItems": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "course": {
+            "$ref": "#/components/schemas/CourseRef"
+          },
+          "enrollment": {
+            "$ref": "#/components/schemas/StudentEnrollment"
+          },
+          "feedbackCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "generatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lastActivityAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "modules": {
+            "items": {
+              "$ref": "#/components/schemas/ModuleProgress"
+            },
+            "type": "array"
+          },
+          "progressPercent": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "student": {
+            "$ref": "#/components/schemas/UserSummaryDto"
+          },
+          "totalLiveItems": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/StudentTotals"
+          }
+        },
+        "type": "object"
+      },
+      "StudentTotals": {
+        "properties": {
+          "assessments": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "assessmentsAttempted": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "assessmentsPassed": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "attempts": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "averageBestPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "pendingGrading": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "SubmitRequest": {
+        "properties": {
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/SubmittedAnswer"
+            },
+            "maxItems": 500,
+            "minItems": 0,
+            "type": "array"
+          }
+        },
+        "required": [
+          "answers"
+        ],
+        "type": "object"
+      },
+      "SubmittedAnswer": {
+        "properties": {
+          "questionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "selectedOptionIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 0,
+            "type": "array"
+          },
+          "textAnswer": {
+            "maxLength": 20000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "questionId"
+        ],
+        "type": "object"
+      },
+      "TokenRequest": {
+        "properties": {
+          "token": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "type": "object"
+      },
+      "UnreadCount": {
+        "properties": {
+          "count": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "UnreadCountDto": {
+        "properties": {
+          "conversations": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "count": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "UpdateProfileRequest": {
+        "properties": {
+          "avatarMediaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "bio": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "fullName": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "fullName"
+        ],
+        "type": "object"
+      },
+      "UpdateUserRequest": {
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "role": {
+            "enum": [
+              "STUDENT",
+              "INSTRUCTOR",
+              "ADMIN"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UserDto": {
+        "properties": {
+          "avatarMediaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "instructorStatus": {
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "STUDENT",
+              "INSTRUCTOR",
+              "ADMIN"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UserSummaryDto": {
+        "properties": {
+          "avatarUrl": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "VerificationDto": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "completedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "courseTitle": {
+            "type": "string"
+          },
+          "instructorName": {
+            "type": "string"
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "learnerName": {
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "A1",
+              "A2",
+              "B1",
+              "B2",
+              "C1",
+              "C2"
+            ],
+            "type": "string"
+          },
+          "organization": {
+            "type": "string"
+          },
+          "revoked": {
+            "type": "boolean"
+          },
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "WeekBucket": {
+        "properties": {
+          "applications": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "approvals": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "weekStart": {
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WrongAnswer": {
+        "properties": {
+          "count": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "REST API of the Sprachweg German language course platform",
+    "title": "Sprachweg API",
+    "version": "v1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/admin/stats": {
+      "get": {
+        "operationId": "stats",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "operationId": "users",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "enum": [
+                "STUDENT",
+                "INSTRUCTOR",
+                "ADMIN"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "instructorStatus",
+            "required": false,
+            "schema": {
+              "enum": [
+                "PENDING",
+                "APPROVED",
+                "REJECTED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseAdminUserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/admin/users/{id}": {
+      "put": {
+        "operationId": "update_3",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/admin/users/{id}/approve-instructor": {
+      "post": {
+        "operationId": "approveInstructor",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/admin/users/{id}/reject-instructor": {
+      "post": {
+        "operationId": "rejectInstructor",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstructorDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "operationId": "forgotPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "operationId": "refresh",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/resend-verification": {
+      "post": {
+        "operationId": "resend",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "operationId": "resetPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/verify-email": {
+      "post": {
+        "operationId": "verifyEmail",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/instructor/announcements/{id}": {
+      "delete": {
+        "operationId": "delete_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: announcements"
+        ]
+      },
+      "get": {
+        "operationId": "get_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: announcements"
+        ]
+      },
+      "put": {
+        "operationId": "update_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: announcements"
+        ]
+      }
+    },
+    "/api/instructor/announcements/{id}/send": {
+      "post": {
+        "operationId": "send_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: announcements"
+        ]
+      }
+    },
+    "/api/instructor/attempts/{id}": {
+      "get": {
+        "operationId": "attempt",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptResultDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: assessments"
+        ]
+      }
+    },
+    "/api/instructor/attempts/{id}/grade": {
+      "post": {
+        "operationId": "grade",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GradeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptResultDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: assessments"
+        ]
+      }
+    },
+    "/api/instructor/certificates/{id}/pdf": {
+      "get": {
+        "operationId": "pdf_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Certificate as PDF (A4 landscape); revoked certificates carry a stamp",
+        "tags": [
+          "Instructor: certificates"
+        ]
+      }
+    },
+    "/api/instructor/certificates/{id}/revoke": {
+      "post": {
+        "operationId": "revoke_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstructorCertificateDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: certificates"
+        ]
+      }
+    },
+    "/api/instructor/courses": {
+      "get": {
+        "operationId": "courses",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InstructorCourseDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      },
+      "post": {
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseDto"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/announcements": {
+      "get": {
+        "operationId": "list",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AnnouncementDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: announcements"
+        ]
+      },
+      "post": {
+        "operationId": "create_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementDto"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Instructor: announcements"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/certificate-settings": {
+      "get": {
+        "operationId": "settings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateSettingsDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: certificates"
+        ]
+      },
+      "put": {
+        "operationId": "updateSettings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateSettingsDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: certificates"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/certificates": {
+      "get": {
+        "operationId": "list_4",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InstructorCertificateDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Issued certificates of a course (newest first), optionally filtered by name, e-mail or code",
+        "tags": [
+          "Instructor: certificates"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/certificates/issue": {
+      "post": {
+        "operationId": "issue",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstructorCertificateDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Issue a certificate manually (override), also when the learner does not meet the criteria",
+        "tags": [
+          "Instructor: certificates"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/enrollments/add": {
+      "post": {
+        "operationId": "add",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddStudentsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddStudentsResult"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: enrollments"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/reports/gradebook": {
+      "get": {
+        "operationId": "gradebook",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradebookDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: reports"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/reports/gradebook.csv": {
+      "get": {
+        "operationId": "gradebookCsv",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Gradebook as CSV (UTF-8 with BOM, localized headers)",
+        "tags": [
+          "Instructor: reports"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/reports/overview": {
+      "get": {
+        "operationId": "overview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: reports"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/reports/progress.csv": {
+      "get": {
+        "operationId": "progressCsv",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Learner progress table as CSV (UTF-8 with BOM, localized headers)",
+        "tags": [
+          "Instructor: reports"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/reports/students/{studentId}": {
+      "get": {
+        "operationId": "student",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "studentId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentReportDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: reports"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/reports/students/{studentId}.csv": {
+      "get": {
+        "operationId": "studentCsv",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "studentId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Learner report as CSV (UTF-8 with BOM, localized headers)",
+        "tags": [
+          "Instructor: reports"
+        ]
+      }
+    },
+    "/api/instructor/courses/{id}": {
+      "delete": {
+        "operationId": "delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      },
+      "get": {
+        "operationId": "get_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      },
+      "put": {
+        "operationId": "update_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/courses/{id}/enrollments": {
+      "get": {
+        "operationId": "list_3",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "PENDING",
+                "APPROVED",
+                "REJECTED",
+                "WITHDRAWN",
+                "REVOKED"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EnrollmentDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: enrollments"
+        ]
+      }
+    },
+    "/api/instructor/courses/{id}/modules": {
+      "post": {
+        "operationId": "createModule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModuleUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModuleDto"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/courses/{id}/modules/order": {
+      "put": {
+        "operationId": "reorderModules",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/courses/{id}/publication": {
+      "put": {
+        "operationId": "publish",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/dashboard": {
+      "get": {
+        "operationId": "dashboard",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: schedule & dashboard"
+        ]
+      }
+    },
+    "/api/instructor/enrollments/bulk": {
+      "post": {
+        "operationId": "bulk",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EnrollmentDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: enrollments"
+        ]
+      }
+    },
+    "/api/instructor/enrollments/{id}/approve": {
+      "post": {
+        "operationId": "approve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: enrollments"
+        ]
+      }
+    },
+    "/api/instructor/enrollments/{id}/reject": {
+      "post": {
+        "operationId": "reject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasonRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: enrollments"
+        ]
+      }
+    },
+    "/api/instructor/enrollments/{id}/revoke": {
+      "post": {
+        "operationId": "revoke",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasonRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: enrollments"
+        ]
+      }
+    },
+    "/api/instructor/items/{id}": {
+      "delete": {
+        "operationId": "deleteItem",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      },
+      "get": {
+        "operationId": "getItem",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentItemDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      },
+      "put": {
+        "operationId": "updateItem",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentItemDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/items/{id}/assessment": {
+      "get": {
+        "operationId": "get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: assessments"
+        ]
+      },
+      "put": {
+        "operationId": "replace",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: assessments"
+        ]
+      }
+    },
+    "/api/instructor/items/{id}/attempts": {
+      "get": {
+        "operationId": "attempts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AttemptSummaryDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: assessments"
+        ]
+      }
+    },
+    "/api/instructor/items/{id}/publication": {
+      "put": {
+        "operationId": "publishItem",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentItemDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/items/{itemId}/reports/assessment": {
+      "get": {
+        "operationId": "assessment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "itemId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentAnalyticsDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: reports"
+        ]
+      }
+    },
+    "/api/instructor/items/{itemId}/reports/attempts.csv": {
+      "get": {
+        "operationId": "attemptsCsv",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "itemId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "All attempts of a quiz/exam with per-question points as CSV",
+        "tags": [
+          "Instructor: reports"
+        ]
+      }
+    },
+    "/api/instructor/modules/{id}": {
+      "delete": {
+        "operationId": "deleteModule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      },
+      "put": {
+        "operationId": "updateModule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModuleUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModuleDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/modules/{id}/items": {
+      "post": {
+        "operationId": "createItem",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentItemDto"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/modules/{id}/items/order": {
+      "put": {
+        "operationId": "reorderItems",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/modules/{id}/publication": {
+      "put": {
+        "operationId": "publishModule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModuleDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/schedule": {
+      "get": {
+        "operationId": "schedule",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "courseId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ScheduleEventDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: schedule & dashboard"
+        ]
+      }
+    },
+    "/api/media": {
+      "post": {
+        "operationId": "upload",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaDto"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/media/usage": {
+      "get": {
+        "operationId": "usage",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageUsage"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/media/{id}": {
+      "delete": {
+        "operationId": "delete_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      },
+      "get": {
+        "operationId": "get_3",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/media/{id}/content": {
+      "get": {
+        "operationId": "content",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expires",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sig",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "download",
+            "required": false,
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/messages/conversations": {
+      "get": {
+        "operationId": "conversations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseConversationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      },
+      "post": {
+        "operationId": "start_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartConversationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDto"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/messages/conversations/with/{userId}": {
+      "get": {
+        "operationId": "with",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "courseId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/messages/conversations/{id}": {
+      "get": {
+        "operationId": "conversation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/messages/conversations/{id}/messages": {
+      "get": {
+        "operationId": "messages",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagePageDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      },
+      "post": {
+        "operationId": "send",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageDto"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/messages/conversations/{id}/read": {
+      "post": {
+        "operationId": "read_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/messages/unread-count": {
+      "get": {
+        "operationId": "unreadCount_1",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "operationId": "list_2",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseNotificationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/notifications/read-all": {
+      "post": {
+        "operationId": "readAll",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/notifications/unread-count": {
+      "get": {
+        "operationId": "unreadCount",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCount"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "post": {
+        "operationId": "read_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/public/certificates/{code}": {
+      "get": {
+        "operationId": "verify",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Verify a certificate code (no personal data beyond the name on the certificate); unknown codes → 404 CERTIFICATE_NOT_FOUND, too many lookups → 429 RATE_LIMITED",
+        "tags": [
+          "Public: certificate verification"
+        ]
+      }
+    },
+    "/api/public/courses": {
+      "get": {
+        "operationId": "courses_1",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "level",
+            "required": false,
+            "schema": {
+              "enum": [
+                "A1",
+                "A2",
+                "B1",
+                "B2",
+                "C1",
+                "C2"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseCourseSummaryDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Public catalog"
+        ]
+      }
+    },
+    "/api/public/courses/{slug}": {
+      "get": {
+        "operationId": "course",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoursePublicDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Public catalog"
+        ]
+      }
+    },
+    "/api/student/announcements/unread": {
+      "get": {
+        "operationId": "unread",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CourseUnreadDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: announcements"
+        ]
+      }
+    },
+    "/api/student/announcements/{id}/read": {
+      "post": {
+        "operationId": "read",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: announcements"
+        ]
+      }
+    },
+    "/api/student/attempts/{id}": {
+      "get": {
+        "operationId": "result",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptResultDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: quizzes & exams"
+        ]
+      }
+    },
+    "/api/student/attempts/{id}/answers": {
+      "put": {
+        "operationId": "saveAnswers",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveAnswersRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: quizzes & exams"
+        ]
+      }
+    },
+    "/api/student/attempts/{id}/submit": {
+      "post": {
+        "operationId": "submit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptResultDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: quizzes & exams"
+        ]
+      }
+    },
+    "/api/student/certificates": {
+      "get": {
+        "operationId": "mine_1",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CertificateDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "My certificates (newest first, including revoked ones)",
+        "tags": [
+          "Learner: certificates"
+        ]
+      }
+    },
+    "/api/student/certificates/{id}/pdf": {
+      "get": {
+        "operationId": "pdf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lang",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "My certificate as PDF (A4 landscape); lang=en|de overrides the course's language",
+        "tags": [
+          "Learner: certificates"
+        ]
+      }
+    },
+    "/api/student/courses/{courseId}/announcements": {
+      "get": {
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LearnerAnnouncementDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: announcements"
+        ]
+      }
+    },
+    "/api/student/courses/{courseId}/certificate": {
+      "get": {
+        "operationId": "status",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateStatusDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Certificate status for a course: NOT_ENABLED, IN_PROGRESS (with criteria), ISSUED or REVOKED",
+        "tags": [
+          "Learner: certificates"
+        ]
+      }
+    },
+    "/api/student/courses/{courseId}/enrollment": {
+      "get": {
+        "operationId": "mine",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: enrollments"
+        ]
+      }
+    },
+    "/api/student/courses/{courseId}/enrollments": {
+      "post": {
+        "operationId": "apply",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentDto"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Learner: enrollments"
+        ]
+      }
+    },
+    "/api/student/courses/{courseId}/learn": {
+      "get": {
+        "operationId": "learn",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearnCourseDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: player"
+        ]
+      }
+    },
+    "/api/student/enrollments": {
+      "get": {
+        "operationId": "myEnrollments",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StudentEnrollmentDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: enrollments"
+        ]
+      }
+    },
+    "/api/student/enrollments/{id}/withdraw": {
+      "post": {
+        "operationId": "withdraw",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: enrollments"
+        ]
+      }
+    },
+    "/api/student/items/{itemId}": {
+      "get": {
+        "operationId": "item",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "itemId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearnItemDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: player"
+        ]
+      }
+    },
+    "/api/student/items/{itemId}/attempts": {
+      "get": {
+        "operationId": "myAttempts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "itemId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AttemptSummaryDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: quizzes & exams"
+        ]
+      },
+      "post": {
+        "operationId": "start",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "itemId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptSessionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: quizzes & exams"
+        ]
+      }
+    },
+    "/api/student/items/{itemId}/complete": {
+      "delete": {
+        "operationId": "uncomplete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "itemId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: player"
+        ]
+      },
+      "post": {
+        "operationId": "complete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "itemId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: player"
+        ]
+      }
+    },
+    "/api/users/me": {
+      "delete": {
+        "operationId": "deleteAccount",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Me"
+        ]
+      },
+      "get": {
+        "operationId": "me",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Me"
+        ]
+      },
+      "put": {
+        "operationId": "update",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Me"
+        ]
+      }
+    },
+    "/api/users/me/export": {
+      "get": {
+        "operationId": "exportData",
+        "responses": {
+          "200": {
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "ZIP archive"
+          }
+        },
+        "tags": [
+          "Me"
+        ]
+      }
+    },
+    "/api/users/me/locale": {
+      "put": {
+        "operationId": "changeLocale",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocaleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Me"
+        ]
+      }
+    },
+    "/api/users/me/password": {
+      "put": {
+        "operationId": "changePassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Me"
+        ]
+      }
+    },
+    "/error": {
+      "delete": {
+        "operationId": "error_3",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "problem-error-controller"
+        ]
+      },
+      "get": {
+        "operationId": "error",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "problem-error-controller"
+        ]
+      },
+      "head": {
+        "operationId": "error_5",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "problem-error-controller"
+        ]
+      },
+      "options": {
+        "operationId": "error_6",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "problem-error-controller"
+        ]
+      },
+      "patch": {
+        "operationId": "error_4",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "problem-error-controller"
+        ]
+      },
+      "post": {
+        "operationId": "error_1",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "problem-error-controller"
+        ]
+      },
+      "put": {
+        "operationId": "error_2",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "problem-error-controller"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": [ ]
+    }
+  ]
+}

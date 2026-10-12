@@ -1,0 +1,56 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+  mail:
+    # Resend SMTP by default (https://resend.com/docs/send-with-smtp). Override for other providers / Mailpit.
+    host: ${MAIL_HOST:smtp.resend.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:resend}
+    password: ${RESEND_API_KEY:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:true}
+            required: ${MAIL_SMTP_STARTTLS:true}
+          ssl:
+            # Set MAIL_SMTP_SSL=true (and MAIL_PORT=465, MAIL_SMTP_STARTTLS=false) for implicit TLS.
+            enable: ${MAIL_SMTP_SSL:false}
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+
+app:
+  frontend-url: ${FRONTEND_URL:https://course.amanullah.me}
+  public-base-url: ${PUBLIC_BASE_URL:https://api.course.amanullah.me}
+  jwt:
+    secret: ${JWT_SECRET}
+  media:
+    secret: ${MEDIA_SECRET}
+  storage:
+    location: ${STORAGE_LOCATION:/data/uploads}
+  auth:
+    secure-cookie: ${COOKIE_SECURE:true}
+  mail:
+    enabled: ${MAIL_ENABLED:true}
+    from: "${MAIL_FROM:Sprachweg <no-reply@course.amanullah.me>}"
+  cors:
+    allowed-origins: ${CORS_ORIGINS:https://course.amanullah.me}
+  seed:
+    enabled: ${SEED_ENABLED:false}
+
+logging:
+  level:
+    me.amanullah.course: INFO
+
+# Swagger UI and the OpenAPI document are not public in production (SWAGGER_ENABLED=true to turn them on).
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}

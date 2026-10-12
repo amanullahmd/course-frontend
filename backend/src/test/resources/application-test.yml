@@ -1,0 +1,40 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:sprachweg-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  servlet:
+    multipart:
+      # tiny limits so the upload-size handling can be tested
+      max-file-size: 10KB
+      max-request-size: 20KB
+
+app:
+  storage:
+    location: ./target/test-uploads
+  # Security & privacy: off for the general suites; SecurityPrivacyTest turns them on explicitly.
+  rate-limit:
+    enabled: false
+  registration:
+    instructor-approval-required: false
+    terms-required: false
+  mail:
+    enabled: false
+  seed:
+    enabled: false
+  # tests call AttemptExpirySweeper.sweep(now) directly
+  attempts:
+    sweeper:
+      enabled: false
+  # tests call AnnouncementScheduler.sendDue(now) and MessageMailJob.sendDue(now) directly
+  announcements:
+    scheduler:
+      enabled: false
+  messaging:
+    mail-job:
+      enabled: false
+
+logging:
+  level:
+    root: WARN
+    me.amanullah.course: INFO

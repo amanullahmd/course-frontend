@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/sprachweg-db;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;AUTO_SERVER=TRUE
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: false
+
+app:
+  mail:
+    # Logs e-mails to the console unless MAIL_ENABLED=true (e.g. in backend/.env) — then they go out via Resend.
+    enabled: ${MAIL_ENABLED:false}
+  seed:
+    enabled: true
+
+logging:
+  level:
+    me.amanullah.course: DEBUG

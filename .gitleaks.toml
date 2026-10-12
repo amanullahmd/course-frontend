@@ -1,0 +1,26 @@
+# gitleaks configuration (CI job "scan:secrets": gitleaks git --config .gitleaks.toml over the full history).
+# Uses the default rule set and allowlists only known, intentional non-secrets. Never add real keys here:
+# real secrets (RESEND_API_KEY, JWT_SECRET, MEDIA_SECRET, DB passwords) live in git-ignored .env files or CI secrets.
+title = "Sprachweg gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Development/test defaults that are public by design (overridden by env vars in production)"
+condition = "OR"
+regexes = [
+  # application.yml development fallbacks for app.jwt.secret / app.media.secret
+  '''dev-only-(jwt|media)-secret-change-me-[0-9a-f]+''',
+  # dummy secrets of the ephemeral CI database / prod-boot check
+  '''ci-only-(jwt|media)-secret-not-used-anywhere-[0-9]+''',
+  # documented password of the seeded demo accounts (dev profile only)
+  '''Password123!''',
+]
+
+[[allowlists]]
+description = "Generated or third-party files without secrets"
+paths = [
+  '''(^|/)package-lock\.json$''',
+  '''^backend/openapi/openapi\.json$''',
+]

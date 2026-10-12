@@ -1,0 +1,25 @@
+# Build output
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Local runtime data (H2 database, uploads)
+data/
+
+# Logs
+*.log
+
+# IDEs / OS
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.factorypath
+*.swp
+.DS_Store
+
+# Local env overrides
+.env
+.env.*
+!.env.example
