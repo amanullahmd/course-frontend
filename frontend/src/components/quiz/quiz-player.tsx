@@ -202,6 +202,13 @@ export function QuizPlayer({
   const saveRef = React.useRef<((keepalive?: boolean) => Promise<void>) | null>(null);
   const doSubmitRef = React.useRef<((auto?: boolean, retry?: number) => void) | null>(null);
   const mountedRef = React.useRef(true);
+  // The parent re-renders every second (countdowns) with a new callback; keep autosave timers stable.
+  const onSubmittedRef = React.useRef(onSubmitted);
+  const errorMessageRef = React.useRef(errorMessage);
+  React.useEffect(() => {
+    onSubmittedRef.current = onSubmitted;
+    errorMessageRef.current = errorMessage;
+  });
   React.useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -223,9 +230,9 @@ export function QuizPlayer({
       else if (result.pendingManualGrading || result.status === "SUBMITTED") toast.success(t("submittedPending"));
       else if (result.passed) toast.success(t("submittedPassed"));
       else toast.success(t("submittedNeutral"));
-      onSubmitted(result);
+      onSubmittedRef.current(result);
     },
-    [courseId, itemId, onSubmitted, qc, storageKey, t],
+    [courseId, itemId, qc, storageKey, t],
   );
 
   /** The server already closed the attempt (expired or submitted elsewhere): show its result. */
@@ -236,9 +243,9 @@ export function QuizPlayer({
       finish(await studentApi.attempt(session.id), false);
     } catch (error) {
       doneRef.current = false;
-      toast.error(errorMessage(error));
+      toast.error(errorMessageRef.current(error));
     }
-  }, [errorMessage, finish, session.id]);
+  }, [finish, session.id]);
 
   const save = React.useCallback(
     async (keepalive = false) => {
