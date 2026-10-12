@@ -232,11 +232,11 @@ export function ScheduleView() {
         </div>
       </div>
       <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground" aria-label={t("legend")}>
-        {(["PUBLISH", "UNPUBLISH", "OPENS", "CLOSES"] as const).map((action) => (
+        {(["PUBLISH", "UNPUBLISH", "OPENS", "CLOSES", "DUE", "SESSION"] as const).map((action) => (
           <li key={action} className="flex items-center gap-1.5">
             <span className={cn("size-2 rounded-full", ACTION_META[action].dot)} />
             <ActionIcon action={action} className="size-3" />
-            {t(ACTION_META[action].label as "publish" | "unpublish" | "windowOpens" | "windowCloses")}
+            {t(ACTION_META[action].label as "publish" | "unpublish" | "windowOpens" | "windowCloses" | "assignmentDue" | "liveSession")}
           </li>
         ))}
       </ul>

@@ -194,7 +194,7 @@ function Player({ courseId, cards, onMore }: { courseId: string; cards: ReviewCa
             <span className="max-w-[10rem] truncate sm:max-w-xs">{current.deckTitle}</span>
             <Badge variant={current.newCard ? "info" : "brand"}>{current.newCard ? t("new") : t("due")}</Badge>
           </span>
-          <span className="font-medium tabular-nums" aria-live="polite">
+          <span className="shrink-0 font-medium whitespace-nowrap tabular-nums" aria-live="polite">
             {t("progress", { done: state.done, total: state.total })}
           </span>
         </div>
@@ -259,7 +259,7 @@ export function ReviewSession() {
             <ArrowLeft /> {t("backToCourse")}
           </Link>
         </Button>
-        <h1 className="text-lg font-semibold tracking-tight sm:text-xl">{t("reviewTitle")}</h1>
+        <h1 className="sr-only text-lg font-semibold tracking-tight sm:not-sr-only sm:text-xl">{t("reviewTitle")}</h1>
         <span className="w-24" aria-hidden />
       </div>
       {session.isPending ? (

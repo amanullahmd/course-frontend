@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { DoorClosed, DoorOpen, EyeOff, Layers, Library, Rocket, type LucideIcon } from "lucide-react";
+import { CalendarClock, DoorClosed, DoorOpen, EyeOff, Layers, Library, Rocket, Video, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { ScheduleEventDto } from "@/lib/api/types";
 import { ITEM_TYPE_META } from "@/lib/constants";
@@ -8,12 +8,21 @@ import { cn } from "@/lib/utils";
 
 export function eventHref(e: ScheduleEventDto): string {
   if (e.action === "OPENS" || e.action === "CLOSES") return `/instructor/courses/${e.courseId}/items/${e.entityId}?tab=assessment`;
+  if (e.entityType === "SESSION") return `/instructor/courses/${e.courseId}?tab=live`;
+  if (e.action === "DUE") return `/instructor/courses/${e.courseId}/items/${e.entityId}?tab=assignment`;
   if (e.entityType === "ITEM") return `/instructor/courses/${e.courseId}/items/${e.entityId}`;
   return `/instructor/courses/${e.courseId}${e.entityType === "COURSE" ? "?tab=publishing" : ""}`;
 }
 
 export function EventIcon({ event, className }: { event: ScheduleEventDto; className?: string }) {
-  const Icon = event.entityType === "ITEM" && event.itemType ? ITEM_TYPE_META[event.itemType].icon : event.entityType === "MODULE" ? Layers : Library;
+  const Icon =
+    event.entityType === "SESSION"
+      ? Video
+      : event.entityType === "ITEM" && event.itemType
+        ? ITEM_TYPE_META[event.itemType].icon
+        : event.entityType === "MODULE"
+          ? Layers
+          : Library;
   return <Icon className={cn("size-3.5 shrink-0", className)} aria-hidden />;
 }
 
@@ -49,12 +58,26 @@ export const ACTION_META: Record<Action, { chip: string; dot: string; icon: Luci
     label: "windowCloses",
     verb: "attemptsClose",
   },
+  DUE: {
+    chip: "bg-warning-soft text-warning ring-warning/30 hover:bg-warning/15",
+    dot: "bg-warning",
+    icon: CalendarClock,
+    label: "assignmentDue",
+    verb: "dueDate",
+  },
+  SESSION: {
+    chip: "bg-brand-soft text-brand-strong ring-brand/30 hover:bg-brand/15",
+    dot: "bg-brand",
+    icon: Video,
+    label: "liveSession",
+    verb: "liveStarts",
+  },
 };
 
 export const actionClass = (action: Action) => ACTION_META[action].chip;
 
-type ActionKey = "publish" | "unpublish" | "windowOpens" | "windowCloses";
-type VerbKey = "goesLive" | "unpublishes" | "attemptsOpen" | "attemptsClose";
+type ActionKey = "publish" | "unpublish" | "windowOpens" | "windowCloses" | "assignmentDue" | "liveSession";
+type VerbKey = "goesLive" | "unpublishes" | "attemptsOpen" | "attemptsClose" | "dueDate" | "liveStarts";
 
 export function ActionIcon({ action, className }: { action: Action; className?: string }) {
   const Icon = ACTION_META[action].icon;
@@ -73,7 +96,7 @@ export function EventChip({ event, className }: { event: ScheduleEventDto; class
         className,
       )}
     >
-      {event.action === "OPENS" || event.action === "CLOSES" ? (
+      {event.action === "OPENS" || event.action === "CLOSES" || event.action === "DUE" ? (
         <ActionIcon action={event.action} />
       ) : (
         <EventIcon event={event} />

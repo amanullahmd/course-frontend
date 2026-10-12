@@ -14,6 +14,8 @@ import { useHotkey } from "@/hooks/use-hotkey";
 import { ItemTypeIcon } from "@/components/course/item-type-icon";
 import { RichContent } from "@/components/course/rich-content";
 import { AssessmentPanel } from "@/components/quiz/assessment-panel";
+import { AssignmentView } from "@/components/assignments/assignment-view";
+import { FlashcardDeckView } from "@/components/flashcards/deck-view";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -55,10 +57,12 @@ export function LearnItemView() {
   const prevId = item.data?.prevItemId ?? (position > 0 ? all[position - 1].id : null);
   const nextId = item.data?.nextItemId ?? (position >= 0 && position < all.length - 1 ? all[position + 1].id : null);
   const isAssessment = item.data ? isAssessmentType(item.data.type) : false;
+  // quizzes, exams and assignments complete themselves when the learner hands something in
+  const selfCompleting = isAssessment || item.data?.type === "ASSIGNMENT";
 
   useHotkey("[", () => prevId && router.push(`/learn/${courseId}/${prevId}`), { enabled: !!prevId });
   useHotkey("]", () => nextId && router.push(`/learn/${courseId}/${nextId}`), { enabled: !!nextId });
-  useHotkey("m", () => item.data && !isAssessment && toggle.mutate(!item.data.completed), { enabled: !!item.data && !isAssessment });
+  useHotkey("m", () => item.data && !selfCompleting && toggle.mutate(!item.data.completed), { enabled: !!item.data && !selfCompleting });
 
   if (item.isPending) return <ItemSkeleton />;
   if (item.isError) {
@@ -141,13 +145,15 @@ export function LearnItemView() {
           <>
             <ItemViewer item={data} />
             <RichContent html={data.body} />
+            {data.type === "FLASHCARDS" && <FlashcardDeckView item={data} />}
+            {data.type === "ASSIGNMENT" && <AssignmentView item={data} />}
           </>
         )}
         <ExtraAttachments attachments={extras} />
       </div>
 
       <footer className="mt-14 border-t pt-6">
-        {!isAssessment && (
+        {!selfCompleting && (
           <div
             className={cn(
               "mb-6 flex flex-col items-start justify-between gap-4 rounded-xl border p-4 transition-colors sm:flex-row sm:items-center",
@@ -210,11 +216,11 @@ export function LearnItemView() {
             <Button
               asChild
               onClick={() => {
-                if (!isAssessment && !data.completed) toggle.mutate(true);
+                if (!selfCompleting && !data.completed) toggle.mutate(true);
               }}
             >
               <Link href={`/learn/${courseId}/${nextId}`}>
-                {!isAssessment && !data.completed ? t("learn.completeContinue") : t("learn.nextLesson")} <ArrowRight />
+                {!selfCompleting && !data.completed ? t("learn.completeContinue") : t("learn.nextLesson")} <ArrowRight />
                 <Kbd className="ml-1 hidden border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground/80 sm:inline-flex">]</Kbd>
               </Link>
             </Button>

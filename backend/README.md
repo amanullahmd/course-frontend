@@ -87,6 +87,11 @@ Unit tests (visibility rule, slug generation, grading helpers, media URL signing
   notification per conversation), cursor pagination, the 5000-character limit, the 30/min rate limit (429 +
   `Retry-After`) and the delayed/throttled new-message e-mails (`MessageMailJob.sendDue(now)`).
   `CommunicationRobustnessTest`: ~55 bad requests against both APIs, always 4xx with a `code`, never 5xx.
+* `Sm2SchedulerTest`, `FlashcardCsvTest`, `IcsWriterTest` (pure units) and `FlashcardIT`, `AssignmentIT`, `LiveSessionIT`: decks and CSV,
+  the review queue (daily new-card limit, hidden decks, per-learner state), the assignment lifecycle (submit, return, resubmit, grade,
+  limits, late flag, foreign media, notifications and e-mails), live sessions (join URL window, series across the DST change on
+  25 Oct 2026, attendance, cancellation, 24 h reminders) and the token-protected iCal feed. Demo data (deck, assignment, sessions)
+  comes from `PracticeSeeder`.
 * `HttpRobustnessTest` (real Tomcat, `RANDOM_PORT`): multipart size limits (413), `/error`, exceptions and
   `sendError` raised in servlet filters, and URLs rejected by the HTTP firewall. The same suite also passes against PostgreSQL:
 

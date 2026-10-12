@@ -54,7 +54,7 @@ function DueCardsTile() {
 function NextLessonTile() {
   const t = useTranslations("live");
   const fmt = useFormat();
-  const now = useNow() || Date.now();
+  const now = useNow();
   const upcoming = useUpcomingSessions();
   if (upcoming.isPending) return <Skeleton className="h-40 rounded-xl" />;
   const next = upcoming.data?.[0];
@@ -62,15 +62,15 @@ function NextLessonTile() {
   const state = sessionState(next, now);
   return (
     <section className="flex flex-col gap-4 rounded-xl border bg-card p-5 shadow-xs" aria-labelledby="live-tile-title">
-      <div className="flex items-start gap-3">
+      <div className="flex flex-wrap items-start gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand-strong">
           <Video className="size-5" aria-hidden />
         </span>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1 basis-40">
           <h2 id="live-tile-title" className="text-sm font-medium text-muted-foreground">
             {t("nextLesson")}
           </h2>
-          <p className="truncate text-lg font-semibold tracking-tight">{next.title}</p>
+          <p className="text-lg font-semibold tracking-tight break-words">{next.title}</p>
           <p className="truncate text-sm text-muted-foreground">{next.courseTitle}</p>
         </div>
         <Badge variant={state === "running" ? "success" : state === "joinable" ? "brand" : "secondary"} className="ml-auto">

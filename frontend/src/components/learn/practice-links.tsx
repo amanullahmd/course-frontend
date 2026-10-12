@@ -19,7 +19,7 @@ export function PracticeLinks({ data, onNavigate }: { data: LearnCourseDto; onNa
   const t = useTranslations();
   const fmt = useFormat();
   const pathname = usePathname();
-  const now = useNow() || Date.now();
+  const now = useNow();
   const courseId = data.course.id;
   const hasDeck = data.modules.some((m) => m.items.some((i) => i.type === "FLASHCARDS"));
   const summary = useReviewSummary(hasDeck);

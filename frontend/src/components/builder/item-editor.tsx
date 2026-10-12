@@ -6,7 +6,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { BarChart3, ChevronRight, ClipboardList, Eye, FileText, Inbox, Info, Lock, Save, Trash } from "lucide-react";
+import { BarChart3, ChevronRight, ClipboardList, Eye, FileText, Inbox, Info, Layers, Lock, PenLine, Save, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -43,13 +43,16 @@ import { ItemReleasePanel } from "./release-rules-panel";
 import { RichTextEditor } from "./rich-text-editor";
 import { SubmissionsPanel } from "./submissions-panel";
 import { AssessmentAnalytics } from "@/components/reports/assessment-analytics";
+import { DeckEditor } from "@/components/flashcards/deck-editor";
+import { AssignmentEditor } from "@/components/assignments/assignment-editor";
+import { ItemSubmissionQueue } from "@/components/assignments/submission-queue";
 
 type SchemaT = (key: "validation.titleRequired" | "validation.tooLong" | "validation.url" | "validation.wholeNumber") => string;
 
 const makeSchema = (t: SchemaT) =>
   z.object({
     title: z.string().trim().min(1, t("validation.titleRequired")).max(200, t("validation.tooLong")),
-    type: z.enum(["TEXT", "DOCUMENT", "VIDEO", "AUDIO", "IMAGE", "EMBED", "QUIZ", "EXAM"]),
+    type: z.enum(["TEXT", "DOCUMENT", "VIDEO", "AUDIO", "IMAGE", "EMBED", "QUIZ", "EXAM", "FLASHCARDS", "ASSIGNMENT"]),
     summary: z.string().max(1000, t("validation.tooLong")),
     body: z.string(),
     externalUrl: z
@@ -101,7 +104,7 @@ function EditorSkeleton() {
   );
 }
 
-type EditorTab = "content" | "release" | "assessment" | "submissions" | "analytics";
+type EditorTab = "content" | "release" | "assessment" | "submissions" | "analytics" | "cards" | "assignment" | "handins";
 
 function ItemEditorLoaded({
   item,
@@ -124,7 +127,14 @@ function ItemEditorLoaded({
   const update = useUpdateItem(item.courseId);
   const publish = usePublishItem(item.courseId);
   const del = useDeleteItem(item.courseId);
-  const [tab, setTab] = React.useState<EditorTab>(isAssessmentType(item.type) || initialTab === "release" ? initialTab : "content");
+  const [tab, setTab] = React.useState<EditorTab>(
+    isAssessmentType(item.type) ||
+      initialTab === "release" ||
+      (item.type === "FLASHCARDS" && initialTab === "cards") ||
+      (item.type === "ASSIGNMENT" && (initialTab === "assignment" || initialTab === "handins"))
+      ? initialTab
+      : "content",
+  );
   const [assessmentDirty, setAssessmentDirty] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
 
@@ -214,6 +224,21 @@ function ItemEditorLoaded({
             <TabsTrigger value="release">
               <Lock /> {t("release.tab")}
             </TabsTrigger>
+            {item.type === "FLASHCARDS" && (
+              <TabsTrigger value="cards">
+                <Layers /> {t("flashcards.tab")}
+              </TabsTrigger>
+            )}
+            {item.type === "ASSIGNMENT" && (
+              <>
+                <TabsTrigger value="assignment">
+                  <PenLine /> {t("assignments.tab")}
+                </TabsTrigger>
+                <TabsTrigger value="handins">
+                  <Inbox /> {t("assignments.handinsTab")}
+                </TabsTrigger>
+              </>
+            )}
             {isAssessmentType(type) && (
               <>
                 <TabsTrigger value="assessment">
@@ -345,6 +370,22 @@ function ItemEditorLoaded({
             <ItemReleasePanel item={item} />
           </TabsContent>
 
+          {item.type === "FLASHCARDS" && (
+            <TabsContent value="cards" className="mt-6">
+              <DeckEditor itemId={item.id} />
+            </TabsContent>
+          )}
+          {item.type === "ASSIGNMENT" && (
+            <>
+              <TabsContent value="assignment" className="mt-6">
+                <AssignmentEditor itemId={item.id} />
+              </TabsContent>
+              <TabsContent value="handins" className="mt-6">
+                <ItemSubmissionQueue itemId={item.id} />
+              </TabsContent>
+            </>
+          )}
+
           {isAssessmentType(type) && (
             <>
               <TabsContent value="assessment" className="mt-6">
@@ -440,7 +481,11 @@ export function ItemEditor() {
   const t = useTranslations("itemEditor");
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const initialTab: EditorTab = tabParam === "assessment" || tabParam === "submissions" || tabParam === "analytics" || tabParam === "release" ? tabParam : "content";
+  const initialTab: EditorTab =
+    tabParam === "assessment" || tabParam === "submissions" || tabParam === "analytics" || tabParam === "release" ||
+    tabParam === "cards" || tabParam === "assignment" || tabParam === "handins"
+      ? tabParam
+      : "content";
   const initialAttemptId = searchParams.get("attempt");
 
   if (item.isPending) return <EditorSkeleton />;

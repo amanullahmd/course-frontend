@@ -275,6 +275,27 @@ activity, else `IN_PROGRESS`. A quiz/exam counts as *taken* with at least one su
 Expired in-progress attempts (deadline or window end + 30 s grace) are also submitted automatically by a background
 job every 60 s and lazily whenever attempts are read, with `submittedAt` = the effective deadline.
 
+### Practice and teaching loop (flashcards, assignments, live sessions)
+
+Item types `FLASHCARDS` and `ASSIGNMENT` (migration `V10__flashcards_assignments_live.sql`).
+
+* **Flashcards** (instructor): `GET/PUT /api/instructor/items/{id}/flashcards` (replace semantics, max 2,000 cards, articles der/die/das),
+  `POST .../flashcards/import?commit=false|true` (multipart CSV `front;back;article;plural;example`, preview with per-row errors),
+  `GET .../flashcards/export`. Learner: `GET /api/student/items/{id}/flashcards`, `GET /api/student/courses/{courseId}/review?limit=20`
+  (due cards plus up to 15 new cards a day from decks the learner may open), `POST /api/student/flashcards/{cardId}/review {grade}`
+  (AGAIN|HARD|GOOD|EASY, SM-2), `GET /api/student/review/summary` (`{dueToday, byCourse[]}`).
+* **Assignments** (instructor): `GET/PUT /api/instructor/items/{id}/assignment`, `GET /api/instructor/items/{id}/submissions?status=`,
+  `GET /api/instructor/courses/{id}/submissions?status=`, `GET /api/instructor/submissions/{id}`,
+  `POST /api/instructor/submissions/{id}/review {action: RETURN|GRADE, points, feedback, feedbackMediaIds}`.
+  Learner: `GET /api/student/items/{id}/assignment`, `GET|POST /api/student/items/{id}/submissions {textAnswer, mediaIds}`
+  (versions, SUBMITTED/RETURNED/GRADED, late flag, 409 `SUBMISSION_*` codes). Notifications `ASSIGNMENT_SUBMITTED`/`ASSIGNMENT_REVIEWED`
+  (+ e-mail in the learner's language); due dates appear in `/api/instructor/schedule` as `DUE` events.
+* **Live sessions** (instructor): `GET|POST /api/instructor/courses/{id}/live-sessions`, `POST .../live-sessions/series`,
+  `PUT|DELETE /api/instructor/live-sessions/{id}` (cancelling notifies), `GET|PUT /api/instructor/live-sessions/{id}/attendance`.
+  Learner: `GET /api/student/courses/{id}/live-sessions` (`joinUrl` only from 15 min before the start until the end),
+  `GET /api/student/live-sessions/upcoming`. iCal: `GET|POST /api/users/me/calendar-token`, public `GET /api/calendar/{token}.ics`
+  (no join URLs). Reminder 24 h before (`LiveReminderJob`, ShedLock, `app.live.reminders.enabled`); sessions are `SESSION` schedule events.
+
 ### Notifications `/api/notifications`
 `GET ?page=&size=` → Page<{id,type,title,body,link,read,createdAt}> · `GET /unread-count` → `{count}` ·
 `POST /{id}/read` · `POST /read-all`

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Award, BarChart3, ChevronRight, Copy, Ellipsis, ExternalLink, Eye, FileCog, Layers, Megaphone, Rocket, Trash, Users } from "lucide-react";
+import { Award, BarChart3, ChevronRight, Copy, Ellipsis, ExternalLink, Eye, FileCog, Inbox, Layers, Megaphone, Rocket, Trash, Users, Video } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { isApiError } from "@/lib/api/client";
@@ -35,8 +35,10 @@ import { StudentsPanel } from "./students-panel";
 import { ReportsPanel } from "@/components/reports/reports-panel";
 import { AnnouncementsPanel } from "@/components/announcements/announcements-panel";
 import { CertificatePanel } from "@/components/certificates/certificate-panel";
+import { LivePanel } from "@/components/live/live-panel";
+import { CourseSubmissionQueue } from "@/components/assignments/submission-queue";
 
-const TABS = ["curriculum", "details", "publishing", "students", "announcements", "reports", "certificate"] as const;
+const TABS = ["curriculum", "details", "publishing", "students", "announcements", "reports", "certificate", "live", "submissions"] as const;
 type Tab = (typeof TABS)[number];
 
 function BuilderSkeleton() {
@@ -204,6 +206,12 @@ export function CourseBuilder() {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="live">
+            <Video /> {t("builder.tabs.live")}
+          </TabsTrigger>
+          <TabsTrigger value="submissions">
+            <Inbox /> {t("builder.tabs.submissions")}
+          </TabsTrigger>
           <TabsTrigger value="announcements">
             <Megaphone /> {t("builder.tabs.announcements")}
           </TabsTrigger>
@@ -229,6 +237,12 @@ export function CourseBuilder() {
         </TabsContent>
         <TabsContent value="students" className="mt-6">
           <StudentsPanel courseId={c.id} capacity={c.capacity} />
+        </TabsContent>
+        <TabsContent value="live" className="mt-6">
+          <LivePanel courseId={c.id} />
+        </TabsContent>
+        <TabsContent value="submissions" className="mt-6">
+          <CourseSubmissionQueue courseId={c.id} />
         </TabsContent>
         <TabsContent value="announcements" className="mt-6">
           <AnnouncementsPanel courseId={c.id} />

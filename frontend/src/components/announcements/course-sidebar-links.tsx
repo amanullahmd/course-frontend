@@ -9,6 +9,7 @@ import { useLearnerAnnouncements } from "@/hooks/queries/announcements";
 import { useAuth } from "@/providers/auth-provider";
 import { cn } from "@/lib/utils";
 import { MessageInstructorButton } from "@/components/messages/message-button";
+import { PracticeLinks } from "@/components/learn/practice-links";
 
 /** Top of the course player outline: the announcements entry (with unread badge) and "Message instructor". */
 export function CourseSidebarLinks({ data, onNavigate }: { data: LearnCourseDto; onNavigate?: () => void }) {
@@ -43,6 +44,7 @@ export function CourseSidebarLinks({ data, onNavigate }: { data: LearnCourseDto;
           </span>
         )}
       </Link>
+      <PracticeLinks data={data} onNavigate={onNavigate} />
       {!isOwner && (
         <MessageInstructorButton
           instructor={course.instructor}

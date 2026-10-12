@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/ui/stat-card";
 import { CertificateCourseBadge, MyCertificatesSection } from "@/components/certificates/my-certificates";
 import { UnreadAnnouncementsHint } from "@/components/announcements/unread-hint";
+import { PracticeTiles } from "@/components/student/practice-tiles";
 
 function ContinueCard({ enrollment }: { enrollment: StudentEnrollmentDto }) {
   const t = useTranslations("student");
@@ -138,6 +139,8 @@ export function StudentDashboard() {
         <StatCard label={t("pendingApplications")} value={pending} icon={Hourglass} loading={enrollments.isPending} accent="info" />
         <StatCard label={t("avgProgress")} value={`${avg}%`} icon={TrendingUp} loading={enrollments.isPending} accent="success" className="col-span-2 sm:col-span-1" />
       </div>
+
+      {active.length > 0 && <PracticeTiles />}
 
       {enrollments.isError ? (
         <ErrorState className="mt-10" error={enrollments.error} onRetry={() => enrollments.refetch()} />

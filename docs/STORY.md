@@ -131,3 +131,14 @@ learner sees item  ⇔ live(course) && live(module) && live(item)
 | M4 | As a user I see new messages without reloading | Open threads refresh every 10 s, the header badge every 60 s; screen readers announce new messages |
 | M5 | As a user I am told by e-mail when a message stays unread | At most one e-mail per conversation every 30 minutes, only if the message is still unread after 2 minutes |
 | M6 | As the platform we prevent abuse | Only instructor ↔ learner (and admin) conversations; 30 messages per minute and user (429) |
+
+## Practice and teaching loop
+
+| ID | Story | Acceptance criteria |
+|---|---|---|
+| P1 | As a learner I practise vocabulary with spaced repetition | Flashcard decks with der/die/das colour coding; a review session per course with Space to flip and 1 to 4 to grade; "cards due" on the dashboard |
+| P2 | As an instructor I build decks quickly | Inline editor, bulk add, CSV import with preview and error report, CSV export |
+| P3 | As a learner I hand in text and files and get feedback | Versions, return for revision, grading with points, notification and e-mail in my language |
+| P4 | As an instructor I review hand-ins | Queue per assignment and per course, review drawer with feedback files, Return / Grade |
+| P5 | As a learner I join live lessons | Join button 15 minutes before the start, recordings afterwards, personal calendar feed (`.ics`) |
+| P6 | As an instructor I run live lessons | Single sessions and weekly series, attendance sheet with "all present", cancellation notifies learners |

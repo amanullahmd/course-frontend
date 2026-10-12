@@ -21,7 +21,7 @@ export function LearnerLiveView() {
   const { courseId } = useParams<{ courseId: string }>();
   const t = useTranslations("live");
   const sessions = useLearnerSessions(courseId);
-  const now = useNow() || Date.now();
+  const now = useNow();
   const upcoming = React.useMemo(() => nextSessions(sessions.data ?? [], now), [sessions.data, now]);
   const past = React.useMemo(() => pastSessions(sessions.data ?? [], now), [sessions.data, now]);
 

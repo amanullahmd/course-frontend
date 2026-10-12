@@ -212,7 +212,7 @@ export function AssignmentView({ item }: { item: LearnItemDto }) {
   const a = settings.data;
   const versions = [...mine.data].sort((x, y) => y.versionNo - x.versionNo);
   const latest = versions[0];
-  const due = dueState(a.dueAt, now || Date.now());
+  const due = dueState(a.dueAt, now);
   const left = Math.max(0, a.maxSubmissions - a.submissionsUsed);
 
   return (

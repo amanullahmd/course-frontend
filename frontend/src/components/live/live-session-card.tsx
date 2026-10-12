@@ -43,7 +43,7 @@ export function SessionWhen({ session, className }: { session: LearnerLiveSessio
 export function SessionStatusBadge({ session, state, now }: { session: LearnerLiveSessionDto; state: SessionState; now: number }) {
   const t = useTranslations("live");
   let text: string;
-  if (state === "upcoming") text = t("startsIn", { time: formatCountdown(countdown(Date.parse(session.startsAt), now || Date.now())) });
+  if (state === "upcoming") text = t("startsIn", { time: formatCountdown(countdown(Date.parse(session.startsAt), now)) });
   else if (state === "joinable") text = t("startsSoon", { time: formatCountdown(countdown(Date.parse(session.startsAt), now)) });
   else text = t(`state.${state}`);
   return (

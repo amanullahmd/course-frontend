@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, ChevronUp, Download, FileUp, ImageIcon, ListPlus, Music, Plus, Save, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Ellipsis, Download, FileUp, ImageIcon, ListPlus, Music, Plus, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { DeckDto, FlashcardArticle, FlashcardUpsert, MediaDto } from "@/lib/api/types";
@@ -146,7 +146,7 @@ const CardRow = React.memo(function CardRow({
   const n = index + 1;
   return (
     <li className={cn("rounded-xl border bg-card p-3 shadow-xs", error && "border-destructive/50")} data-testid="deck-row">
-      <div className="grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-[2rem_minmax(0,1.4fr)_6.5rem_minmax(0,1.4fr)_minmax(0,1fr)_auto] md:items-start">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-[2rem_minmax(0,1.3fr)_6rem_minmax(0,1.3fr)_minmax(0,1.2fr)_auto] md:items-start">
         <span className="hidden pt-2 text-xs text-muted-foreground tabular-nums md:block">{n}</span>
         <div className="order-1 col-span-2 md:order-none md:col-span-1">
           <label className="mb-1 block text-xs text-muted-foreground md:sr-only" htmlFor={`front-${row.key}`}>
@@ -189,7 +189,7 @@ const CardRow = React.memo(function CardRow({
         </div>
         <div className="order-5 col-span-2 flex items-center justify-end gap-0.5 md:order-none md:col-span-1">
           <Button type="button" variant="ghost" size="icon-sm" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label={t("moreFields", { n })}>
-            <ChevronDown className={cn("transition-transform", open && "rotate-180")} />
+            <Ellipsis className={cn(open && "text-brand-strong")} />
           </Button>
           <Button type="button" variant="ghost" size="icon-sm" onClick={() => onMove(row.key, -1)} disabled={index === 0} aria-label={t("moveUp", { n })}>
             <ChevronUp />
@@ -329,7 +329,7 @@ function Editor({ itemId, deck }: { itemId: string; deck: DeckDto }) {
         />
       ) : (
         <>
-          <div className="hidden grid-cols-[2rem_minmax(0,1.4fr)_6.5rem_minmax(0,1.4fr)_minmax(0,1fr)_9.5rem] gap-3 px-3 text-xs font-medium text-muted-foreground md:grid" aria-hidden>
+          <div className="hidden grid-cols-[2rem_minmax(0,1.3fr)_6rem_minmax(0,1.3fr)_minmax(0,1.2fr)_9.5rem] gap-3 px-3 text-xs font-medium text-muted-foreground md:grid" aria-hidden>
             <span>#</span>
             <span>{t("front")}</span>
             <span>{t("article")}</span>
