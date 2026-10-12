@@ -2,6 +2,7 @@ package me.amanullah.course.media;
 
 import me.amanullah.course.config.AppProperties;
 import me.amanullah.course.security.CurrentUser;
+import me.amanullah.course.security.RateLimiter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.Duration;
 import java.util.Locale;
@@ -34,18 +35,32 @@ public class MediaController {
             "text/javascript", "application/javascript", "application/xml", "text/xml");
 
     private final MediaService mediaService;
+    private final RateLimiter rateLimiter;
     private final String frameAncestors;
 
-    public MediaController(MediaService mediaService, AppProperties props) {
+    public MediaController(MediaService mediaService, RateLimiter rateLimiter, AppProperties props) {
         this.mediaService = mediaService;
+        this.rateLimiter = rateLimiter;
         this.frameAncestors = "frame-ancestors 'self' " + String.join(" ", props.cors().allowedOrigins());
     }
 
-    /** multipart/form-data with a {@code file} part; anything else → 400 FILE_REQUIRED. */
+    /**
+     * multipart/form-data with a {@code file} part; anything else → 400 FILE_REQUIRED. Rate limited per user
+     * (429), checked against the type rules (415 FILE_TYPE_NOT_ALLOWED) and the storage quota (413 QUOTA_EXCEEDED).
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public MediaDto upload(@RequestPart("file") MultipartFile file) {
-        return mediaService.upload(CurrentUser.get().id(), file);
+        UUID me = CurrentUser.get().id();
+        rateLimiter.consumeUser(RateLimiter.Limit.UPLOAD_USER, me);
+        return mediaService.upload(me, file);
+    }
+
+    /** Storage used by the caller's uploads and their quota ({@code quotaBytes} null = unlimited). */
+    @GetMapping("/usage")
+    public StorageUsage usage() {
+        CurrentUser me = CurrentUser.get();
+        return mediaService.usage(me.id(), me.role());
     }
 
     @GetMapping("/{id}")
@@ -74,7 +89,8 @@ public class MediaController {
         } catch (Exception e) {
             type = MediaType.APPLICATION_OCTET_STREAM;
         }
-        boolean active = ACTIVE_TYPES.contains((type.getType() + "/" + type.getSubtype()).toLowerCase(Locale.ROOT));
+        boolean active = ACTIVE_TYPES.contains((type.getType() + "/" + type.getSubtype()).toLowerCase(Locale.ROOT))
+                || FileTypePolicy.isActive(asset.getOriginalName(), asset.getContentType());
         boolean attachment = download || active;
         if (active) {
             type = MediaType.APPLICATION_OCTET_STREAM;
@@ -82,11 +98,16 @@ public class MediaController {
             // Without a charset browsers fall back to windows-1252 and garble umlauts (e.g. "TschÃ¼ss").
             type = new MediaType(type, java.nio.charset.StandardCharsets.UTF_8);
         }
+        // Inline content is sandboxed (no scripts, unique origin) in case a file is opened directly. PDFs are the
+        // exception: browsers refuse to run their built-in PDF viewer inside a sandboxed document.
+        boolean pdf = "application".equalsIgnoreCase(type.getType()) && "pdf".equalsIgnoreCase(type.getSubtype());
+        String csp = attachment || pdf ? frameAncestors : "sandbox; " + frameAncestors;
         return ResponseEntity.ok()
                 .contentType(type)
                 .header(HttpHeaders.CONTENT_DISPOSITION, FileNames.contentDisposition(asset.getOriginalName(), attachment))
                 .header(HttpHeaders.ACCEPT_RANGES, "bytes")
-                .header("Content-Security-Policy", frameAncestors)
+                .header("X-Content-Type-Options", "nosniff")
+                .header("Content-Security-Policy", csp)
                 .header("Cross-Origin-Resource-Policy", "cross-origin")
                 .cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePrivate())
                 .body(content.resource());

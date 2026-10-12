@@ -7,10 +7,14 @@ import me.amanullah.course.common.exception.UnauthorizedException;
 import me.amanullah.course.common.i18n.I18nConfig;
 import me.amanullah.course.common.util.Tokens;
 import org.springframework.context.i18n.LocaleContextHolder;
+import me.amanullah.course.common.exception.ValidationException;
+import me.amanullah.course.common.i18n.MessageRef;
 import me.amanullah.course.config.AppProperties;
+import me.amanullah.course.config.RegistrationProperties;
 import me.amanullah.course.notification.EmailTemplates;
 import me.amanullah.course.notification.MailService;
 import me.amanullah.course.security.JwtService;
+import me.amanullah.course.user.InstructorStatus;
 import me.amanullah.course.user.Role;
 import me.amanullah.course.user.User;
 import me.amanullah.course.user.UserMapper;
@@ -19,6 +23,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Map;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,11 +43,13 @@ public class AuthService {
     private final MailService mail;
     private final EmailTemplates templates;
     private final AppProperties props;
+    private final RegistrationProperties registration;
     private final Clock clock;
 
     public AuthService(UserRepository users, VerificationTokenRepository tokens, RefreshTokenService refreshTokens,
                        PasswordEncoder passwordEncoder, JwtService jwtService, UserMapper userMapper, MailService mail,
-                       EmailTemplates templates, AppProperties props, Clock clock) {
+                       EmailTemplates templates, AppProperties props, RegistrationProperties registration,
+                       Clock clock) {
         this.users = users;
         this.tokens = tokens;
         this.refreshTokens = refreshTokens;
@@ -52,6 +59,7 @@ public class AuthService {
         this.mail = mail;
         this.templates = templates;
         this.props = props;
+        this.registration = registration;
         this.clock = clock;
         this.dummyHash = passwordEncoder.encode("timing-equalizer-" + Tokens.random());
     }
@@ -68,12 +76,22 @@ public class AuthService {
         if (req.role() != Role.STUDENT && req.role() != Role.INSTRUCTOR) {
             throw new BadRequestException("INVALID_ROLE", "Role must be STUDENT or INSTRUCTOR");
         }
+        boolean termsAccepted = Boolean.TRUE.equals(req.acceptTerms());
+        if (registration.termsRequired() && !termsAccepted) {
+            throw new ValidationException(Map.of("acceptTerms", new MessageRef("validation.acceptTerms")));
+        }
         String email = normalizeEmail(req.email());
         if (users.existsByEmailIgnoreCase(email)) {
             throw new ConflictException("EMAIL_TAKEN", "An account with this e-mail address already exists");
         }
         User newUser = new User(req.fullName().trim(), email, passwordEncoder.encode(req.password()), req.role());
         newUser.setLocale(req.locale() != null ? req.locale() : I18nConfig.toTag(LocaleContextHolder.getLocale()));
+        if (req.role() == Role.INSTRUCTOR && registration.instructorApprovalRequired()) {
+            newUser.setInstructorStatus(InstructorStatus.PENDING);
+        }
+        if (termsAccepted) {
+            newUser.setTermsAcceptedAt(Instant.now(clock));
+        }
         User user = users.save(newUser);
         sendVerification(user);
     }

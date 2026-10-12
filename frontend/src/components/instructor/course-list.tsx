@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Clock, LayoutGrid, Layers, Library, List, Plus, Users } from "lucide-react";
+import { BarChart3, Clock, LayoutGrid, Layers, Library, List, Plus, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { InstructorCourseDto, Visibility } from "@/lib/api/types";
 import { VISIBILITY_META } from "@/lib/constants";
@@ -58,7 +58,14 @@ function CourseTile({ course }: { course: InstructorCourseDto }) {
         <p className="flex items-center gap-1 text-xs text-muted-foreground">
           <Clock className="size-3" /> {t("instructor.updated", { when: fmt.relative(course.updatedAt) })}
         </p>
-        <CourseActiveSwitch course={course} />
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon-xs" asChild>
+            <Link href={`/instructor/courses/${course.id}?tab=reports`} aria-label={t("reports.dashboard.viewFor", { title: course.title })} title={t("reports.dashboard.view")}>
+              <BarChart3 />
+            </Link>
+          </Button>
+          <CourseActiveSwitch course={course} />
+        </div>
       </div>
     </div>
   );
@@ -170,6 +177,7 @@ export function InstructorCourseList() {
                   <TableHead className="hidden md:table-cell">{t("instructor.content")}</TableHead>
                   <TableHead className="text-right">{t("instructor.learners")}</TableHead>
                   <TableHead className="hidden text-right lg:table-cell">{t("instructor.updatedCol")}</TableHead>
+                  <TableHead className="w-10"><span className="sr-only">{t("reports.dashboard.view")}</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -200,6 +208,13 @@ export function InstructorCourseList() {
                       {c.pendingCount > 0 && <Badge variant="info" className="ml-2">{t("instructor.pendingCount", { count: c.pendingCount })}</Badge>}
                     </TableCell>
                     <TableCell className="hidden text-right text-muted-foreground lg:table-cell">{fmt.relative(c.updatedAt)}</TableCell>
+                    <TableCell className="w-10 text-right">
+                      <Button variant="ghost" size="icon-xs" asChild>
+                        <Link href={`/instructor/courses/${c.id}?tab=reports`} aria-label={t("reports.dashboard.viewFor", { title: c.title })} title={t("reports.dashboard.view")}>
+                          <BarChart3 />
+                        </Link>
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

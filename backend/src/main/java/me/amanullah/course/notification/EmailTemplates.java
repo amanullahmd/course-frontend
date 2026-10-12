@@ -71,6 +71,21 @@ public class EmailTemplates {
         return build(to, "mail.graded", link, null, itemTitle);
     }
 
+    /** "Congratulations, your certificate is ready" with a link to the learner's certificate page. */
+    public Email certificateIssued(User to, String courseTitle, String link) {
+        return build(to, "mail.certificate", link, null, courseTitle);
+    }
+
+    /** Instructor account approved by an admin (security &amp; privacy). */
+    public Email instructorApproved(User to, String link) {
+        return build(to, "mail.instructorApproved", link, null);
+    }
+
+    /** Instructor account rejected by an admin; {@code reason} is optional. */
+    public Email instructorRejected(User to, String reason, String link) {
+        return build(to, "mail.instructorRejected", link, reason);
+    }
+
     public String link(String path) {
         return props.frontendUrl() + path;
     }

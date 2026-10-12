@@ -1,6 +1,65 @@
 {
   "components": {
     "schemas": {
+      "AddStudentsRequest": {
+        "properties": {
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "type": "array"
+          },
+          "invite": {
+            "type": "boolean"
+          },
+          "message": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "emails"
+        ],
+        "type": "object"
+      },
+      "AddStudentsResult": {
+        "properties": {
+          "added": {
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentDto"
+            },
+            "type": "array"
+          },
+          "alreadyEnrolled": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "invited": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "notFound": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/SkippedEmail"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
       "AdminUserDto": {
         "properties": {
           "avatarMediaId": {
@@ -118,6 +177,98 @@
             "maxLength": 2000,
             "minLength": 0,
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AssessmentAnalyticsDto": {
+        "properties": {
+          "attempts": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "averageDurationSeconds": {
+            "format": "double",
+            "type": "number"
+          },
+          "averagePercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "averageScore": {
+            "format": "double",
+            "type": "number"
+          },
+          "course": {
+            "$ref": "#/components/schemas/CourseRef"
+          },
+          "generatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "gradedAttempts": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "inProgress": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxScore": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "medianPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "passRate": {
+            "format": "double",
+            "type": "number"
+          },
+          "passingScore": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "pendingGrading": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionStats"
+            },
+            "type": "array"
+          },
+          "scoreDistribution": {
+            "items": {
+              "$ref": "#/components/schemas/Bucket"
+            },
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          },
+          "uniqueLearners": {
+            "format": "int32",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -241,6 +392,9 @@
             },
             "type": "array"
           },
+          "autoSubmitted": {
+            "type": "boolean"
+          },
           "deadline": {
             "format": "date-time",
             "type": "string"
@@ -301,6 +455,10 @@
       },
       "AttemptSessionDto": {
         "properties": {
+          "availableUntil": {
+            "format": "date-time",
+            "type": "string"
+          },
           "deadline": {
             "format": "date-time",
             "type": "string"
@@ -315,6 +473,16 @@
             },
             "type": "array"
           },
+          "savedAnswers": {
+            "items": {
+              "$ref": "#/components/schemas/SubmittedAnswer"
+            },
+            "type": "array"
+          },
+          "serverTime": {
+            "format": "date-time",
+            "type": "string"
+          },
           "startedAt": {
             "format": "date-time",
             "type": "string"
@@ -326,12 +494,19 @@
               "GRADED"
             ],
             "type": "string"
+          },
+          "timeLimitMinutes": {
+            "format": "int32",
+            "type": "integer"
           }
         },
         "type": "object"
       },
       "AttemptSummaryDto": {
         "properties": {
+          "autoSubmitted": {
+            "type": "boolean"
+          },
           "id": {
             "format": "uuid",
             "type": "string"
@@ -394,13 +569,38 @@
         },
         "type": "object"
       },
+      "Bucket": {
+        "properties": {
+          "count": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "from": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "label": {
+            "type": "string"
+          },
+          "to": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "BulkRequest": {
         "properties": {
           "action": {
             "enum": [
               "APPROVE",
-              "REJECT"
+              "REJECT",
+              "REVOKE"
             ],
+            "type": "string"
+          },
+          "courseId": {
+            "format": "uuid",
             "type": "string"
           },
           "ids": {
@@ -441,6 +641,43 @@
           "currentPassword",
           "newPassword"
         ],
+        "type": "object"
+      },
+      "ColumnStats": {
+        "properties": {
+          "attempts": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "average": {
+            "format": "double",
+            "type": "number"
+          },
+          "graded": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "max": {
+            "format": "double",
+            "type": "number"
+          },
+          "median": {
+            "format": "double",
+            "type": "number"
+          },
+          "min": {
+            "format": "double",
+            "type": "number"
+          },
+          "passRate": {
+            "format": "double",
+            "type": "number"
+          },
+          "pendingGrading": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
         "type": "object"
       },
       "ContentItemDto": {
@@ -776,6 +1013,21 @@
         },
         "type": "object"
       },
+      "CourseRef": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "CourseSummaryDto": {
         "properties": {
           "coverImageUrl": {
@@ -1001,6 +1253,39 @@
         },
         "type": "object"
       },
+      "Funnel": {
+        "properties": {
+          "applied": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "approvalRate": {
+            "format": "double",
+            "type": "number"
+          },
+          "approved": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "pending": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "rejected": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "revoked": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "withdrawn": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "Grade": {
         "properties": {
           "feedback": {
@@ -1038,6 +1323,204 @@
         "required": [
           "grades"
         ],
+        "type": "object"
+      },
+      "GradebookCell": {
+        "properties": {
+          "attempts": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "bestPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "bestScore": {
+            "format": "double",
+            "type": "number"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "lastSubmittedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "latestAttemptId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "NOT_STARTED",
+              "IN_PROGRESS",
+              "SUBMITTED_PENDING",
+              "GRADED"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "GradebookColumn": {
+        "properties": {
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxScore": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "passingScore": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/ColumnStats"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "GradebookDto": {
+        "properties": {
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/GradebookColumn"
+            },
+            "type": "array"
+          },
+          "course": {
+            "$ref": "#/components/schemas/CourseRef"
+          },
+          "generatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/GradebookRow"
+            },
+            "type": "array"
+          },
+          "totalLiveItems": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "GradebookRow": {
+        "properties": {
+          "activity": {
+            "enum": [
+              "NOT_STARTED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "INACTIVE"
+            ],
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "averageExamPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "averagePercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "averageQuizPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/GradebookCell"
+            },
+            "type": "array"
+          },
+          "completedItems": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "email": {
+            "type": "string"
+          },
+          "enrolledAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "examsTaken": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "examsTotal": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "gradedAssessments": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "lastActivityAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lessonsCompleted": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "lessonsTotal": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "progressPercent": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "quizzesTaken": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "quizzesTotal": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalLiveItems": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
         "type": "object"
       },
       "IdsRequest": {
@@ -1164,6 +1647,91 @@
         },
         "type": "object"
       },
+      "ItemEngagement": {
+        "properties": {
+          "averagePercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "completed": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "completedPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "moduleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "moduleTitle": {
+            "type": "string"
+          },
+          "passed": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "taken": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "takenPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ItemProgressRow": {
+        "properties": {
+          "completedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "ItemUpsert": {
         "properties": {
           "attachmentIds": {
@@ -1219,6 +1787,59 @@
           "title",
           "type"
         ],
+        "type": "object"
+      },
+      "Kpis": {
+        "properties": {
+          "activeLearners7d": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "approvedLearners": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "assessments": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "averageBestScore": {
+            "format": "double",
+            "type": "number"
+          },
+          "averageProgress": {
+            "format": "double",
+            "type": "number"
+          },
+          "completedLearners": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "completionRate": {
+            "format": "double",
+            "type": "number"
+          },
+          "medianProgress": {
+            "format": "double",
+            "type": "number"
+          },
+          "passRate": {
+            "format": "double",
+            "type": "number"
+          },
+          "pendingApplications": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "pendingGrading": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalLiveItems": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
         "type": "object"
       },
       "LearnAssessmentDto": {
@@ -1487,6 +2108,26 @@
         },
         "type": "object"
       },
+      "ModuleCompletion": {
+        "properties": {
+          "completionPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "itemCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "moduleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "ModuleDto": {
         "properties": {
           "courseId": {
@@ -1536,6 +2177,36 @@
               "EXPIRED"
             ],
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ModuleProgress": {
+        "properties": {
+          "completedItems": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ItemProgressRow"
+            },
+            "type": "array"
+          },
+          "moduleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "progressPercent": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "totalItems": {
+            "format": "int32",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -1684,6 +2355,48 @@
           },
           "title": {
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "OverviewDto": {
+        "properties": {
+          "course": {
+            "$ref": "#/components/schemas/CourseRef"
+          },
+          "enrollmentTimeline": {
+            "items": {
+              "$ref": "#/components/schemas/WeekBucket"
+            },
+            "type": "array"
+          },
+          "funnel": {
+            "$ref": "#/components/schemas/Funnel"
+          },
+          "generatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ItemEngagement"
+            },
+            "type": "array"
+          },
+          "kpis": {
+            "$ref": "#/components/schemas/Kpis"
+          },
+          "modules": {
+            "items": {
+              "$ref": "#/components/schemas/ModuleCompletion"
+            },
+            "type": "array"
+          },
+          "progressDistribution": {
+            "items": {
+              "$ref": "#/components/schemas/Bucket"
+            },
+            "type": "array"
           }
         },
         "type": "object"
@@ -1875,6 +2588,59 @@
         },
         "type": "object"
       },
+      "QuestionStats": {
+        "properties": {
+          "answered": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "averagePoints": {
+            "format": "double",
+            "type": "number"
+          },
+          "commonWrongAnswers": {
+            "items": {
+              "$ref": "#/components/schemas/WrongAnswer"
+            },
+            "type": "array"
+          },
+          "percentCorrect": {
+            "format": "double",
+            "type": "number"
+          },
+          "points": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "position": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "questionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "SINGLE_CHOICE",
+              "MULTIPLE_CHOICE",
+              "TRUE_FALSE",
+              "SHORT_ANSWER",
+              "FILL_BLANK",
+              "ESSAY"
+            ],
+            "type": "string"
+          },
+          "unanswered": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "QuestionUpsert": {
         "properties": {
           "acceptedAnswers": {
@@ -2026,12 +2792,30 @@
         },
         "type": "object"
       },
+      "SaveAnswersRequest": {
+        "properties": {
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/SubmittedAnswer"
+            },
+            "maxItems": 500,
+            "minItems": 0,
+            "type": "array"
+          }
+        },
+        "required": [
+          "answers"
+        ],
+        "type": "object"
+      },
       "ScheduleEventDto": {
         "properties": {
           "action": {
             "enum": [
               "PUBLISH",
-              "UNPUBLISH"
+              "UNPUBLISH",
+              "OPENS",
+              "CLOSES"
             ],
             "type": "string"
           },
@@ -2128,6 +2912,17 @@
         },
         "type": "object"
       },
+      "SkippedEmail": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "StatsDto": {
         "properties": {
           "courses": {
@@ -2153,6 +2948,102 @@
           "users": {
             "format": "int64",
             "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "StudentAttempt": {
+        "properties": {
+          "autoSubmitted": {
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "itemTitle": {
+            "type": "string"
+          },
+          "itemType": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM"
+            ],
+            "type": "string"
+          },
+          "late": {
+            "type": "boolean"
+          },
+          "maxScore": {
+            "format": "double",
+            "type": "number"
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "pendingManualGrading": {
+            "type": "boolean"
+          },
+          "percent": {
+            "format": "double",
+            "type": "number"
+          },
+          "score": {
+            "format": "double",
+            "type": "number"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "IN_PROGRESS",
+              "SUBMITTED",
+              "GRADED"
+            ],
+            "type": "string"
+          },
+          "submittedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "StudentEnrollment": {
+        "properties": {
+          "appliedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "decidedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED",
+              "WITHDRAWN",
+              "REVOKED"
+            ],
+            "type": "string"
           }
         },
         "type": "object"
@@ -2195,6 +3086,88 @@
             "type": "string"
           },
           "waitlistPosition": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "StudentReportDto": {
+        "properties": {
+          "attempts": {
+            "items": {
+              "$ref": "#/components/schemas/StudentAttempt"
+            },
+            "type": "array"
+          },
+          "completedItems": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "course": {
+            "$ref": "#/components/schemas/CourseRef"
+          },
+          "enrollment": {
+            "$ref": "#/components/schemas/StudentEnrollment"
+          },
+          "feedbackCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "generatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lastActivityAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "modules": {
+            "items": {
+              "$ref": "#/components/schemas/ModuleProgress"
+            },
+            "type": "array"
+          },
+          "progressPercent": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "student": {
+            "$ref": "#/components/schemas/UserSummaryDto"
+          },
+          "totalLiveItems": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/StudentTotals"
+          }
+        },
+        "type": "object"
+      },
+      "StudentTotals": {
+        "properties": {
+          "assessments": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "assessmentsAttempted": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "assessmentsPassed": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "attempts": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "averageBestPercent": {
+            "format": "double",
+            "type": "number"
+          },
+          "pendingGrading": {
             "format": "int32",
             "type": "integer"
           }
@@ -2359,6 +3332,35 @@
           },
           "id": {
             "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WeekBucket": {
+        "properties": {
+          "applications": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "approvals": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "weekStart": {
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WrongAnswer": {
+        "properties": {
+          "count": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "text": {
             "type": "string"
           }
         },
@@ -2835,6 +3837,257 @@
         },
         "tags": [
           "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/enrollments/add": {
+      "post": {
+        "operationId": "add",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddStudentsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddStudentsResult"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: enrollments"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/reports/gradebook": {
+      "get": {
+        "operationId": "gradebook",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradebookDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: reports"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/reports/gradebook.csv": {
+      "get": {
+        "operationId": "gradebookCsv",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Gradebook as CSV (UTF-8 with BOM, localized headers)",
+        "tags": [
+          "Instructor: reports"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/reports/overview": {
+      "get": {
+        "operationId": "overview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: reports"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/reports/progress.csv": {
+      "get": {
+        "operationId": "progressCsv",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Learner progress table as CSV (UTF-8 with BOM, localized headers)",
+        "tags": [
+          "Instructor: reports"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/reports/students/{studentId}": {
+      "get": {
+        "operationId": "student",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "studentId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentReportDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: reports"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/reports/students/{studentId}.csv": {
+      "get": {
+        "operationId": "studentCsv",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "studentId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Learner report as CSV (UTF-8 with BOM, localized headers)",
+        "tags": [
+          "Instructor: reports"
         ]
       }
     },
@@ -3496,6 +4749,70 @@
         ]
       }
     },
+    "/api/instructor/items/{itemId}/reports/assessment": {
+      "get": {
+        "operationId": "assessment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "itemId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentAnalyticsDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: reports"
+        ]
+      }
+    },
+    "/api/instructor/items/{itemId}/reports/attempts.csv": {
+      "get": {
+        "operationId": "attemptsCsv",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "itemId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "All attempts of a quiz/exam with per-question points as CSV",
+        "tags": [
+          "Instructor: reports"
+        ]
+      }
+    },
     "/api/instructor/modules/{id}": {
       "delete": {
         "operationId": "deleteModule",
@@ -4090,6 +5407,40 @@
                 }
               }
             },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: quizzes & exams"
+        ]
+      }
+    },
+    "/api/student/attempts/{id}/answers": {
+      "put": {
+        "operationId": "saveAnswers",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveAnswersRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
             "description": "OK"
           }
         },

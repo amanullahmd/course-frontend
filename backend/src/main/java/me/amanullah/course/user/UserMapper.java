@@ -14,7 +14,8 @@ public class UserMapper {
 
     public UserDto toDto(User u) {
         return new UserDto(u.getId(), u.getFullName(), u.getEmail(), u.getRole(), u.isEmailVerified(), u.getBio(),
-                avatarUrl(u), u.getAvatar() == null ? null : u.getAvatar().getId(), u.getLocale(), u.getCreatedAt());
+                avatarUrl(u), u.getAvatar() == null ? null : u.getAvatar().getId(), u.getLocale(), u.getCreatedAt(),
+                u.getInstructorStatus());
     }
 
     public UserSummaryDto toSummary(User u) {

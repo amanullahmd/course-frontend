@@ -3,6 +3,8 @@ package me.amanullah.course.media;
 import me.amanullah.course.common.exception.BadRequestException;
 import me.amanullah.course.common.exception.ForbiddenException;
 import me.amanullah.course.common.exception.NotFoundException;
+import me.amanullah.course.config.StorageQuotaProperties;
+import me.amanullah.course.user.Role;
 import me.amanullah.course.user.User;
 import me.amanullah.course.user.UserRepository;
 import java.io.IOException;
@@ -33,27 +35,60 @@ public class MediaService {
     private final MediaMapper mapper;
     private final MediaUrlSigner signer;
     private final Clock clock;
+    private final StorageQuotaProperties quotas;
 
     public MediaService(MediaRepository repository, UserRepository users, FileStorage storage, MediaMapper mapper,
-                        MediaUrlSigner signer, Clock clock) {
+                        MediaUrlSigner signer, Clock clock, StorageQuotaProperties quotas) {
         this.repository = repository;
         this.users = users;
         this.storage = storage;
         this.mapper = mapper;
         this.signer = signer;
         this.clock = clock;
+        this.quotas = quotas;
     }
 
+    /**
+     * Upload by a user: checks the type rules ({@link FileTypePolicy}: allow-list for students, no executables for
+     * anyone) and the storage quota (413 QUOTA_EXCEEDED) before storing.
+     */
     @Transactional
     public MediaDto upload(UUID ownerId, MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new BadRequestException("FILE_EMPTY", "Please choose a non-empty file");
         }
-        try (InputStream in = file.getInputStream()) {
-            return mapper.toDto(store(ownerId, file.getOriginalFilename(), file.getContentType(), in));
+        User owner = users.findById(ownerId).orElseThrow(() -> NotFoundException.of("User"));
+        String name = FileNames.sanitize(file.getOriginalFilename());
+        try {
+            String verifiedType = FileTypePolicy.check(owner.getRole(), name, file.getContentType(), file::getInputStream);
+            Long quota = quotaBytes(owner.getRole());
+            if (quota != null) {
+                long used = repository.sumSizeByOwner(ownerId);
+                if (used + file.getSize() > quota) {
+                    throw new QuotaExceededException(used, quota, file.getSize());
+                }
+            }
+            try (InputStream in = file.getInputStream()) {
+                return mapper.toDto(store(ownerId, name, verifiedType != null ? verifiedType : file.getContentType(), in));
+            }
         } catch (IOException e) {
             throw new UncheckedIOException("Could not store upload", e);
         }
+    }
+
+    /** Bytes used by the user's media and their quota ({@code null} = unlimited). */
+    @Transactional(readOnly = true)
+    public StorageUsage usage(UUID userId, Role role) {
+        return new StorageUsage(repository.sumSizeByOwner(userId), quotaBytes(role));
+    }
+
+    /** Storage quota of a role; admins are unlimited ({@code null}). */
+    public Long quotaBytes(Role role) {
+        return switch (role) {
+            case ADMIN -> null;
+            case INSTRUCTOR -> quotas.instructor().toBytes();
+            case STUDENT -> quotas.student().toBytes();
+        };
     }
 
     /** Stores content from any stream (also used by the seeder). */

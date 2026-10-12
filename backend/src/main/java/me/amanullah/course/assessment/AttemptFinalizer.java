@@ -12,6 +12,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Completes attempts: grades the answers stored on the attempt, records progress and notifies the instructor when
@@ -78,6 +80,16 @@ public class AttemptFinalizer {
     public void finalizeExpired(UUID assessmentId, UUID studentId, Instant now) {
         attempts.findFirstByAssessmentIdAndStudentIdAndStatus(assessmentId, studentId, AttemptStatus.IN_PROGRESS)
                 .ifPresent(a -> finalizeIfExpired(a, now));
+    }
+
+    /**
+     * Same as {@link #finalizeExpired(UUID, UUID, Instant)} but committed in its own transaction, so the
+     * finalization survives when the caller's transaction is rolled back afterwards (e.g. starting a new attempt is
+     * refused).
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void finalizeExpiredInNewTransaction(UUID assessmentId, UUID studentId, Instant now) {
+        finalizeExpired(assessmentId, studentId, now);
     }
 
     /** Lazily finalizes every expired attempt in the list (e.g. before listing them). */

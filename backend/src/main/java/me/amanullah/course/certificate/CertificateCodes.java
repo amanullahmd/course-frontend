@@ -7,14 +7,14 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
- * Certificate codes like {@code SW-2026-7KQ4-M9XP-R2TA}: the issue year plus 12 random characters from a 32-symbol
- * alphabet without look-alikes (no 0/O, 1/I/L, U) = 60 bits from {@link SecureRandom}, so codes cannot be guessed.
+ * Certificate codes like {@code SW-2026-7KQ4-M9XP-R2TA}: the issue year plus 12 random Crockford base32 characters
+ * (digits and letters without I, L, O, U) = 60 bits from {@link SecureRandom}, so codes cannot be guessed.
  */
 public final class CertificateCodes {
 
-    static final String ALPHABET = "23456789ABCDEFGHJKMNPQRSTVWXYZ" + "3K".substring(0, 0) + "ab".substring(0, 0);
-    private static final char[] SYMBOLS = "23456789ABCDEFGHJKMNPQRSTVWXYZ@#".toCharArray();
-    private static final Pattern FORMAT = Pattern.compile("SW-\\d{4}-[2-9A-Z]{4}-[2-9A-Z]{4}-[2-9A-Z]{4}");
+    private static final char[] SYMBOLS = "0123456789ABCDEFGHJKMNPQRSTVWXYZ".toCharArray();
+    private static final String GROUP = "[0-9A-HJKMNP-TV-Z]{4}";
+    private static final Pattern FORMAT = Pattern.compile("SW-\\d{4}-" + GROUP + "-" + GROUP + "-" + GROUP);
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private CertificateCodes() {

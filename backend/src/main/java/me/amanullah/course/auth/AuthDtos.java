@@ -21,7 +21,12 @@ public final class AuthDtos {
             String password,
             @NotNull Role role,
             /** Optional "en" or "de"; defaults to the request locale (Accept-Language), else English. */
-            @Pattern(regexp = PasswordPolicy.LOCALE_REGEX, message = PasswordPolicy.LOCALE_MESSAGE) String locale) {
+            @Pattern(regexp = PasswordPolicy.LOCALE_REGEX, message = PasswordPolicy.LOCALE_MESSAGE) String locale,
+            /**
+             * "I accept the terms and have read the privacy policy". Must be {@code true} unless
+             * {@code app.registration.terms-required=false}; the time of acceptance is stored.
+             */
+            Boolean acceptTerms) {
     }
 
     public record TokenRequest(@NotBlank @Size(max = 200) String token) {

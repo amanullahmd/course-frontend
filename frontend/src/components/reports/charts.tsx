@@ -26,9 +26,10 @@ export interface Series {
 }
 
 function niceMax(max: number): number {
-  if (max <= 4) return Math.max(1, max);
+  if (max <= 2) return 2;
+  if (max <= 4) return 4;
   const pow = 10 ** Math.floor(Math.log10(max));
-  const steps = [1, 2, 2.5, 5, 10];
+  const steps = [1, 2, 4, 6, 8, 10]; // even steps keep the middle tick an integer
   for (const s of steps) {
     if (s * pow >= max) return s * pow;
   }

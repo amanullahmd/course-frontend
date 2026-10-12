@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { EnrollmentDto, EnrollmentStatus } from "@/lib/api/types";
 import { useFormat } from "@/hooks/use-format";
+import { cn } from "@/lib/utils";
 import { useCourseEnrollments, useEnrollmentActions } from "@/hooks/queries/instructor";
 import { EnrollmentStatusBadge } from "@/components/course/badges";
 import { UserAvatar } from "@/components/ui/avatar";
@@ -31,6 +32,9 @@ const TAB_STATUSES: Record<Tab, EnrollmentStatus[]> = {
   approved: ["APPROVED"],
   inactive: ["REJECTED", "REVOKED", "WITHDRAWN"],
 };
+
+/** On phones the three tabs share the width (labels may wrap, icons hidden) instead of scrolling sideways. */
+const MOBILE_TAB = "max-sm:min-h-9 max-sm:whitespace-normal max-sm:px-1.5 max-sm:py-1 max-sm:text-[13px] max-sm:leading-tight max-sm:[&>svg]:hidden";
 
 /** Decision reason the backend stores on enrollments created by "Add learners". */
 const ADDED_BY_INSTRUCTOR = "Added by instructor";
@@ -257,7 +261,7 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
   const addedByInstructor = (e: EnrollmentDto) => e.status === "APPROVED" && e.decisionReason === ADDED_BY_INSTRUCTOR;
 
   return (
-    <div className="grid gap-4">
+    <div className={cn("grid gap-4", selectedRows.length > 0 && "max-sm:pb-28")}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="min-w-0 text-sm text-muted-foreground" aria-live="polite">
           {capacity != null ? (
@@ -287,14 +291,14 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
           }}
           className="min-w-0"
         >
-          <TabsList className="max-w-full overflow-x-auto">
-            <TabsTrigger value="pending">
+          <TabsList className="max-sm:grid max-sm:h-auto max-sm:w-full max-sm:grid-cols-3">
+            <TabsTrigger value="pending" className={MOBILE_TAB}>
               <Hourglass /> {t("waitlist")} {counts.pending > 0 && <Badge variant="info" className="ml-0.5 px-1.5">{counts.pending}</Badge>}
             </TabsTrigger>
-            <TabsTrigger value="approved">
+            <TabsTrigger value="approved" className={MOBILE_TAB}>
               <UserCheck /> {t("approved")} <span className="text-muted-foreground tabular-nums">{counts.approved}</span>
             </TabsTrigger>
-            <TabsTrigger value="inactive">
+            <TabsTrigger value="inactive" className={MOBILE_TAB}>
               <ShieldX /> {t("inactive")}
             </TabsTrigger>
           </TabsList>
@@ -308,9 +312,13 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
         <div
           role="region"
           aria-label={t("selected", { count: selectedRows.length })}
-          className="sticky bottom-3 z-10 flex flex-wrap items-center gap-2 rounded-xl border border-brand/40 bg-card px-3 py-2.5 shadow-lg animate-slide-up sm:static sm:gap-3 sm:bg-brand-soft/40 sm:px-4 sm:shadow-none"
+          className="fixed inset-x-3 bottom-3 z-40 flex flex-wrap items-center gap-2 rounded-xl border border-brand/40 bg-card px-3 py-2.5 shadow-lg animate-slide-up sm:static sm:gap-3 sm:bg-brand-soft/40 sm:px-4 sm:shadow-none"
         >
-          <span className="mr-auto text-sm font-medium sm:mr-0">{t("selected", { count: selectedRows.length })}</span>
+          <span className="text-sm font-medium">{t("selected", { count: selectedRows.length })}</span>
+          <Button size="sm" variant="ghost" className="ml-auto sm:order-last" onClick={clearSelection}>
+            {tc("clear")}
+          </Button>
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto [&>*]:max-sm:flex-1">
           {tab === "pending" && (
             <>
               <GuardedButton size="sm" loading={bulk.isPending && !reasonAction} onClick={bulkApprove} blockedReason={seatsBlock(selectedRows.length)}>
@@ -343,9 +351,7 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
               <RotateCcw /> {t("restoreSelected")}
             </GuardedButton>
           )}
-          <Button size="sm" variant="ghost" className="sm:ml-auto" onClick={clearSelection}>
-            {tc("clear")}
-          </Button>
+          </div>
         </div>
       )}
 

@@ -179,14 +179,14 @@ export function LearnersView({ gradebook, courseId }: { gradebook: Gradebook; co
               <EmptyState compact icon={SearchX} title={t("learners.noMatch")} description={t("learners.noMatchText")} />
             </div>
           ) : (
-            <div className="report-scroll overflow-x-auto border-t">
-              <table className="w-full min-w-[980px] text-sm">
+            <div className="report-scroll relative overflow-x-auto border-t">
+              <table className="w-full min-w-[900px] text-sm">
                 <caption className="sr-only">{t("learners.title")}</caption>
                 <thead className="bg-muted/40">
                   <tr className="border-b">
                     {head("name", t("col.learner"), "sticky left-0 z-10 bg-muted pl-4 sm:pl-5")}
                     {head("activity", t("col.status"))}
-                    {head("progress", t("col.completion"), "min-w-40")}
+                    {head("progress", t("col.completion"), "min-w-36")}
                     {head("lessons", t("col.lessons"))}
                     {head("quizzes", t("col.quizzes"))}
                     {head("exams", t("col.exams"))}
@@ -205,7 +205,7 @@ export function LearnersView({ gradebook, courseId }: { gradebook: Gradebook; co
                             href={`/instructor/courses/${courseId}/reports/students/${r.id}`}
                             className="flex max-w-56 items-center gap-2.5 rounded outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
-                            <UserAvatar name={r.fullName} src={r.avatarUrl} className="size-8 print:hidden" />
+                            <UserAvatar name={r.fullName} src={r.avatarUrl} className="size-8 shrink-0 print:hidden" />
                             <span className="min-w-0">
                               <span className="block truncate font-medium hover:underline">{r.fullName}</span>
                               <span className="block truncate text-xs text-muted-foreground">{r.email}</span>
@@ -223,7 +223,7 @@ export function LearnersView({ gradebook, courseId }: { gradebook: Gradebook; co
                               label={t("col.completion")}
                               barClassName={r.progressPercent === 100 ? "bg-success" : "bg-brand"}
                             />
-                            <span className="w-11 text-right tabular-nums">{f.pct0(r.progressPercent)}</span>
+                            <span className="w-11 text-right whitespace-nowrap tabular-nums">{f.pct0(r.progressPercent)}</span>
                           </div>
                           <span className="text-xs text-muted-foreground tabular-nums">
                             {t("learners.items", { done: r.completedItems, total: r.totalLiveItems })}
@@ -233,13 +233,13 @@ export function LearnersView({ gradebook, courseId }: { gradebook: Gradebook; co
                           <Fraction done={r.lessonsCompleted} total={r.lessonsTotal} />
                         </td>
                         <td className="px-3 tabular-nums">
-                          <Fraction done={r.quizzesTaken} total={r.quizzesTotal} suffix={t("learners.taken")} />
+                          <Fraction done={r.quizzesTaken} total={r.quizzesTotal} />
                         </td>
                         <td className="px-3 tabular-nums">
-                          <Fraction done={r.examsTaken} total={r.examsTotal} suffix={t("learners.taken")} warnIfZero />
+                          <Fraction done={r.examsTaken} total={r.examsTotal} warnIfZero />
                         </td>
                         <td className="px-3 text-right tabular-nums">{f.pct(r.averageQuizPercent)}</td>
-                        <td className="px-3 text-right tabular-nums">
+                        <td className="px-3 text-right whitespace-nowrap tabular-nums">
                           {r.averageExamPercent != null ? (
                             f.pct(r.averageExamPercent)
                           ) : examCell && examCell.status === "SUBMITTED_PENDING" ? (

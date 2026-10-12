@@ -92,7 +92,7 @@ export function GradebookView({ gradebook, courseId }: { gradebook: Gradebook; c
               <EmptyState compact icon={SearchX} title={t("learners.noMatch")} description={t("learners.noMatchText")} />
             </div>
           ) : (
-            <div className="report-scroll mt-3 max-h-[70vh] overflow-auto border-t">
+            <div className={cn("report-scroll relative mt-3 overflow-auto border-t", visible.length > 12 && "max-h-[70vh]")}>
               <table className="w-max min-w-full border-separate border-spacing-0 text-sm">
                 <caption className="sr-only">{t("gradebook.title")}</caption>
                 <thead className="sticky top-0 z-20">

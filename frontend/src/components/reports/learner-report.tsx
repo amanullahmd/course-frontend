@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { CalendarDays, Check, ChevronRight, Circle, Clock, MessageSquareText, UserX } from "lucide-react";
+import { CalendarDays, Check, ClipboardCheck, ListChecks, Target, ChevronRight, Circle, Clock, MessageSquareText, UserX } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { reportCsv } from "@/lib/api/reports";
 import { isApiError } from "@/lib/api/client";
@@ -46,6 +46,7 @@ function LearnerSkeleton() {
 export function LearnerReport() {
   const { courseId, studentId } = useParams<{ courseId: string; studentId: string }>();
   const t = useTranslations("reports");
+  const te = useTranslations("enrollmentStatus");
   const f = useReportFormat();
   const report = useStudentReport(courseId, studentId);
 
@@ -111,7 +112,7 @@ export function LearnerReport() {
                 <Clock className="size-3.5" />{" "}
                 {r.lastActivityAt ? t("learner.lastActive", { when: f.relative(r.lastActivityAt) }) : t("learner.noActivity")}
               </span>
-              {r.enrollment.status !== "APPROVED" && <Badge variant="warning">{t(`enrollment.${r.enrollment.status}`)}</Badge>}
+              {r.enrollment.status !== "APPROVED" && <Badge variant="warning">{te(r.enrollment.status)}</Badge>}
             </div>
           </div>
         </div>
@@ -129,13 +130,14 @@ export function LearnerReport() {
       </div>
 
       <div className="kpi-grid mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4 lg:grid-cols-4">
-        <StatCard label={t("learner.items")} value={`${r.completedItems}/${r.totalLiveItems}`} hint={t("learner.itemsHint")} />
+        <StatCard label={t("learner.items")} value={`${r.completedItems}/${r.totalLiveItems}`} icon={ListChecks} hint={t("learner.itemsHint")} />
         <StatCard
           label={t("learner.assessments")}
           value={`${r.totals.assessmentsAttempted}/${r.totals.assessments}`}
+          icon={ClipboardCheck}
           hint={t("learner.passedHint", { count: r.totals.assessmentsPassed })}
         />
-        <StatCard label={t("learner.averageScore")} value={f.pct(r.totals.averageBestPercent)} hint={t("learner.averageScoreHint")} accent="brand" />
+        <StatCard label={t("learner.averageScore")} value={f.pct(r.totals.averageBestPercent)} icon={Target} hint={t("learner.averageScoreHint")} accent="brand" />
         <StatCard
           label={t("learner.feedback")}
           value={f.num(r.feedbackCount)}
@@ -189,8 +191,8 @@ export function LearnerReport() {
               <EmptyState compact title={t("empty.noAttempts")} description={t("empty.noAttemptsLearner")} />
             </div>
           ) : (
-            <div className="report-scroll overflow-x-auto border-t">
-              <table className="w-full min-w-[640px] text-sm">
+            <div className="report-scroll relative overflow-x-auto border-t">
+              <table className="w-full min-w-[560px] text-sm">
                 <caption className="sr-only">{t("learner.attemptsTitle")}</caption>
                 <thead className="bg-muted/40 text-xs text-muted-foreground">
                   <tr className="border-b">
@@ -212,7 +214,7 @@ export function LearnerReport() {
                       </td>
                       <td className="px-3 whitespace-nowrap text-muted-foreground">
                         {a.submittedAt ? f.dateTime(a.submittedAt) : t("cell.inProgress")}
-                        <span className="block text-xs">{t("learner.started", { date: f.dateTime(a.startedAt) })}</span>
+                        <span className="block text-xs">{t("learner.started", { date: f.date(a.startedAt, "d MMM, HH:mm") })}</span>
                       </td>
                       <td className="px-3 text-right whitespace-nowrap tabular-nums">
                         {a.score != null ? (

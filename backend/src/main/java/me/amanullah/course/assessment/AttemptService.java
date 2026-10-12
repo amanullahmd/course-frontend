@@ -5,7 +5,6 @@ import me.amanullah.course.assessment.AssessmentDtos.AttemptSessionDto;
 import me.amanullah.course.assessment.AssessmentDtos.AttemptSummaryDto;
 import me.amanullah.course.assessment.AssessmentDtos.Grade;
 import me.amanullah.course.assessment.AssessmentDtos.SubmittedAnswer;
-import me.amanullah.course.common.exception.ApiException;
 import me.amanullah.course.common.exception.BadRequestException;
 import me.amanullah.course.common.exception.ConflictException;
 import me.amanullah.course.common.exception.ForbiddenException;
@@ -82,15 +81,15 @@ public class AttemptService {
 
     /**
      * Starts a new attempt or resumes the one in progress. An in-progress attempt whose time is up is never resumed:
-     * it is submitted with its saved answers first, then a new attempt starts if the rules allow it. The
-     * finalization is kept even when starting a new attempt is refused (no rollback for API errors; nothing else is
-     * written before those checks).
+     * it is submitted with its saved answers first (in its own transaction, so that sticks even when starting a new
+     * attempt is refused), then a new attempt starts if the rules allow it.
      */
-    @Transactional(noRollbackFor = ApiException.class)
+    @Transactional
     public AttemptSessionDto start(CurrentUser me, UUID itemId) {
         Instant now = Instant.now(clock);
         ContentItem item = learnerAccess.item(itemId, me, now);
         Assessment a = requireAssessment(item);
+        finalizer.finalizeExpiredInNewTransaction(a.getId(), me.id(), now);
         var inProgress = attempts.findFirstByAssessmentIdAndStudentIdAndStatus(a.getId(), me.id(), AttemptStatus.IN_PROGRESS);
         if (inProgress.isPresent()) {
             if (!finalizer.finalizeIfExpired(inProgress.get(), now)) {

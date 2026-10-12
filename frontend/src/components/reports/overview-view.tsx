@@ -7,7 +7,6 @@ import {
   ChartColumn,
   CircleCheckBig,
   ClipboardCheck,
-  Hourglass,
   Inbox,
   Target,
   TrendingUp,

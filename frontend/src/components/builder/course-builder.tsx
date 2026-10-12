@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronRight, Ellipsis, ExternalLink, Eye, FileCog, Layers, Rocket, Trash, Users } from "lucide-react";
+import { BarChart3, ChevronRight, Ellipsis, ExternalLink, Eye, FileCog, Layers, Rocket, Trash, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { isApiError } from "@/lib/api/client";
@@ -31,8 +31,9 @@ import { PublicationPopover } from "./publication-control";
 import { PublishingPanel } from "./publishing-panel";
 import { CourseActiveSwitch } from "./course-active-switch";
 import { StudentsPanel } from "./students-panel";
+import { ReportsPanel } from "@/components/reports/reports-panel";
 
-const TABS = ["curriculum", "details", "publishing", "students"] as const;
+const TABS = ["curriculum", "details", "publishing", "students", "reports"] as const;
 type Tab = (typeof TABS)[number];
 
 function BuilderSkeleton() {
@@ -69,6 +70,7 @@ export function CourseBuilder() {
     const sp = new URLSearchParams(searchParams.toString());
     if (t === "curriculum") sp.delete("tab");
     else sp.set("tab", t);
+    if (t !== "reports") sp.delete("view");
     const qs = sp.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
@@ -195,6 +197,9 @@ export function CourseBuilder() {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="reports">
+            <BarChart3 /> {t("builder.tabs.reports")}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="curriculum" className="mt-6">
           <CurriculumBoard course={c} />
@@ -211,6 +216,9 @@ export function CourseBuilder() {
         </TabsContent>
         <TabsContent value="students" className="mt-6">
           <StudentsPanel courseId={c.id} capacity={c.capacity} />
+        </TabsContent>
+        <TabsContent value="reports" className="mt-6">
+          <ReportsPanel courseId={c.id} courseTitle={c.title} />
         </TabsContent>
       </Tabs>
 

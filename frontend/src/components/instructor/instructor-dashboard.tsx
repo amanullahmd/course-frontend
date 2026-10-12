@@ -19,6 +19,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/ui/stat-card";
 import { EventRow } from "./schedule-event";
+import { CourseReportsCard } from "@/components/reports/course-reports-card";
 
 export function InstructorDashboard() {
   const t = useTranslations();
@@ -151,6 +152,7 @@ export function InstructorDashboard() {
               </CardContent>
             </Card>
           </div>
+          <CourseReportsCard className="mt-6" />
         </>
       )}
       <ReasonDialog

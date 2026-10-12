@@ -6,7 +6,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ChevronRight, ClipboardList, Eye, FileText, Inbox, Info, Save, Trash } from "lucide-react";
+import { BarChart3, ChevronRight, ClipboardList, Eye, FileText, Inbox, Info, Save, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -41,6 +41,7 @@ import { AttachmentsManager } from "./attachments-manager";
 import { PublicationForm } from "./publication-control";
 import { RichTextEditor } from "./rich-text-editor";
 import { SubmissionsPanel } from "./submissions-panel";
+import { AssessmentAnalytics } from "@/components/reports/assessment-analytics";
 
 type SchemaT = (key: "validation.titleRequired" | "validation.tooLong" | "validation.url" | "validation.wholeNumber") => string;
 
@@ -99,7 +100,7 @@ function EditorSkeleton() {
   );
 }
 
-type EditorTab = "content" | "assessment" | "submissions";
+type EditorTab = "content" | "assessment" | "submissions" | "analytics";
 
 function ItemEditorLoaded({
   item,
@@ -216,6 +217,9 @@ function ItemEditorLoaded({
                 </TabsTrigger>
                 <TabsTrigger value="submissions">
                   <Inbox /> {t("itemEditor.submissions")}
+                </TabsTrigger>
+                <TabsTrigger value="analytics">
+                  <BarChart3 /> {t("itemEditor.analytics")}
                 </TabsTrigger>
               </>
             )}
@@ -345,6 +349,9 @@ function ItemEditorLoaded({
               <TabsContent value="submissions" className="mt-6">
                 {assessmentSaved ? <SubmissionsPanel itemId={item.id} initialAttemptId={initialAttemptId} /> : null}
               </TabsContent>
+              <TabsContent value="analytics" className="mt-6">
+                {assessmentSaved ? <AssessmentAnalytics itemId={item.id} active={tab === "analytics"} /> : null}
+              </TabsContent>
             </>
           )}
         </Tabs>
@@ -425,7 +432,7 @@ export function ItemEditor() {
   const t = useTranslations("itemEditor");
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const initialTab: EditorTab = tabParam === "assessment" || tabParam === "submissions" ? tabParam : "content";
+  const initialTab: EditorTab = tabParam === "assessment" || tabParam === "submissions" || tabParam === "analytics" ? tabParam : "content";
   const initialAttemptId = searchParams.get("attempt");
 
   if (item.isPending) return <EditorSkeleton />;
