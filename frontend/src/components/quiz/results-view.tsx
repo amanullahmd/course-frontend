@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, CircleCheck, CircleX, Hourglass, MessageSquareText, X } from "lucide-react";
+import { Check, CircleCheck, CircleX, Hourglass, MessageSquareText, TimerOff, X } from "lucide-react";
 import type { AttemptAnswerResult, AttemptResultDto } from "@/lib/api/types";
 import { useTranslations } from "next-intl";
 import { useFormat } from "@/hooks/use-format";
@@ -97,7 +97,7 @@ function AnswerReview({ answer, index }: { answer: AttemptAnswerResult; index: n
       {answer.explanation && (
         <p className="mt-3 rounded-lg bg-muted/50 px-3 py-2 text-[13px] text-muted-foreground">
           <span className="font-medium text-foreground">{t("quiz.explanation")}</span>
-          {answer.explanation}
+          <InlineHtml html={answer.explanation} />
         </p>
       )}
 
@@ -117,6 +117,12 @@ export function ResultsView({ result, passingScore }: { result: AttemptResultDto
   const pending = result.pendingManualGrading || result.status === "SUBMITTED";
   return (
     <div className="grid gap-8 animate-slide-up">
+      {result.autoSubmitted && (
+        <p role="status" className="flex items-start gap-2.5 rounded-xl border border-info/30 bg-info-soft/60 px-4 py-3 text-sm">
+          <TimerOff className="mt-0.5 size-4 shrink-0 text-info" />
+          {t("autoSubmittedNotice")}
+        </p>
+      )}
       <div className="flex flex-col items-center gap-6 rounded-2xl border bg-card p-6 text-center sm:flex-row sm:text-left">
         <ScoreRing percent={result.percent} passed={result.passed} pending={pending} />
         <div className="grid gap-2">
@@ -137,9 +143,14 @@ export function ResultsView({ result, passingScore }: { result: AttemptResultDto
             {t("pointsOf", { score: result.score ?? 0, max: result.maxScore ?? 0 })}
             {passingScore != null && ` · ${t("needed", { percent: passingScore })}`}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-muted-foreground sm:justify-start">
             {t("submittedOn", { date: fmt.dateTime(result.submittedAt) })}
-            {result.late && ` · ${t("late")}`}
+            {result.late && <Badge variant="warning">{t("late")}</Badge>}
+            {result.autoSubmitted && (
+              <Badge variant="info">
+                <TimerOff /> {t("autoSubmitted")}
+              </Badge>
+            )}
           </p>
           {pending && (
             <p className="text-sm text-muted-foreground">{t("pendingText")}</p>

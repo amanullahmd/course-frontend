@@ -40,28 +40,29 @@ export function QuestionMedia({ media }: { media: SessionQuestion["media"] }) {
   );
 }
 
-/** Renders the prompt; "___" gaps in fill-in-the-blank prompts are highlighted. */
+const escapeHtml = (text: string) =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/**
+ * Renders the (server-sanitised) prompt HTML; "___" gaps in fill-in-the-blank prompts become a highlighted blank
+ * inside the same HTML, so inline formatting around the gap is kept.
+ */
 export function QuestionPrompt({ prompt, type }: { prompt: string; type: SessionQuestion["type"] }) {
   const t = useTranslations("quiz");
-  if (type !== "FILL_BLANK" || !prompt.includes("___")) {
+  if (type !== "FILL_BLANK" || !/_{3,}/.test(prompt)) {
     return (
       <p className="text-lg leading-relaxed font-medium">
         <InlineHtml html={prompt} />
       </p>
     );
   }
-  const parts = prompt.split(/_{3,}/);
+  const html = /<\/?[a-z][\s\S]*>/i.test(prompt) ? prompt : escapeHtml(prompt);
+  const blank = `<span role="img" aria-label="${escapeHtml(t("blank"))}" class="mx-1 inline-block min-w-16 border-b-2 border-dashed border-brand align-baseline"></span>`;
   return (
-    <p className="text-lg leading-relaxed font-medium whitespace-pre-line">
-      {parts.map((p, i) => (
-        <React.Fragment key={i}>
-          {p}
-          {i < parts.length - 1 && (
-            <span className="mx-1 inline-block min-w-16 border-b-2 border-dashed border-brand align-baseline" aria-label={t("blank")} />
-          )}
-        </React.Fragment>
-      ))}
-    </p>
+    <p
+      className="text-lg leading-relaxed font-medium whitespace-pre-line [&_p]:inline [&_strong]:font-semibold"
+      dangerouslySetInnerHTML={{ __html: html.replace(/_{3,}/g, blank) }}
+    />
   );
 }
 

@@ -52,9 +52,10 @@ function GradingForm({ result, itemId, onDone }: { result: AttemptResultDto; ite
           <UserAvatar name={result.student.fullName} src={result.student.avatarUrl} className="size-10" />
           <div className="min-w-0 flex-1">
             <p className="truncate font-medium">{result.student.fullName}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
               {t("submissions.submittedOn", { date: fmt.dateTime(result.submittedAt) })}
-              {result.late && ` · ${t("submissions.late")}`}
+              {result.late && <Badge variant="warning">{t("submissions.late")}</Badge>}
+              {result.autoSubmitted && <Badge variant="info">{t("submissions.autoSubmitted")}</Badge>}
             </p>
           </div>
           <div className="text-right">
@@ -278,8 +279,14 @@ export function SubmissionsPanel({ itemId, initialAttemptId = null }: { itemId: 
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="hidden whitespace-nowrap text-muted-foreground sm:table-cell">{fmt.dateTime(a.submittedAt)}
-                    {a.late && ` · ${t("late")}`}
+                  <TableCell className="hidden whitespace-nowrap text-muted-foreground sm:table-cell">
+                    {fmt.dateTime(a.submittedAt)}
+                    {(a.late || a.autoSubmitted) && (
+                      <span className="mt-1 flex gap-1">
+                        {a.late && <Badge variant="warning">{t("late")}</Badge>}
+                        {a.autoSubmitted && <Badge variant="info">{t("autoSubmitted")}</Badge>}
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     {a.pendingManualGrading ? (

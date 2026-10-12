@@ -2,9 +2,11 @@
 
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { CalendarClock, CircleCheck, ClipboardList, Clock, Lock, PlayCircle, RotateCcw, Target, Trophy } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { CalendarClock, CircleCheck, ClipboardList, Clock, Hourglass, Lock, PlayCircle, RotateCcw, Target, TriangleAlert, Trophy } from "lucide-react";
 import type { AttemptResultDto, AttemptSessionDto, LearnItemDto } from "@/lib/api/types";
 import { useTranslations } from "next-intl";
+import { qk } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { useFormat } from "@/hooks/use-format";
 import { useMyAttempt, useMyAttempts, useStartAttempt } from "@/hooks/queries/student";
@@ -17,6 +19,30 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { QuizPlayer } from "./quiz-player";
 import { ResultsView } from "./results-view";
+
+const MINUTE = 60_000;
+
+/** "2 h 10 min", "35 min", "3 d 4 h", "< 1 min" (rounded up to whole minutes). */
+function useDuration() {
+  const t = useTranslations("quiz.duration");
+  return React.useCallback(
+    (ms: number) => {
+      const minutes = Math.max(0, Math.ceil(ms / MINUTE));
+      if (ms < MINUTE) return t("lessThanMinute");
+      const d = Math.floor(minutes / 1440);
+      const h = Math.floor((minutes % 1440) / 60);
+      const m = minutes % 60;
+      if (d > 0) return h > 0 ? t("daysHours", { d, h }) : t("days", { d });
+      if (h > 0) return m > 0 ? t("hoursMinutes", { h, m }) : t("hours", { h });
+      return t("minutes", { m });
+    },
+    [t],
+  );
+}
+
+function sameDay(a: number, b: number) {
+  return new Date(a).toDateString() === new Date(b).toDateString();
+}
 
 type View = { kind: "intro" } | { kind: "play"; session: AttemptSessionDto } | { kind: "result"; attemptId: string };
 
@@ -46,7 +72,9 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
   };
   const attempts = useMyAttempts(item.id, !!info);
   const start = useStartAttempt(item.id);
+  const qc = useQueryClient();
   const now = useNow();
+  const duration = useDuration();
 
   if (!info) {
     return <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">{t("noQuestions")}</p>;
@@ -77,11 +105,30 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
   }
 
   const isExam = item.type === "EXAM";
-  const notYetOpen = !!info.availableFrom && now > 0 && new Date(info.availableFrom).getTime() > now;
-  const closed = !!info.availableUntil && now > 0 && new Date(info.availableUntil).getTime() < now;
+  const opensAt = info.availableFrom ? new Date(info.availableFrom).getTime() : null;
+  const closesAt = info.availableUntil ? new Date(info.availableUntil).getTime() : null;
+  // `now` is 0 until hydration; the live values below re-render every second, so the start button re-enables itself
+  // the moment the window opens (and disables itself when it closes).
+  const notYetOpen = opensAt != null && now > 0 && opensAt > now;
+  const closed = closesAt != null && now > 0 && closesAt <= now;
   const noAttemptsLeft = info.maxAttempts > 0 && info.attemptsUsed >= info.maxAttempts && !info.inProgressAttemptId;
-  const canStart = !notYetOpen && !closed && !noAttemptsLeft && info.questionCount > 0;
-  const resume = !!info.inProgressAttemptId;
+  const canStart = now > 0 && !notYetOpen && !closed && !noAttemptsLeft && info.questionCount > 0;
+  const resume = !!info.inProgressAttemptId && !closed;
+  const windowLabel = (ms: number) => fmt.date(new Date(ms), "EEE d MMM, HH:mm");
+  const timeLabel = (ms: number) => (now > 0 && sameDay(ms, now) ? fmt.date(new Date(ms), "HH:mm") : windowLabel(ms));
+  // Effective deadline if the learner started right now: the time limit, capped at the window end.
+  const limitMs = info.timeLimitMinutes ? info.timeLimitMinutes * MINUTE : null;
+  const capped = canStart && limitMs != null && closesAt != null && now + limitMs > closesAt;
+  const kind = isExam ? "exam" : "quiz";
+  const startAttempt = () =>
+    start.mutate(undefined, {
+      onSuccess: (session) => setView({ kind: "play", session }),
+      // e.g. the window closed meanwhile or an expired attempt was just submitted: show the current state
+      onError: () => {
+        void qc.invalidateQueries({ queryKey: qk.student.item(item.id) });
+        void qc.invalidateQueries({ queryKey: qk.student.attempts(item.id) });
+      },
+    });
 
   const stats = [
     { icon: ClipboardList, label: t("questions"), value: info.questionCount },
@@ -119,23 +166,52 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
             </div>
           ))}
         </dl>
-        {(info.availableFrom || info.availableUntil) && (
-          <p className="flex items-center gap-2 border-t px-5 py-3 text-sm text-muted-foreground sm:px-6">
-            <CalendarClock className="size-4" />
-            {t("available")} {info.availableFrom ? t("from", { date: fmt.dateTime(info.availableFrom) }) : ""}
-            {info.availableUntil ? ` ${t("until", { date: fmt.dateTime(info.availableUntil) })}` : ""}
-          </p>
+        {(opensAt != null || closesAt != null) && (
+          <div className="grid gap-2 border-t px-5 py-3 text-sm sm:px-6">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+              <CalendarClock className="size-4 text-muted-foreground" aria-hidden />
+              {opensAt != null && (
+                <span className={cn(notYetOpen ? "font-medium" : "text-muted-foreground")}>
+                  {t(notYetOpen ? "opensAt" : "openedAt", { date: windowLabel(opensAt) })}
+                </span>
+              )}
+              {closesAt != null && (
+                <span className={cn(!notYetOpen && !closed ? "font-medium" : "text-muted-foreground")}>
+                  {t(closed ? "closedAt" : "closesAt", { date: windowLabel(closesAt) })}
+                </span>
+              )}
+              {now > 0 && notYetOpen && opensAt != null && (
+                <Badge variant="info" className="tabular-nums" aria-live="polite">
+                  <Hourglass /> {t("opensIn", { time: duration(opensAt - now) })}
+                </Badge>
+              )}
+              {now > 0 && !notYetOpen && !closed && closesAt != null && (
+                <Badge variant={closesAt - now < 15 * MINUTE ? "warning" : "secondary"} className="tabular-nums">
+                  <Hourglass /> {t("closesIn", { time: duration(closesAt - now) })}
+                </Badge>
+              )}
+            </div>
+            {capped && closesAt != null && (
+              <p className="flex items-start gap-1.5 text-[13px] text-warning">
+                <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
+                {t("cappedHint", { minutes: info.timeLimitMinutes ?? 0, kind, time: timeLabel(closesAt) })}
+              </p>
+            )}
+            {!limitMs && closesAt != null && !closed && (
+              <p className="text-[13px] text-muted-foreground">{t("untimedClosesHint", { kind, time: timeLabel(closesAt) })}</p>
+            )}
+          </div>
         )}
         <div className="flex flex-col gap-3 border-t px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p className="text-sm text-muted-foreground">
-            {notYetOpen && (
+            {notYetOpen && opensAt != null && (
               <span className="flex items-center gap-1.5">
-                <Lock className="size-4" /> {t("opens", { date: fmt.dateTime(info.availableFrom) })}
+                <Lock className="size-4" /> {t("notOpenYetReason", { kind, date: windowLabel(opensAt) })}
               </span>
             )}
-            {closed && (
+            {closed && closesAt != null && (
               <span className="flex items-center gap-1.5">
-                <Lock className="size-4" /> {t("closedOn", { date: fmt.dateTime(info.availableUntil) })}
+                <Lock className="size-4" /> {t("closedReason", { kind, date: windowLabel(closesAt) })}
               </span>
             )}
             {noAttemptsLeft && !closed && !notYetOpen && t("noAttemptsLeft")}
@@ -147,7 +223,7 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
             variant={resume ? "brand" : "default"}
             disabled={!canStart && !resume}
             loading={start.isPending}
-            onClick={() => start.mutate(undefined, { onSuccess: (session) => setView({ kind: "play", session }) })}
+            onClick={startAttempt}
           >
             <PlayCircle /> {resume ? t("resume") : info.attemptsUsed > 0 ? t("startNew") : isExam ? t("startExam") : t("startQuiz")}
           </Button>
@@ -184,6 +260,16 @@ export function AssessmentPanel({ item }: { item: LearnItemDto }) {
                         <Badge variant="success">{t("passed")}</Badge>
                       ) : (
                         <Badge variant="destructive">{t("notPassed")}</Badge>
+                      )}
+                      {a.autoSubmitted && (
+                        <Badge variant="info" className="ml-1">
+                          {t("autoSubmitted")}
+                        </Badge>
+                      )}
+                      {a.late && (
+                        <Badge variant="warning" className="ml-1">
+                          {t("late")}
+                        </Badge>
                       )}
                       {a.submittedAt && <p className="mt-1 text-xs whitespace-nowrap text-muted-foreground sm:hidden">{fmt.date(a.submittedAt)}</p>}
                     </TableCell>
