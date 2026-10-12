@@ -16,7 +16,11 @@ import me.amanullah.course.enrollment.Enrollment;
 import me.amanullah.course.enrollment.EnrollmentRepository;
 import me.amanullah.course.enrollment.EnrollmentStatus;
 import me.amanullah.course.learning.ProgressService;
+import me.amanullah.course.course.ItemType;
+import me.amanullah.course.report.ReportDtos.ActivityStatus;
 import me.amanullah.course.report.ReportDtos.AssessmentAnalyticsDto;
+import me.amanullah.course.report.ReportDtos.ItemEngagement;
+import me.amanullah.course.report.ReportDtos.WeekBucket;
 import me.amanullah.course.report.ReportDtos.Bucket;
 import me.amanullah.course.report.ReportDtos.CellStatus;
 import me.amanullah.course.report.ReportDtos.ColumnStats;
@@ -47,6 +51,9 @@ import me.amanullah.course.security.CurrentUser;
 import me.amanullah.course.user.User;
 import me.amanullah.course.user.UserMapper;
 import java.time.Clock;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -75,6 +82,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReportService {
 
     static final Duration ACTIVE_WINDOW = Duration.ofDays(7);
+    static final Duration INACTIVE_AFTER = Duration.ofDays(14);
+    static final int TIMELINE_WEEKS = 12;
 
     private final CourseAccess access;
     private final ContentItemRepository items;
@@ -243,13 +252,96 @@ public class ReportService {
 
         Kpis kpis = new Kpis(learners.size(), count(byStatus, EnrollmentStatus.PENDING),
                 learners.isEmpty() ? null : round1(percents.stream().mapToInt(Integer::intValue).average().orElse(0)),
+                median(percents.stream().map(Integer::doubleValue).toList()),
                 learners.isEmpty() ? null : round1(completed * 100.0 / learners.size()), completed,
                 d.assessmentItems.size(), mean(bests), bests.isEmpty() ? null : round1(passed * 100.0 / bests.size()),
                 pendingGrading, active, total);
-        Funnel funnel = new Funnel(all.size(), count(byStatus, EnrollmentStatus.PENDING),
-                count(byStatus, EnrollmentStatus.APPROVED), count(byStatus, EnrollmentStatus.REJECTED),
-                count(byStatus, EnrollmentStatus.WITHDRAWN), count(byStatus, EnrollmentStatus.REVOKED));
-        return new OverviewDto(d.ref(), d.now, kpis, distribution, modules, funnel);
+        int approvedCount = count(byStatus, EnrollmentStatus.APPROVED);
+        int revoked = count(byStatus, EnrollmentStatus.REVOKED);
+        int rejected = count(byStatus, EnrollmentStatus.REJECTED);
+        int decided = approvedCount + revoked + rejected;
+        Funnel funnel = new Funnel(all.size(), count(byStatus, EnrollmentStatus.PENDING), approvedCount, rejected,
+                count(byStatus, EnrollmentStatus.WITHDRAWN), revoked,
+                decided == 0 ? null : round1((approvedCount + revoked) * 100.0 / decided));
+        return new OverviewDto(d.ref(), d.now, kpis, distribution, modules, funnel, timeline(course, all, d.now),
+                engagement(d, learners, completions, grouped));
+    }
+
+    /** Applications vs approvals per week (Monday-based, UTC), the last 12 weeks or since course creation. */
+    static List<WeekBucket> timeline(Course course, List<Enrollment> all, Instant now) {
+        LocalDate thisWeek = LocalDate.ofInstant(now, ZoneOffset.UTC).with(DayOfWeek.MONDAY);
+        LocalDate first = thisWeek.minusWeeks(TIMELINE_WEEKS - 1);
+        if (course.getCreatedAt() != null) {
+            LocalDate created = LocalDate.ofInstant(course.getCreatedAt(), ZoneOffset.UTC).with(DayOfWeek.MONDAY);
+            if (created.isAfter(first)) {
+                first = created.isAfter(thisWeek) ? thisWeek : created;
+            }
+        }
+        Map<LocalDate, int[]> weeks = new LinkedHashMap<>();
+        for (LocalDate w = first; !w.isAfter(thisWeek); w = w.plusWeeks(1)) {
+            weeks.put(w, new int[2]);
+        }
+        for (Enrollment e : all) {
+            int[] applied = weeks.get(week(e.getAppliedAt()));
+            if (applied != null) {
+                applied[0]++;
+            }
+            boolean accepted = e.getStatus() == EnrollmentStatus.APPROVED || e.getStatus() == EnrollmentStatus.REVOKED;
+            if (accepted && e.getDecidedAt() != null) {
+                int[] approved = weeks.get(week(e.getDecidedAt()));
+                if (approved != null) {
+                    approved[1]++;
+                }
+            }
+        }
+        List<WeekBucket> result = new ArrayList<>();
+        weeks.forEach((w, c) -> result.add(new WeekBucket(w, c[0], c[1])));
+        return result;
+    }
+
+    private static LocalDate week(Instant at) {
+        return at == null ? null : LocalDate.ofInstant(at, ZoneOffset.UTC).with(DayOfWeek.MONDAY);
+    }
+
+    /** Completion of every live item (and participation for quizzes/exams) among the approved learners. */
+    private static List<ItemEngagement> engagement(CourseData d, List<UUID> learners,
+                                                   Map<UUID, Map<UUID, Instant>> completions,
+                                                   Map<UUID, Map<UUID, List<AttemptRow>>> grouped) {
+        int n = learners.size();
+        List<ItemEngagement> result = new ArrayList<>();
+        for (ContentItem item : d.liveItems) {
+            int completed = (int) learners.stream()
+                    .filter(s -> completions.getOrDefault(s, Map.of()).containsKey(item.getId())).count();
+            Integer taken = null;
+            Integer passed = null;
+            Double average = null;
+            AssessmentRow a = d.assessmentByItem.get(item.getId());
+            if (item.getType().isAssessment() && a != null) {
+                int t = 0;
+                int p = 0;
+                List<Double> bests = new ArrayList<>();
+                for (UUID s : learners) {
+                    List<AttemptRow> list = grouped.getOrDefault(s, Map.of()).getOrDefault(item.getId(), List.of());
+                    if (list.stream().anyMatch(AttemptRow::submitted)) {
+                        t++;
+                    }
+                    Double best = bestGraded(list);
+                    if (best != null) {
+                        bests.add(best);
+                        if (best >= a.passingScore()) {
+                            p++;
+                        }
+                    }
+                }
+                taken = t;
+                passed = p;
+                average = mean(bests);
+            }
+            result.add(new ItemEngagement(item.getId(), item.getTitle(), item.getType(), item.getModule().getId(),
+                    item.getModule().getTitle(), completed, n == 0 ? null : round1(completed * 100.0 / n), taken,
+                    taken == null || n == 0 ? null : round1(taken * 100.0 / n), passed, average));
+        }
+        return result;
     }
 
     // ================================================================== gradebook
@@ -262,6 +354,9 @@ public class ReportService {
         Map<UUID, Instant> lastActivity = d.lastActivity();
         Map<UUID, Map<UUID, List<AttemptRow>>> grouped = d.attemptsByStudentAndItem();
         int total = d.liveItems.size();
+        List<ContentItem> lessons = d.liveItems.stream().filter(i -> !i.getType().isAssessment()).toList();
+        int quizzesTotal = (int) d.assessmentItems.stream().filter(i -> i.getType() == ItemType.QUIZ).count();
+        int examsTotal = (int) d.assessmentItems.stream().filter(i -> i.getType() == ItemType.EXAM).count();
 
         List<GradebookRow> rows = new ArrayList<>();
         Map<UUID, List<GradebookCell>> cellsByItem = new HashMap<>();
@@ -276,10 +371,34 @@ public class ReportService {
                 cellsByItem.computeIfAbsent(item.getId(), k -> new ArrayList<>()).add(cell);
             }
             List<Double> bests = cells.stream().map(GradebookCell::bestPercent).filter(Objects::nonNull).toList();
-            int done = completions.getOrDefault(u.getId(), Map.of()).size();
+            Map<UUID, Instant> doneItems = completions.getOrDefault(u.getId(), Map.of());
+            int done = doneItems.size();
+            int lessonsDone = (int) lessons.stream().filter(i -> doneItems.containsKey(i.getId())).count();
+            int quizzesTaken = 0;
+            int examsTaken = 0;
+            List<Double> quizBests = new ArrayList<>();
+            List<Double> examBests = new ArrayList<>();
+            for (int c = 0; c < cells.size(); c++) {
+                GradebookCell cell = cells.get(c);
+                boolean exam = d.assessmentItems.get(c).getType() == ItemType.EXAM;
+                if (cell.attempts() > 0) {
+                    if (exam) {
+                        examsTaken++;
+                    } else {
+                        quizzesTaken++;
+                    }
+                }
+                if (cell.bestPercent() != null) {
+                    (exam ? examBests : quizBests).add(cell.bestPercent());
+                }
+            }
+            int progressPercent = ProgressService.percent(done, total);
+            Instant last = lastActivity.get(u.getId());
             rows.add(new GradebookRow(u.getId(), u.getFullName(), u.getEmail(), userMapper.avatarUrl(u),
-                    ProgressService.percent(done, total), done, total, lastActivity.get(u.getId()), mean(bests),
-                    bests.size(), cells));
+                    e.getDecidedAt() != null ? e.getDecidedAt() : e.getAppliedAt(), progressPercent, done, total,
+                    lessonsDone, lessons.size(), quizzesTaken, quizzesTotal, examsTaken, examsTotal, mean(quizBests),
+                    mean(examBests), last, activity(progressPercent, total, last, d.now), mean(bests), bests.size(),
+                    cells));
         }
         rows.sort(Comparator.comparing(GradebookRow::fullName, String.CASE_INSENSITIVE_ORDER)
                 .thenComparing(GradebookRow::email));
@@ -301,6 +420,19 @@ public class ReportService {
                     a.passingScore(), stats);
         }).toList();
         return new GradebookDto(d.ref(), d.now, total, columns, rows);
+    }
+
+    static ActivityStatus activity(int progressPercent, int totalItems, Instant lastActivity, Instant now) {
+        if (totalItems > 0 && progressPercent == 100) {
+            return ActivityStatus.COMPLETED;
+        }
+        if (lastActivity == null) {
+            return ActivityStatus.NOT_STARTED;
+        }
+        if (lastActivity.isBefore(now.minus(INACTIVE_AFTER))) {
+            return ActivityStatus.INACTIVE;
+        }
+        return ActivityStatus.IN_PROGRESS;
     }
 
     private static GradebookCell cell(UUID itemId, List<AttemptRow> attempts, AssessmentRow assessment) {

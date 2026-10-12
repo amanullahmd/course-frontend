@@ -69,6 +69,14 @@ public class InstructorReportController {
         return csv(exports.gradebook(CurrentUser.get(), courseId));
     }
 
+    @Operation(summary = "Learner progress table as CSV (UTF-8 with BOM, localized headers)")
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = "text/csv",
+            schema = @Schema(type = "string", format = "binary")))
+    @GetMapping("/courses/{courseId}/reports/progress.csv")
+    public ResponseEntity<byte[]> progressCsv(@PathVariable UUID courseId) {
+        return csv(exports.progress(CurrentUser.get(), courseId));
+    }
+
     @Operation(summary = "Learner report as CSV (UTF-8 with BOM, localized headers)")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = "text/csv",
             schema = @Schema(type = "string", format = "binary")))

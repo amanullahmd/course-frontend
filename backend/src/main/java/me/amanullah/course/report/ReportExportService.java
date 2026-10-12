@@ -87,6 +87,37 @@ public class ReportExportService {
         return new CsvFile(fileName("gradebook", g.course().slug()), csv.toBytes());
     }
 
+    /** Learner progress table: completion, lessons, quiz/exam participation, averages, activity. */
+    public CsvFile progress(CurrentUser me, UUID courseId) {
+        GradebookDto g = reports.gradebook(me, courseId);
+        List<Object> header = new ArrayList<>(List.of(h("name"), h("email"), h("enrolledAt"), h("activity"),
+                h("progress"), h("completedItems"), h("lessons"), h("quizzesTaken"), h("examsTaken"),
+                h("averageQuiz"), h("averageExam"), h("lastActivity")));
+        for (GradebookColumn c : g.columns()) {
+            header.add(c.title() + " (" + messages.get("report.itemType." + c.type().name()) + ")");
+        }
+        Csv csv = new Csv().row(header);
+        for (GradebookRow r : g.rows()) {
+            List<Object> row = new ArrayList<>(List.of(r.fullName(), r.email()));
+            row.add(r.enrolledAt());
+            row.add(messages.get("report.activity." + r.activity().name()));
+            row.add(r.progressPercent());
+            row.add(r.completedItems() + "/" + r.totalLiveItems());
+            row.add(r.lessonsCompleted() + "/" + r.lessonsTotal());
+            row.add(r.quizzesTaken() + "/" + r.quizzesTotal());
+            row.add(r.examsTaken() + "/" + r.examsTotal());
+            row.add(r.averageQuizPercent());
+            row.add(r.averageExamPercent());
+            row.add(r.lastActivityAt());
+            for (GradebookCell cell : r.cells()) {
+                row.add(cell.bestPercent() != null ? Csv.number(cell.bestPercent()) + " %"
+                        : messages.get("report.cellStatus." + cell.status().name()));
+            }
+            csv.row(row);
+        }
+        return new CsvFile(fileName("progress", g.course().slug()), csv.toBytes());
+    }
+
     public CsvFile attempts(CurrentUser me, UUID itemId) {
         ContentItem item = access.item(itemId, me);
         Assessment assessment = assessments.findByItemId(item.getId())

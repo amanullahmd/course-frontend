@@ -6,6 +6,7 @@ import me.amanullah.course.course.ItemType;
 import me.amanullah.course.enrollment.EnrollmentStatus;
 import me.amanullah.course.user.UserSummaryDto;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,7 +22,25 @@ public final class ReportDtos {
     // ------------------------------------------------------------------ overview
 
     public record OverviewDto(CourseRef course, Instant generatedAt, Kpis kpis, List<Bucket> progressDistribution,
-                              List<ModuleCompletion> modules, Funnel funnel) {
+                              List<ModuleCompletion> modules, Funnel funnel, List<WeekBucket> enrollmentTimeline,
+                              List<ItemEngagement> items) {
+    }
+
+    /**
+     * Applications and approvals per ISO week (Monday, UTC), last 12 weeks or since the course was created.
+     * Re-applications reuse the enrollment row, so only the latest application of a learner is counted.
+     */
+    public record WeekBucket(LocalDate weekStart, int applications, int approvals) {
+    }
+
+    /**
+     * Engagement of one live item among the approved learners (content funnel). The assessment fields are only set
+     * for quizzes and exams: {@code taken} = learners with a submitted attempt, {@code passed} and
+     * {@code averagePercent} use their best graded attempt.
+     */
+    public record ItemEngagement(UUID itemId, String title, ItemType type, UUID moduleId, String moduleTitle,
+                                 int completed, Double completedPercent, Integer taken, Double takenPercent,
+                                 Integer passed, Double averagePercent) {
     }
 
     /**
@@ -32,8 +51,8 @@ public final class ReportDtos {
      * @param pendingGrading     submitted attempts that still need manual grading
      * @param activeLearners7d   approved learners with progress or attempt activity in the last 7 days
      */
-    public record Kpis(int approvedLearners, int pendingApplications, Double averageProgress, Double completionRate,
-                       int completedLearners, int assessments, Double averageBestScore, Double passRate,
+    public record Kpis(int approvedLearners, int pendingApplications, Double averageProgress, Double medianProgress,
+                       Double completionRate, int completedLearners, int assessments, Double averageBestScore, Double passRate,
                        int pendingGrading, int activeLearners7d, int totalLiveItems) {
     }
 
@@ -44,7 +63,12 @@ public final class ReportDtos {
     public record ModuleCompletion(UUID moduleId, String title, int itemCount, Double completionPercent) {
     }
 
-    public record Funnel(int applied, int pending, int approved, int rejected, int withdrawn, int revoked) {
+    /**
+     * Current status counts of all applications. {@code approvalRate} = (approved + revoked) / (approved + revoked +
+     * rejected), i.e. the share of decided applications that were accepted (null before any decision).
+     */
+    public record Funnel(int applied, int pending, int approved, int rejected, int withdrawn, int revoked,
+                         Double approvalRate) {
     }
 
     // ------------------------------------------------------------------ gradebook
@@ -62,10 +86,20 @@ public final class ReportDtos {
                               int attempts, int pendingGrading) {
     }
 
-    public record GradebookRow(UUID id, String fullName, String email, String avatarUrl, int progressPercent,
-                               int completedItems, int totalLiveItems, Instant lastActivityAt,
-                               Double averagePercent, int gradedAssessments, List<GradebookCell> cells) {
+    /**
+     * One approved learner. Lessons are the live non-assessment items; a quiz/exam counts as taken with at least one
+     * submitted attempt. {@code activity}: COMPLETED at 100 %, INACTIVE without activity for 14+ days, NOT_STARTED
+     * without any activity, else IN_PROGRESS.
+     */
+    public record GradebookRow(UUID id, String fullName, String email, String avatarUrl, Instant enrolledAt,
+                               int progressPercent, int completedItems, int totalLiveItems, int lessonsCompleted,
+                               int lessonsTotal, int quizzesTaken, int quizzesTotal, int examsTaken, int examsTotal,
+                               Double averageQuizPercent, Double averageExamPercent, Instant lastActivityAt,
+                               ActivityStatus activity, Double averagePercent, int gradedAssessments,
+                               List<GradebookCell> cells) {
     }
+
+    public enum ActivityStatus { NOT_STARTED, IN_PROGRESS, COMPLETED, INACTIVE }
 
     public enum CellStatus { NOT_STARTED, IN_PROGRESS, SUBMITTED_PENDING, GRADED }
 
