@@ -37,6 +37,7 @@ import {
   ReportSection,
   useReportFormat,
 } from "./report-kit";
+import { MessageLearnerButton } from "@/components/messages/message-button";
 
 function LearnerSkeleton() {
   return (
@@ -183,6 +184,12 @@ export function LearnerReport() {
             })}
           />
           <div className="flex flex-col gap-2">
+            <MessageLearnerButton
+              student={s}
+              course={{ id: r.course.id, title: r.course.title }}
+              size="sm"
+              className="print:hidden"
+            />
             <DownloadButton path={reportCsv.student(r.course.id, s.id)} />
             <PrintButton />
           </div>

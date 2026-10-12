@@ -250,47 +250,56 @@ function ComposerForm({
               <RichTextEditor id="ann-body" value={form.body} onChange={(html) => set("body", html)} placeholder={t("bodyPlaceholder")} className="[&_.tiptap]:min-h-48" />
             </Field>
 
-            <fieldset className="grid gap-3" disabled={isSent}>
-              <legend className="mb-3 text-sm font-medium">{t("audienceLabel")}</legend>
-              <RadioGroup
-                value={form.audience}
-                onValueChange={(v) => set("audience", v as FormState["audience"])}
-                className="grid gap-3 sm:grid-cols-2"
-                disabled={isSent}
-              >
-                <RadioCard
-                  value="ALL_APPROVED"
-                  icon={<UsersRound />}
-                  title={t("audienceAllTitle")}
-                  description={t("audienceAllText", { count: approvedIds.size })}
-                  className={isSent ? "opacity-60" : undefined}
-                />
-                <RadioCard
-                  value="SELECTED"
-                  icon={<Users />}
-                  title={t("audienceSelectedTitle")}
-                  description={t("audienceSelectedText")}
-                  className={isSent ? "opacity-60" : undefined}
-                />
-              </RadioGroup>
-              {form.audience === "SELECTED" && !isSent && (
-                <div className="grid gap-1.5">
-                  <LearnerPicker
-                    learners={learners}
-                    loading={learnersLoading}
-                    selected={form.recipientIds}
-                    onChange={(ids) => set("recipientIds", ids)}
-                    invalid={!!errors.recipientIds}
-                    describedBy={errors.recipientIds ? "ann-recipients-error" : undefined}
+            {isSent && existing ? (
+              <div className="grid gap-2">
+                <p className="text-sm font-medium">{t("audienceLabel")}</p>
+                <p className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2.5 text-sm text-muted-foreground">
+                  <Users className="size-4 shrink-0" />
+                  {existing.audience === "ALL_APPROVED" ? ta("audienceAll") : ta("audienceSelected")} ·{" "}
+                  {ta("recipients", { count: existing.recipientCount })} ·{" "}
+                  {ta("readOf", { read: existing.readCount, total: existing.recipientCount })}
+                </p>
+              </div>
+            ) : (
+              <fieldset className="grid gap-3">
+                <legend className="mb-3 text-sm font-medium">{t("audienceLabel")}</legend>
+                <RadioGroup
+                  value={form.audience}
+                  onValueChange={(v) => set("audience", v as FormState["audience"])}
+                  className="grid gap-3 sm:grid-cols-2"
+                >
+                  <RadioCard
+                    value="ALL_APPROVED"
+                    icon={<UsersRound />}
+                    title={t("audienceAllTitle")}
+                    description={t("audienceAllText", { count: approvedIds.size })}
                   />
-                  {errors.recipientIds && (
-                    <p id="ann-recipients-error" role="alert" className="text-[13px] text-destructive">
-                      {errors.recipientIds}
-                    </p>
-                  )}
-                </div>
-              )}
-            </fieldset>
+                  <RadioCard
+                    value="SELECTED"
+                    icon={<Users />}
+                    title={t("audienceSelectedTitle")}
+                    description={t("audienceSelectedText")}
+                  />
+                </RadioGroup>
+                {form.audience === "SELECTED" && (
+                  <div className="grid gap-1.5">
+                    <LearnerPicker
+                      learners={learners}
+                      loading={learnersLoading}
+                      selected={form.recipientIds}
+                      onChange={(ids) => set("recipientIds", ids)}
+                      invalid={!!errors.recipientIds}
+                      describedBy={errors.recipientIds ? "ann-recipients-error" : undefined}
+                    />
+                    {errors.recipientIds && (
+                      <p id="ann-recipients-error" role="alert" className="text-[13px] text-destructive">
+                        {errors.recipientIds}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </fieldset>
+            )}
 
             <div className="grid gap-3 rounded-xl border bg-card p-4">
               <label className="flex items-start justify-between gap-4">

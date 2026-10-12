@@ -72,8 +72,8 @@ function AnnouncementRow({
           </button>
           <AnnouncementStatusBadge status={a.status} />
           {a.sendEmail && (
-            <Tooltip content={t("emailed")}>
-              <Mail className="size-3.5 shrink-0 text-muted-foreground" aria-label={t("emailed")} />
+            <Tooltip content={sent ? t("emailed") : t("emailPlanned")}>
+              <Mail className="size-3.5 shrink-0 text-muted-foreground" aria-label={sent ? t("emailed") : t("emailPlanned")} />
             </Tooltip>
           )}
         </div>

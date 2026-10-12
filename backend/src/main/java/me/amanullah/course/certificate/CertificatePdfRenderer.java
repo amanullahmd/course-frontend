@@ -221,9 +221,9 @@ public class CertificatePdfRenderer {
             .meta { margin-top: 3mm; font-size: 9pt; color: #6B6F82; }
             .dot { color: #C59A45; padding: 0 1mm; }
             .custom { margin: 4mm auto 0 auto; width: 175mm; font-family: 'Lora', serif; font-style: italic; font-size: 9.5pt; line-height: 1.45; color: #4A4F66; }
-            .col { position: absolute; top: 140mm; width: 72mm; text-align: center; }
-            .col-left { left: 34mm; }
-            .col-right { right: 34mm; }
+            .col { position: absolute; top: 140mm; width: 82mm; text-align: center; }
+            .col-left { left: 29mm; }
+            .col-right { right: 29mm; }
             .col-value { font-family: 'Lora', serif; font-size: 12.5pt; height: 14mm; line-height: 22mm; color: #151C38; }
             .sig { height: 14mm; }
             .sig-img { max-height: 14mm; max-width: 60mm; }
@@ -239,6 +239,7 @@ public class CertificatePdfRenderer {
             .verify { position: absolute; left: 40mm; width: 217mm; bottom: 20mm; text-align: center; font-size: 7pt; color: #6B6F82; }
             .verify-label { letter-spacing: 0.3mm; text-transform: uppercase; }
             .verify-code { font-weight: 700; color: #151C38; }
+            .verify-url { letter-spacing: 0.01mm; }
             .compact .title { font-size: 26pt; margin-top: 3mm; }
             .compact .lead { margin-top: 4mm; }
             .compact .name { font-size: 28pt; margin-top: 2mm; }

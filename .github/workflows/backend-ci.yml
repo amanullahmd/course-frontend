@@ -39,7 +39,7 @@ defaults:
 
 env:
   JAVA_VERSION: "25"
-  MAVEN_ARGS: -B -ntp
+  MAVEN_ARGS: -B -ntp # read by Maven >= 3.9 for every mvn call
   OASDIFF_VERSION: "1.11.7"
   GITLEAKS_VERSION: "8.28.0"
 
@@ -61,7 +61,9 @@ jobs:
 
       - name: Lint Flyway migrations and check that applied migrations were not changed
         if: github.event_name == 'pull_request'
-        run: python3 ci/lint-migrations.py --base-ref "origin/${{ github.base_ref }}"
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: python3 ci/lint-migrations.py --base-ref "origin/$BASE_REF"
 
   openapi-breaking:
     name: "openapi:breaking"
@@ -144,7 +146,7 @@ jobs:
           node-version: 22
 
       - name: Build the jar
-        run: mvn $MAVEN_ARGS -DskipTests package
+        run: mvn -DskipTests package
 
       - name: Start the API (dev profile, seeded H2, e-mails logged)
         env:
@@ -156,7 +158,7 @@ jobs:
           cp target/sprachweg-backend-*.jar "$RUNNER_TEMP/api/app.jar"
           cd "$RUNNER_TEMP/api"
           nohup java -jar app.jar > app.log 2>&1 &
-          for i in $(seq 1 90); do
+          for _ in $(seq 1 90); do
             if curl -fs http://localhost:8080/actuator/health > /dev/null; then echo "API is up"; exit 0; fi
             sleep 2
           done
@@ -290,7 +292,7 @@ jobs:
           cache: maven
 
       - name: Unit + integration tests, package (mvn verify)
-        run: mvn $MAVEN_ARGS verify
+        run: mvn verify
 
       - name: Upload test reports
         if: always()
@@ -331,11 +333,11 @@ jobs:
           cache: maven
 
       - name: Tests with JaCoCo (mvn -Pcoverage verify)
-        run: mvn $MAVEN_ARGS -Pcoverage verify
+        run: mvn -Pcoverage verify
 
       - name: Coverage summary
-        if: always() && hashFiles('backend/target/site/jacoco/jacoco.xml') != ''
-        run: python3 ci/coverage-summary.py target/site/jacoco/jacoco.xml >> "$GITHUB_STEP_SUMMARY"
+        if: always() && hashFiles('backend/target/site/jacoco/jacoco.csv') != ''
+        run: python3 ci/coverage-summary.py target/site/jacoco/jacoco.csv >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the coverage report
         if: always()
@@ -365,7 +367,7 @@ jobs:
           cache: maven
 
       - name: Maven dependency tree
-        run: mvn $MAVEN_ARGS dependency:tree -DoutputFile=target/dependency-tree.txt
+        run: mvn dependency:tree -DoutputFile=target/dependency-tree.txt
 
       - name: Upload the dependency tree
         uses: actions/upload-artifact@v4
@@ -426,7 +428,7 @@ jobs:
           cache: maven
 
       - name: SpotBugs + FindSecBugs (spotbugs:check, threshold Medium)
-        run: mvn $MAVEN_ARGS -Pspotbugs -DskipTests verify
+        run: mvn -Pspotbugs -DskipTests verify
 
       - name: Upload SARIF to code scanning
         if: always() && hashFiles('backend/target/spotbugsSarif.json') != ''
@@ -486,7 +488,7 @@ jobs:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/sprachweg_test
           SPRING_DATASOURCE_USERNAME: postgres
           SPRING_DATASOURCE_PASSWORD: postgres
-        run: mvn $MAVEN_ARGS test
+        run: mvn test
 
       - name: Upload test reports
         if: always()
@@ -520,7 +522,7 @@ jobs:
           psql -c "CREATE DATABASE sprachweg"
           nohup java -jar sprachweg-backend-*.jar > app.log 2>&1 &
           pid=$!
-          for i in $(seq 1 90); do
+          for _ in $(seq 1 90); do
             if curl -fs http://localhost:8080/actuator/health | grep -q '"status":"UP"'; then
               echo "prod profile is UP"
               psql -d sprachweg -c "SELECT version, description, success FROM flyway_schema_history ORDER BY installed_rank"

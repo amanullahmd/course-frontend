@@ -5,6 +5,7 @@ import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider, useTheme } from "next-themes";
 import { Toaster, toast } from "sonner";
+import "@/lib/zod-config";
 import { isApiError, setApiLocale } from "@/lib/api/client";
 import { useErrorMessage } from "@/hooks/use-error-message";
 import { TooltipProvider } from "@/components/ui/tooltip";

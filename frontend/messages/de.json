@@ -1857,7 +1857,8 @@
       "edited": "bearbeitet",
       "backToCourse": "Zurück zum Kurs",
       "hint": "{count, plural, one {# neue Ankündigung} other {# neue Ankündigungen}}"
-    }
+    },
+    "emailPlanned": "Wird auch per E-Mail gesendet"
   },
   "messaging": {
     "title": "Nachrichten",

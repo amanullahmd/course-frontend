@@ -25,6 +25,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { AddLearnersDialog } from "./add-learners-dialog";
+import { MessageLearnerButton } from "@/components/messages/message-button";
 
 type Tab = "pending" | "approved" | "inactive";
 const TAB_STATUSES: Record<Tab, EnrollmentStatus[]> = {
@@ -189,6 +190,7 @@ export function StudentsPanel({ courseId, capacity }: { courseId: string; capaci
 
   const renderActions = (e: EnrollmentDto) => (
     <div className="flex flex-wrap gap-1.5 sm:justify-end">
+      <MessageLearnerButton student={e.student} course={{ id: courseId, title: e.courseTitle }} iconOnly />
       {e.status === "PENDING" && (
         <>
           <GuardedButton size="xs" onClick={() => approveOne(e)} disabled={approve.isPending} blockedReason={fullReason}>

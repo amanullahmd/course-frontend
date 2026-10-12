@@ -1,0 +1,195 @@
+# Frontend CI (Next.js 16 · React 19 · TypeScript)
+#
+#   verify  lint-typecheck-test · e2e:check · contract-drift (manual: "Run workflow" only)   (parallel)
+#   build   build (needs lint-typecheck-test + e2e:check)
+#
+# Every job can be reproduced locally; see the "CI" section of the root README.md.
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - "backend/openapi/**"
+      - ".github/workflows/frontend-ci.yml"
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "backend/openapi/**"
+      - ".github/workflows/frontend-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: frontend
+    shell: bash
+
+env:
+  NODE_VERSION: "22"
+  JAVA_VERSION: "25"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  # ───────────────────────────── stage: verify ─────────────────────────────
+  lint-typecheck-test:
+    name: lint-typecheck-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Type-check (next typegen + tsc --noEmit)
+        run: npm run typecheck
+
+      - name: Unit tests (Vitest)
+        run: npm test
+
+  e2e-check:
+    name: "e2e:check"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }} (backend for the e2e run)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Build the backend jar
+        working-directory: backend
+        run: mvn -B -ntp -DskipTests package
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the frontend against the local API
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+        run: npm run build
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright smoke tests (starts the backend jar + next start)
+        env:
+          E2E_API_PORT: "8080"
+          E2E_WEB_PORT: "3000"
+        run: npx playwright test
+
+      - name: Upload the Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload traces and screenshots of failed tests
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: frontend/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  contract-drift:
+    name: contract-drift
+    # Manual job: run it with "Run workflow" (workflow_dispatch).
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Compare src/lib/api with backend/openapi/openapi.json
+        run: node scripts/contract-drift.mjs --json contract-drift.json
+
+      - name: Upload the drift report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-drift
+          path: frontend/contract-drift.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # ───────────────────────────── stage: build ──────────────────────────────
+  build:
+    name: build
+    needs: [lint-typecheck-test, e2e-check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production build
+        env:
+          NEXT_PUBLIC_API_URL: https://api.course.amanullah.me
+          NEXT_PUBLIC_SITE_URL: https://course.amanullah.me
+        run: npm run build
+
+      - name: Upload the standalone build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-standalone
+          path: |
+            frontend/.next/standalone/
+            frontend/.next/static/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Build the Docker image (no push)
+        run: |
+          docker build --pull -t sprachweg-frontend:ci \
+            --build-arg NEXT_PUBLIC_API_URL=https://api.course.amanullah.me \
+            --build-arg NEXT_PUBLIC_SITE_URL=https://course.amanullah.me .

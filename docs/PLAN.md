@@ -26,6 +26,17 @@ AttemptAnswer (id, attempt, questionId, selectedOptionIds, textAnswer, correct?,
 Enrollment (id, course, student, status[PENDING|APPROVED|REJECTED|WITHDRAWN|REVOKED], message, decisionReason, appliedAt, decidedAt)
 ItemProgress (student, item, completedAt)
 Notification (id, user, type, title, body, link, readAt, createdAt)
+CertificateSettings (course 1:1, enabled, minProgressPercent, requireAssessmentsPassed, minAverageScore?, showScore, title?,
+                     level?, signerName?, signerTitle?, signatureImage→MediaAsset?, organization?, customText?, language[LEARNER|EN|DE])
+Certificate (id, code, course, student, learnerName, courseTitle, level, instructorName, signerTitle, organization, title,
+             completedAt, finalScore?, issueType[AUTOMATIC|MANUAL], issuedBy?, issuedAt, revokedAt?, revokedReason?, revokedBy?)
+Announcement (id, course, author, title ≤200, body (sanitized html ≤20k), audience[ALL_APPROVED|SELECTED], selectedUserIds[],
+              sendEmail, pinned, status[DRAFT|SCHEDULED|SENT], scheduledAt?, sentAt?, createdAt, updatedAt)
+AnnouncementRecipient (announcement, user, readAt?, emailedAt?, createdAt)      (who received a sent announcement)
+Conversation (id, course? (context, null = general), participantA, participantB (canonical order), pairKey (unique),
+              aLastReadAt?, bLastReadAt?, aMailPendingSince?, bMailPendingSince?, aLastEmailedAt?, bLastEmailedAt?,
+              lastMessageAt?, lastMessagePreview?, lastMessageSenderId?, createdAt)
+Message (id, conversation, sender, body (plain text ≤5000), createdAt)
 ```
 
 ## 5. Architecture
@@ -248,6 +259,111 @@ job every 60 s and lazily whenever attempts are read, with `submittedAt` = the e
 `GET ?page=&size=` → Page<{id,type,title,body,link,read,createdAt}> · `GET /unread-count` → `{count}` ·
 `POST /{id}/read` · `POST /read-all`
 
+### Certificates
+Course completion certificates (A4 landscape PDF, en/de). Instructor endpoints: owner or admin (foreign courses and
+certificates → 404, students → 403). Learner endpoints: any verified user; course status needs an approved enrollment
+(403 `NOT_ENROLLED`, owners/admins see a preview without issuing).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET/PUT | `/api/instructor/courses/{id}/certificate-settings` | `CertificateSettingsDto` / `CertificateSettingsUpdate`; saving with `enabled` issues certificates for approved learners who already qualify |
+| GET | `/api/instructor/courses/{id}/certificates?q=` | `InstructorCertificateDto[]` (newest first, incl. revoked; `q` matches name, e-mail, code) |
+| POST | `/api/instructor/courses/{id}/certificates/issue` | `{studentId}` → InstructorCertificateDto (override, criteria not checked; needs an APPROVED enrollment → else 404 `ENROLLMENT_NOT_FOUND`; 409 `CERTIFICATE_EXISTS`) |
+| POST | `/api/instructor/certificates/{id}/revoke` | `{reason}` (1–500) → InstructorCertificateDto (409 `CERTIFICATE_REVOKED`); learner notified |
+| GET | `/api/instructor/certificates/{id}/pdf?lang=` | `application/pdf` attachment; revoked ones carry a "revoked" stamp |
+| GET | `/api/student/certificates` | `CertificateDto[]` (mine, incl. revoked) |
+| GET | `/api/student/courses/{courseId}/certificate` | `CertificateStatusDto` (lazily issues when the criteria are met) |
+| GET | `/api/student/certificates/{id}/pdf?lang=en\|de` | `application/pdf` attachment, owner only (others → 404 `CERTIFICATE_NOT_FOUND`; revoked → 409 `CERTIFICATE_REVOKED`), file name e.g. `Zertifikat-Deutsch-A1-Luca-Rossi.pdf` |
+| GET | `/api/public/certificates/{code}` | `VerificationDto`, no auth; unknown/malformed code → 404 `CERTIFICATE_NOT_FOUND`; > 60 lookups/min per IP → 429 `RATE_LIMITED` |
+
+```
+CertificateSettingsUpdate = {enabled, minProgressPercent (0-100), requireAssessmentsPassed, minAverageScore? (0-100), showScore,
+                      title? (≤80, null = "Certificate of Completion"/"Teilnahmebestätigung"), level? (null = course level),
+                      signerName? (≤120, null = instructor's name), signerTitle? (≤80), signatureImageId? (own PNG/JPEG/GIF upload),
+                      organization? (≤120), customText? (≤400), language:"LEARNER"|"EN"|"DE"}
+CertificateSettingsDto = CertificateSettingsUpdate − signatureImageId + {courseId, signatureImage:MediaDto?, courseLevel, courseTitle,
+                      defaultSignerName, issuedCount (valid certificates), updatedAt?}
+CertificateDto     = {id, code, courseId, courseTitle, learnerName, level, title?, completedAt, issuedAt, finalScore?, instructorName,
+                      organization?, status:"ACTIVE"|"REVOKED", issueType:"AUTOMATIC"|"MANUAL", revokedAt?, revokedReason?,
+                      verificationUrl, signerTitle?, customText?, showScore, signatureImageUrl?, language:"en"|"de"}
+InstructorCertificateDto = {id, code, student:{id,fullName,email,avatarUrl}, learnerName, courseTitle, level, completedAt, issuedAt,
+                      finalScore?, status, issueType, issuedByName?, revokedAt?, revokedReason?, verificationUrl}
+CertificateStatusDto = {status:"NOT_ENABLED"|"IN_PROGRESS"|"ISSUED"|"REVOKED", criteriaMet, certificate?:CertificateDto,
+                      criteria:[{key:"PROGRESS"|"ASSESSMENTS_PASSED"|"AVERAGE_SCORE", met, current?, target?, pending}]}
+VerificationDto    = {code, valid, revoked, learnerName, courseTitle, level, title?, completedAt, issuedAt, revokedAt?,
+                      instructorName, organization?}   (no e-mail, no ids)
+```
+Criteria: PROGRESS = live-item progress ≥ `minProgressPercent`; ASSESSMENTS_PASSED (optional) = every live quiz/exam with
+questions has a GRADED attempt ≥ its passing score (`pending` = submissions awaiting grading); AVERAGE_SCORE (optional) =
+mean of the best graded percent per quiz/exam ≥ `minAverageScore` (met when the course has none). The same mean is the
+`finalScore`. Certificates are issued automatically (re-checked after commit when an item is completed or an attempt
+becomes GRADED, when the settings are saved and when the learner opens the status), at most one active certificate per
+learner and course (DB unique constraint), never re-issued automatically after a revocation. Codes:
+`SW-<year>-XXXX-XXXX-XXXX` (60 random bits, Crockford base32). The QR code on the PDF points to
+`{frontend}/certificates/verify/{code}`.
+
+### Announcements (course news from the instructor)
+Instructor endpoints: owner or admin (foreign courses/announcements → 404 `COURSE_NOT_FOUND` / `ANNOUNCEMENT_NOT_FOUND`,
+students → 403). Learner endpoints: an APPROVED enrollment in the live course (else 403 `NOT_ENROLLED`; the owner/admin
+gets a preview of every sent announcement).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/api/instructor/courses/{courseId}/announcements` | `AnnouncementDto[]` (drafts and scheduled first, then sent, newest first) |
+| POST | `/api/instructor/courses/{courseId}/announcements` | `AnnouncementUpsert` → 201 AnnouncementDto |
+| GET/PUT/DELETE | `/api/instructor/announcements/{id}` | PUT on a SENT announcement only changes title, body and pinned (no new notifications) |
+| POST | `/api/instructor/announcements/{id}/send` | send a DRAFT/SCHEDULED one now → AnnouncementDto (409 `INVALID_STATUS` if already sent, 409 `NO_RECIPIENTS` if it would reach nobody) |
+| GET | `/api/student/courses/{courseId}/announcements` | `LearnerAnnouncementDto[]`: sent announcements addressed to me, pinned first, then newest |
+| POST | `/api/student/announcements/{id}/read` | 204 (idempotent; 404 if not addressed to me) |
+| GET | `/api/student/announcements/unread` | `[{courseId,count}]` for courses with unread announcements (dashboard hint) |
+
+```
+AnnouncementUpsert = {title (1-200), body (html, sanitized, ≤20000 after sanitizing, not empty), audience:"ALL_APPROVED"|"SELECTED",
+                      recipientIds[] (SELECTED: 1-500 approved learners of the course, else 400 errors.recipientIds),
+                      sendEmail, pinned, status:"DRAFT"|"SCHEDULED" (default DRAFT), scheduledAt? (required and in the future for SCHEDULED)}
+AnnouncementDto    = {id, courseId, courseTitle, author:{id,fullName,avatarUrl}, title, body, audience, recipientIds[], sendEmail, pinned,
+                      status:"DRAFT"|"SCHEDULED"|"SENT", scheduledAt?, sentAt?, createdAt, updatedAt,
+                      recipientCount, readCount, readPercent}   (unsent: recipientCount = learners it would reach right now)
+LearnerAnnouncementDto = {id, courseId, author, title, body, pinned, sentAt, updatedAt, edited, read}
+```
+Sending resolves the recipients at that moment (APPROVED, enabled learners; SELECTED ids that are no longer approved are
+skipped), stores them for read tracking, creates an `ANNOUNCEMENT` notification (link `/learn/{courseId}/announcements`)
+and, with `sendEmail`, queues an e-mail per recipient in their language (subject `[Course title] Announcement title`,
+the sanitized HTML and a "View announcement" button; sent after commit). SCHEDULED announcements are sent by a job every
+60 s once `scheduledAt` has passed (`app.announcements.scheduler.*`).
+
+### Direct messages `/api/messages` (any authenticated user)
+Rules: a learner may message the instructor of a course they are APPROVED or PENDING in; an instructor may message any
+learner with an enrollment (any status) in one of their courses; admins may message anyone. With `courseId` the
+relationship must exist in that course. In an existing conversation either side may reply while the relationship holds
+in either direction (or one side is an admin). Otherwise 403 `MESSAGING_NOT_ALLOWED`; conversations of other people →
+404 `CONVERSATION_NOT_FOUND`. At most 30 messages per user and minute (in memory, per instance) → 429 `RATE_LIMITED`
+with `Retry-After` (seconds).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/conversations?q=&page=&size=` | Page<ConversationDto>, conversations with messages, most recent first; `q` matches the other person's name or the course title |
+| POST | `/conversations` | `{recipientId, courseId?, body}` → 201 ConversationDto: creates or reuses the conversation (one per course or "general" and pair) and sends the first message |
+| GET | `/conversations/with/{userId}?courseId=` | the existing conversation with that user, else 404 (used by "Message" buttons) |
+| GET | `/conversations/{id}` | ConversationDto |
+| GET | `/conversations/{id}/messages?before=&size=` | `MessagePageDto`: newest page first (size 1-100, default 30), `before` = `nextCursor` of the previous page (a message id) |
+| POST | `/conversations/{id}/messages` | `{body}` → 201 MessageDto |
+| POST | `/conversations/{id}/read` | 204: marks the conversation (and its MESSAGE notifications) read |
+| GET | `/unread-count` | `{count, conversations}` (unread messages / conversations with unread messages) |
+
+```
+ConversationDto = {id, course:{id,title}?, other:{id,fullName,avatarUrl,role}, lastMessage:{preview,senderId,mine,createdAt}?,
+                   lastMessageAt?, unreadCount, createdAt}
+MessageDto      = {id, conversationId, senderId, mine, body (plain text, 1-5000 after trimming), createdAt,
+                   read}   (mine: read by the other participant; theirs: read by me)
+MessagePageDto  = {items: MessageDto[] (chronological), hasMore, nextCursor?}
+```
+Notifications: a new message creates a `MESSAGE` notification (link `/messages/{conversationId}`) unless the recipient
+still has an unread one for that conversation. E-mail ("You have a new message from X", recipient's language, with a
+short preview): sent by a job every 60 s only when a message is **still unread 2 minutes** after it arrived, and **at
+most once per conversation and recipient every 30 minutes** (reading or replying cancels the pending e-mail; while
+throttled, the e-mail follows once the 30 minutes have passed if the messages are still unread).
+
 ### Admin `/api/admin` (ADMIN)
 `GET /stats` → `{users,students,instructors,courses,liveCourses,enrollments}` ·
 `GET /users?q=&role=&page=&size=` → Page<UserDto + enabled> · `PUT /users/{id} {role,enabled}` → UserDto
@@ -265,6 +381,6 @@ job every 60 s and lazily whenever attempts are read, with `submittedAt` = the e
 | **6. Assessment** | Quiz/exam builder API, attempts, auto + manual grading | Question builder, quiz player with timer, results, grading UI | End-to-end quiz/exam |
 | **7. Hardening** | Tests, admin, seed data, Docker | Admin pages, empty/error/loading states, a11y, responsive polish | Build + tests green |
 
-Future enhancements: live classes (video conferencing), certificates, discussion forum per item,
+Future enhancements: live classes (video conferencing), discussion forum per item,
 S3/MinIO storage adapter, push/e-mail digests for newly published content, i18n of the UI (de/en),
 pronunciation practice with speech recognition, payments.

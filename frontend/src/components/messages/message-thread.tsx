@@ -37,7 +37,7 @@ function ThreadHeader({ conversation }: { conversation: ConversationDto | undefi
       : `/instructor/courses/${conversation.course.id}?tab=students`
     : null;
   return (
-    <div className="flex items-center gap-3 border-b bg-background/85 px-3 py-2.5 backdrop-blur sm:px-5">
+    <div className="flex items-center gap-3 border-b bg-background px-3 py-2.5 sm:px-5">
       <Button variant="ghost" size="icon-sm" className="md:hidden" asChild>
         <Link href="/messages" aria-label={t("back")}>
           <ArrowLeft />
@@ -95,7 +95,7 @@ function Bubble({
         className={cn(
           "max-w-[85%] rounded-2xl px-3.5 pt-2 pb-1.5 text-[14.5px] leading-relaxed shadow-xs sm:max-w-[70%]",
           mine
-            ? cn("bg-brand text-brand-foreground", grouped ? "rounded-tr-md" : "rounded-br-md")
+            ? cn("bg-primary text-primary-foreground", grouped ? "rounded-tr-md" : "rounded-br-md")
             : cn("bg-card ring-1 ring-border", grouped ? "rounded-tl-md" : "rounded-bl-md"),
           sending && "opacity-70",
           failed && "bg-destructive-soft text-foreground ring-1 ring-destructive/30",
@@ -103,7 +103,7 @@ function Bubble({
       >
         {children}
         {time && (
-          <div className={cn("mt-0.5 text-right text-[10.5px] tabular-nums", mine && !failed ? "text-brand-foreground/75" : "text-muted-foreground")}>
+          <div className={cn("mt-0.5 text-right text-[10.5px] tabular-nums", mine && !failed ? "text-primary-foreground/70" : "text-muted-foreground")}>
             {time}
           </div>
         )}
@@ -330,7 +330,7 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
       <li key={m.id}>
         <Bubble mine={m.mine} grouped={grouped} time={timeOf(m.createdAt, fmt.dateLocale)}>
           <span className="sr-only">{m.mine ? t("you") : otherName}: </span>
-          <LinkifiedText text={m.body} linkClassName={m.mine ? "text-brand-foreground" : "text-brand-strong"} />
+          <LinkifiedText text={m.body} linkClassName={m.mine ? "text-primary-foreground" : "text-brand-strong"} />
         </Bubble>
         {m.id === lastMine?.id && m.id === lastMessage?.id && pending.length === 0 && (
           <p className="mt-1 flex items-center justify-end gap-1 pr-1 text-[11px] text-muted-foreground">
@@ -353,7 +353,7 @@ export function MessageThread({ conversationId }: { conversationId: string }) {
           atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
           if (atBottom.current && showNewPill) setShowNewPill(false);
         }}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-muted/30 px-3 py-4 sm:px-6"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-background px-3 py-4 sm:px-6"
         role="log"
         aria-label={t("threadLabel", { name: otherName })}
       >

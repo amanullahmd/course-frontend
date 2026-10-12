@@ -201,7 +201,7 @@ export function LearnerCertificateView() {
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("progressTitle")}</h1>
           <p className="mt-2 max-w-2xl text-muted-foreground">{t("progressText")}</p>
           <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
-            <section aria-labelledby="criteria" className="rounded-xl border bg-card px-5 shadow-xs">
+            <section aria-labelledby="criteria" className="self-start rounded-xl border bg-card px-5 shadow-xs">
               <h2 id="criteria" className="sr-only">
                 {t("criteria.title")}
               </h2>

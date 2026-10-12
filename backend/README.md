@@ -72,6 +72,21 @@ Unit tests (visibility rule, slug generation, grading helpers, media URL signing
   re-invite throttling, unverified/disabled/owner skipped, capacity partially reached), bulk removal with notifications
   and e-mails, restoring removed and withdrawn learners, all-or-nothing capacity checks, ids of another course,
   per-index validation errors, foreign instructor → 404, student → 403, malformed bodies → 400 (never 5xx).
+* `CertificateTest`: criteria checklist (progress threshold, quizzes/exams passed incl. essay grading, minimum average
+  score), automatic issuing after grading/attempts/settings changes and its idempotency, manual issue and revocation,
+  the PDF (starts with `%PDF`, one page, learner name, course, code and German title found by PDFBox text extraction,
+  file names), public verification (valid / revoked / unknown, no e-mail or ids leaked), ownership (other learner /
+  instructor → 404) and bad input (always 4xx). `CertificateCodesTest`: code format and normalization.
+* `AnnouncementTest`: drafts with sanitized bodies, validation (schedule in the past, SELECTED without or with
+  non-approved learners, empty/oversized body), send now (only approved learners, notifications and e-mails in each
+  recipient's language, 409 when sent twice or without recipients), selected audience, pinned-first learner feeds,
+  read tracking and stats, editing a sent announcement without re-notifying, the scheduler (`sendDue(now)`), delete,
+  ownership (other instructor → 404, student → 403, pending learner → 403).
+* `MessagingTest`: permission rules (approved/pending learner → instructor, instructor → learner of any status, admin →
+  anyone, unrelated users → 403, strangers → 404), conversation reuse per course, unread counts and read marking (one
+  notification per conversation), cursor pagination, the 5000-character limit, the 30/min rate limit (429 +
+  `Retry-After`) and the delayed/throttled new-message e-mails (`MessageMailJob.sendDue(now)`).
+  `CommunicationRobustnessTest`: ~55 bad requests against both APIs, always 4xx with a `code`, never 5xx.
 * `HttpRobustnessTest` (real Tomcat, `RANDOM_PORT`): multipart size limits (413), `/error`, exceptions and
   `sendError` raised in servlet filters, and URLs rejected by the HTTP firewall. The same suite also passes against PostgreSQL:
 
@@ -185,6 +200,13 @@ the same JSON shape. Paging parameters are clamped (`page ≥ 0`, `1 ≤ size �
 | 409 | `MAX_ATTEMPTS_REACHED` · `ATTEMPT_ALREADY_SUBMITTED` · `ATTEMPT_NOT_SUBMITTED` | Assessment attempts |
 | 409 | `ATTEMPT_EXPIRED` | Autosave after the deadline (or window end) + 30 s grace; the attempt was submitted automatically with the saved answers |
 | 409 | `CONFLICT` · `CONCURRENT_MODIFICATION` | Data integrity violation · optimistic locking |
+| 409 | `CERTIFICATE_EXISTS` · `CERTIFICATE_REVOKED` | Manual issue while a valid certificate exists · revoking twice or downloading a revoked certificate as learner |
+| 404 | `CERTIFICATE_NOT_FOUND` | Unknown certificate (also someone else's, or an unknown/malformed verification code) |
+| 429 | `RATE_LIMITED` | More than 60 public certificate verifications per minute from one address |
+| 403 | `MESSAGING_NOT_ALLOWED` | No instructor ↔ learner relationship for a direct message |
+| 404 | `ANNOUNCEMENT_NOT_FOUND` · `CONVERSATION_NOT_FOUND` · `MESSAGE_NOT_FOUND` | Also for other people's announcements/conversations or an unknown `before` cursor |
+| 409 | `NO_RECIPIENTS` | Sending an announcement that would reach no approved learner (`INVALID_STATUS` when it was already sent) |
+| 429 | `RATE_LIMITED` | More than 30 direct messages per user and minute (`Retry-After` header) |
 | 413 | `FILE_TOO_LARGE` | Upload exceeds `MAX_UPLOAD_SIZE` / `MAX_REQUEST_SIZE` |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | Wrong `Content-Type` |
 | 503 | `SERVICE_UNAVAILABLE` | Async request timeout |
@@ -197,7 +219,11 @@ All application settings are bound to `me.amanullah.course.config.AppProperties`
 `app.auth.{email-verification-ttl (24h),password-reset-ttl (1h),refresh-cookie-name,secure-cookie,cookie-same-site}`,
 `app.media.{secret,url-ttl (6h)}`, `app.storage.location`, `app.mail.{enabled,from}`, `app.cors.allowed-origins`,
 `app.seed.enabled`, `app.attempts.sweeper.{enabled (true),interval-ms (60000),initial-delay-ms (20000)}`
-(the background job that auto-submits expired quiz/exam attempts; disabled in the `test` profile).
+(the background job that auto-submits expired quiz/exam attempts; disabled in the `test` profile),
+`app.announcements.scheduler.{enabled (true),interval-ms (60000),initial-delay-ms (15000)}` (sends due scheduled
+announcements) and `app.messaging.mail-job.{enabled (true),interval-ms (60000),initial-delay-ms (30000)}` (new-message
+e-mails: only for messages unread for 2 minutes, at most once per conversation and recipient every 30 minutes); both
+jobs are disabled in the `test` profile, where tests call `sendDue(now)` directly.
 
 ## Architecture
 
@@ -216,6 +242,9 @@ me.amanullah.course
 ├── notification  in-app notifications, e-mail templates and async delivery
 ├── schedule      publish/unpublish calendar, instructor dashboard
 ├── report        instructor reports: overview, gradebook, learner report, assessment analytics, CSV exports
+├── certificate   completion certificates: settings, criteria, auto/manual issue, revoke, PDF (openhtmltopdf + ZXing), public verification
+├── announcement  course announcements: drafts, scheduling (job), audiences, send (notifications + e-mails), read tracking
+├── messaging     instructor ↔ learner direct messages: conversations, cursor paging, unread counts, rate limit, throttled e-mails
 ├── admin         stats and user management
 └── seed          demo data (dev)
 ```
@@ -244,3 +273,20 @@ Key rules:
   `/register?email=…&next=/courses/{slug}`. Invitations are recorded in `course_invitations`
   (`V5__course_invitations.sql`) and repeated at most once per course and address within 24 h (`ALREADY_INVITED`).
 * **Assessments** store a snapshot of every question in each attempt, so editing a quiz never changes old results.
+* **Certificates** (`certificate` package, migration `V7__certificates.sql`, API in PLAN §6 "Certificates"): per-course
+  settings in `certificate_settings` (no row = disabled defaults) and issued certificates in `certificates` with name /
+  title / level snapshots. A unique constraint on `(course_id, active_student_id)` (the student id while valid, `NULL`
+  once revoked) guarantees one valid certificate per learner and course. Criteria are re-checked **after commit** in a
+  new transaction by Hibernate listeners (`CertificateTriggers`: an `ItemProgress` row inserted, an `Attempt` updated
+  to `GRADED`, so also the expiry sweeper and manual grading), when settings are saved, and lazily when the learner
+  opens their certificate status; the learning/assessment code knows nothing about certificates. Issuing notifies the
+  learner in-app and by e-mail in their language. Codes are `SW-<year>-XXXX-XXXX-XXXX` (60 bits from `SecureRandom`,
+  Crockford base32). Public verification is rate-limited in memory (60 lookups/min per client address).
+* **Certificate PDFs** are rendered on demand by `CertificatePdfRenderer`: an HTML/CSS template laid out in millimetres
+  (A4 landscape; mirrored by the frontend's live preview) converted with **openhtmltopdf** 1.1.95
+  (`io.github.openhtmltopdf:openhtmltopdf-pdfbox`, LGPL-2.1, on Apache PDFBox 3 – Apache-2.0) and a QR code from
+  **ZXing** core 3.5.3 (Apache-2.0) pointing to `{app.frontend-url}/certificates/verify/{code}`. Fonts are bundled and
+  embedded as subsets: Lora, Work Sans and Nothing You Could Do (all SIL Open Font License 1.1, license files in
+  `src/main/resources/certificate/fonts/`). The language is the learner's locale or the course's fixed language
+  (`?lang=en|de` overrides). Rendering takes ~0.3 s once warm (a sample is rendered in the background at startup);
+  results are cached in memory (64 entries, keyed by certificate, language, settings version and revocation).

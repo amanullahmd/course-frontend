@@ -51,7 +51,7 @@ export async function LegalPage({ doc }: { doc: LegalDoc }) {
           </div>
         </div>
       )}
-      <div className="grid gap-10 lg:grid-cols-[220px_1fr]">
+      <div className="grid gap-10 lg:grid-cols-[240px_1fr]">
         <nav aria-label={t("navLabel")} className="lg:sticky lg:top-24 lg:self-start">
           <ul className="flex gap-2 overflow-x-auto lg:grid lg:gap-1">
             {DOCS.map(({ doc: d, href, key, icon: Icon }) => (
@@ -60,7 +60,7 @@ export async function LegalPage({ doc }: { doc: LegalDoc }) {
                   href={href}
                   aria-current={d === doc ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-2 rounded-lg px-3 py-2 text-sm whitespace-nowrap text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+                    "flex items-center gap-2 rounded-lg px-3 py-2 text-sm whitespace-nowrap text-muted-foreground transition-colors hover:bg-accent hover:text-foreground lg:whitespace-normal",
                     d === doc && "bg-accent font-medium text-foreground",
                   )}
                 >

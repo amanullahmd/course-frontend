@@ -95,3 +95,35 @@ learner sees item  ⇔ live(course) && live(module) && live(item)
 | AD1 | As an admin I can list/search users, change their role, enable/disable accounts |
 | AD2 | As an admin I see platform statistics |
 
+### 3.7 Certificates
+"Can I download a certificate after finishing a course?" – yes.
+
+| ID | Story | Acceptance criteria |
+|---|---|---|
+| Z1 | As an instructor I switch certificates on for a course and set the requirements: required progress (default 100 %), all quizzes and exams passed (default on, so essays must be graded), optional minimum average score | Course builder tab **Certificate** (`?tab=certificate`) |
+| Z2 | As an instructor I design the certificate: title (default "Certificate of Completion" / "Teilnahmebestätigung", or "Zertifikat", or my own), CEFR level shown, signer name and role, optional signature image, organisation, a short personal text, the language (learner's language or fixed EN/DE) and whether the final score is printed | A live preview next to the form looks exactly like the PDF |
+| Z3 | As a learner I see in the course player what is still missing for my certificate | "Certificate" entry at the end of the outline with a checklist (progress 72 % / 100 %, quizzes and exams 1 / 2, essays awaiting grading, …) |
+| Z4 | As a learner I automatically receive my certificate as soon as I meet all requirements, with an in-app notification and an e-mail in my language | Issued once (idempotent), after item completion, quiz/exam submission or grading |
+| Z5 | As a learner I download my certificate as a beautiful A4 PDF, copy its verification link and add it to my LinkedIn profile | PDF with umlauts, logo, signature, certificate ID and QR code; celebratory card (confetti only without reduced motion) |
+| Z6 | As a learner I find all my certificates on my dashboard | "My certificates" section with downloads; a certificate badge on completed course cards |
+| Z7 | As an instructor I see all issued certificates of a course, search them, export them as CSV, download any PDF, issue a certificate manually (override) and revoke one with a reason | Confirm dialogs; the learner is notified about a revocation |
+| Z8 | As an employer or school I check a certificate on a public page via its QR code or ID | `/certificates/verify/{code}` shows "Valid certificate", "Certificate revoked" or "Certificate not found", with the learner's name, course, level, dates, instructor and organisation – never the e-mail address |
+
+### 3.8 Announcements
+| ID | Story | Acceptance criteria |
+|---|---|---|
+| N1 | As an instructor I post an announcement to everyone in my course (approved learners) or to selected learners | Course builder tab **Announcements** (`?tab=announcements`): title, rich text, audience, e-mail toggle, pin |
+| N2 | As an instructor I save drafts, schedule an announcement for later or send it right away | Send confirmation shows the number of recipients; scheduled ones go out automatically within a minute |
+| N3 | As an instructor I see which announcements went out and how many learners read them | List with status (Draft · Scheduled · Sent), date, recipients and read %, plus edit, duplicate and delete |
+| N4 | As a learner I get a notification (and, if the instructor chose it, an e-mail in my language) for each announcement | In-app notification links to the course's announcement feed |
+| N5 | As a learner I read the announcements of a course in the course player | "Announcements" entry with an unread badge at the top of the outline; feed with pinned ones first; viewing marks them read; unread hint on my dashboard course cards |
+
+### 3.9 Messaging
+| ID | Story | Acceptance criteria |
+|---|---|---|
+| M1 | As a learner I can message the instructor of a course I am enrolled in (or have applied to) | "Message instructor" in the course player and on the course page |
+| M2 | As an instructor I can message any learner of my courses | "Message" on the Students tab rows and on a learner's report page |
+| M3 | As a user I have one inbox with all my conversations | `/messages`: list with search, unread dots, course chip and time; thread with date separators, Enter to send, Shift+Enter for a new line; on phones list and thread are separate screens |
+| M4 | As a user I see new messages without reloading | Open threads refresh every 10 s, the header badge every 60 s; screen readers announce new messages |
+| M5 | As a user I am told by e-mail when a message stays unread | At most one e-mail per conversation every 30 minutes, only if the message is still unread after 2 minutes |
+| M6 | As the platform we prevent abuse | Only instructor ↔ learner (and admin) conversations; 30 messages per minute and user (429) |

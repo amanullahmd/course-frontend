@@ -89,7 +89,6 @@ export function moveItem<T>(list: readonly T[], from: number, to: number): T[] {
 export function safeNextPath(next: string | null | undefined, fallback = "/dashboard"): string {
   if (!next || !next.startsWith("/") || next.startsWith("//")) return fallback;
   // Browsers treat "\" like "/" and drop tabs/newlines, so "/\evil.com" or "/\t/evil.com" would leave the site.
-  // eslint-disable-next-line no-control-regex
   if (/[\\\u0000-\u001f\u007f]/.test(next)) return fallback;
   return next;
 }

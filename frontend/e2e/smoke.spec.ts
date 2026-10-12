@@ -44,7 +44,7 @@ test.describe("language", () => {
     const hero = page.getByRole("heading", { level: 1 });
     await expect(hero).toContainText(en.marketing.heroTitle1);
 
-    await page.getByRole("button", { name: new RegExp(`^${en.locale.switch}`) }).first().click();
+    await page.getByRole("button", { name: en.locale.switch }).first().click();
     await page.getByRole("menuitemradio", { name: /Deutsch/ }).click();
 
     await expect(hero).toContainText(de.marketing.heroTitle1);
@@ -80,7 +80,10 @@ test.describe("signed in", () => {
     // /learn/{courseId} continues with the first (or next) lesson.
     await expect(page).toHaveURL(new RegExp(`/learn/${course.id}/[0-9a-f-]{36}$`));
     await expect(page.getByRole("heading", { level: 1 })).not.toBeEmpty();
-    await expect(page.getByText(en.learn.outline).first()).toBeVisible();
+    // Outline sidebar: course title, progress and the seeded lessons (course content itself is not translated).
+    await expect(page.getByText(DEMO.course.title).first()).toBeVisible();
+    await expect(page.getByText(en.learn.progress, { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /Begrüßungen im Alltag/ }).first()).toBeVisible();
   });
 
   test("a protected page redirects anonymous visitors to the login", async ({ page, baseURL }) => {

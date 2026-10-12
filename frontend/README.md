@@ -77,6 +77,11 @@ src/
   (`components/reports/`, `hooks/queries/reports.ts`, `lib/api/reports.ts`). Charts are plain CSS/SVG on the app
   tokens with hidden data tables; CSV exports are fetched with the bearer token and saved via a blob URL; a print
   stylesheet (`reports-print.css`) gives clean A4 pages for "Print / Save as PDF".
+* **Announcements & messages** – instructors post announcements in the course builder (`?tab=announcements`, Tiptap
+  composer with audience, e-mail, pin, schedule); learners read them at `/learn/[courseId]/announcements` (unread badge in
+  the outline, hint on dashboard cards). Direct messages live at `/messages` (two panes on desktop, list → thread
+  `/messages/[conversationId]` on phones); open threads poll every 10 s, the header badge every 60 s. "Message" buttons:
+  `MessageInstructorButton` / `MessageLearnerButton` (`components/messages/message-button.tsx`).
 * **Notification links** – `/instructor/courses/{id}/enrollments` and `/instructor/attempts/{id}` redirect to the
   matching builder tab / grading drawer.
 

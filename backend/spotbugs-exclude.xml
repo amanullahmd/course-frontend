@@ -60,10 +60,27 @@
         <Bug pattern="REDOS"/>
     </Match>
 
-    <!-- HTML e-mail text block: the line breaks are literal markup, not platform-specific output. -->
+    <!-- HTML e-mail text blocks: the line breaks are literal markup, not platform-specific output. -->
     <Match>
-        <Class name="me.amanullah.course.notification.EmailTemplates"/>
+        <Or>
+            <Class name="me.amanullah.course.notification.EmailTemplates"/>
+            <Class name="me.amanullah.course.messaging.MailLayout"/>
+        </Or>
         <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    </Match>
+
+    <!-- openhtmltopdf's PdfRendererBuilder setters mutate the builder and return it for chaining
+         (builder.useFastMode() has a side effect, SpotBugs cannot see it). -->
+    <Match>
+        <Class name="me.amanullah.course.certificate.CertificatePdfRenderer"/>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
+    </Match>
+
+    <!-- Singleton Spring bean that pre-renders the logo in its constructor; a failure aborts application startup,
+         so no partially constructed instance can be observed (the finalizer-attack concern does not apply). -->
+    <Match>
+        <Class name="me.amanullah.course.certificate.CertificatePdfRenderer"/>
+        <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     </Match>
 
     <!-- Intentional exact check after rounding to one decimal: 3.0 is written as "3", 2.5 as "2.5". -->

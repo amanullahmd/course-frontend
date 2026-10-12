@@ -9,6 +9,8 @@ type CodeKey = keyof typeof en.errors.codes;
 type StatusKey = keyof typeof en.errors.status;
 
 const isCode = (code: string): code is CodeKey => code in en.errors.codes;
+/** Codes whose backend detail (already localised) is more specific than the generic text, e.g. sizes or counts. */
+const PREFER_DETAIL = new Set(["FILE_TYPE_NOT_ALLOWED", "QUOTA_EXCEEDED", "HAS_COURSES", "INSTRUCTOR_NOT_APPROVED"]);
 const isStatus = (status: string): status is StatusKey => status in en.errors.status;
 
 /**
@@ -29,6 +31,7 @@ export function useErrorMessage() {
         if (retryAfter > 90) return t("rateLimitedRetryMinutes", { minutes: Math.ceil(retryAfter / 60) });
         return t("rateLimitedRetry", { seconds: Math.ceil(retryAfter) });
       }
+      if (code && PREFER_DETAIL.has(code) && error.detail && error.status < 500) return error.detail;
       if (code && isCode(code)) return error.status >= 500 ? withRef(t(`codes.${code}`)) : t(`codes.${code}`);
       if (code && code.endsWith("_NOT_FOUND")) return t("codes.NOT_FOUND");
       if (error.status >= 500) return withRef(t("server"));

@@ -196,7 +196,7 @@ export function CertificatePreview({ model, className }: { model: CertificatePre
           <span className={s.dot}>·</span>
           <span className={s["verify-code"]}>{model.code}</span>
           <span className={s.dot}>·</span>
-          <span>{model.verificationUrl}</span>
+          <span className={s["verify-url"]}>{model.verificationUrl}</span>
         </div>
         {model.revoked && <div className={s.revoked}>{t.revoked}</div>}
       </div>

@@ -59,7 +59,7 @@ const securityHeaders = [
   // microphone=(self) for the planned speaking exercises; everything else is off.
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(self), geolocation=(), payment=(), usb=(), serial=(), bluetooth=(), browsing-topics=()",
+    value: "camera=(), microphone=(self), geolocation=(), payment=(), usb=(), browsing-topics=()",
   },
   // Only honoured over HTTPS (ignored on http://localhost).
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
