@@ -30,7 +30,7 @@ public final class FileTypePolicy {
     static final Set<String> BLOCKED_EXT = Set.of("exe", "msi", "msp", "bat", "cmd", "com", "scr", "pif", "cpl",
             "ps1", "psm1", "vbs", "vbe", "js", "mjs", "cjs", "jse", "wsf", "wsh", "hta", "jar", "sh", "bash", "zsh",
             "csh", "ksh", "command", "app", "apk", "dll", "so", "dylib", "dmg", "pkg", "deb", "rpm", "php", "phtml",
-            "py", "pyc", "pl", "rb", "cgi", "lnk", "reg", "inf", "gadget", "msc", "appimage", "run", "bin", "elf");
+            "py", "pyc", "pl", "rb", "cgi", "lnk", "reg", "inf", "gadget", "msc", "appimage", "run", "elf");
 
     /** Extensions that may contain active content: accepted for instructors, but always served as attachments. */
     public static final Set<String> ACTIVE_EXT = Set.of("html", "htm", "xhtml", "shtml", "svg", "svgz", "xml", "xsl",

@@ -90,10 +90,11 @@ class HttpRobustnessTest {
         assertThat(r.body()).doesNotContain("Exception").doesNotContain("stackTrace").doesNotContain("\tat ");
     }
 
+    /** An instructor: students may only upload an allow-list of file types, and this test uploads raw bytes. */
     private String token() throws Exception {
         String email = "http-" + UUID.randomUUID().toString().substring(0, 8) + "@example.org";
         send(req("/api/auth/register").header("Content-Type", "application/json").POST(json(
-                "{\"fullName\":\"Http\",\"email\":\"" + email + "\",\"password\":\"Passwort123\",\"role\":\"STUDENT\"}")));
+                "{\"fullName\":\"Http\",\"email\":\"" + email + "\",\"password\":\"Passwort123\",\"role\":\"INSTRUCTOR\"}")));
         String verify = tx.execute(s -> tokens.findByUserAndTypeOrderByCreatedAtDesc(
                 users.findByEmailIgnoreCase(email).orElseThrow(), TokenType.EMAIL_VERIFY).getFirst().getToken());
         send(req("/api/auth/verify-email").header("Content-Type", "application/json")

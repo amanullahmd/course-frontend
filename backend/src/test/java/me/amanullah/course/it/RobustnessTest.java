@@ -190,7 +190,8 @@ class RobustnessTest extends IntegrationTestSupport {
                 "{\"fullName\":\"A\",\"avatarMediaId\":\"" + rnd + "\"}"), student), 404, "MEDIA_NOT_FOUND");
         expect("profile text/plain", bearer(put("/api/users/me").contentType(MediaType.TEXT_PLAIN).content("x"),
                 student), 415, "UNSUPPORTED_MEDIA_TYPE");
-        expect("profile delete", bearer(delete("/api/users/me"), student), 405, "METHOD_NOT_ALLOWED");
+        // DELETE /api/users/me deletes the account and needs a JSON body {password, confirm}
+        expect("profile delete without body", bearer(delete("/api/users/me"), student), 400, "MALFORMED_REQUEST");
         expect("password empty", bearer(raw(put("/api/users/me/password"), "{}"), student), 400, "VALIDATION_FAILED");
         expect("password wrong", bearer(raw(put("/api/users/me/password"),
                 "{\"currentPassword\":\"nope\",\"newPassword\":\"Passwort123\"}"), student), 400, "INVALID_PASSWORD");

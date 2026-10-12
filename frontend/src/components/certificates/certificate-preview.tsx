@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { CefrLevel } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import s from "./certificate-preview.module.css";
+import "./certificate-preview.css";
 import {
   CERTIFICATE_TEXTS,
   certificateDensity,
@@ -30,6 +30,9 @@ export interface CertificatePreviewModel {
   revoked?: boolean;
   lang: CertificateLang;
 }
+
+/** Class names of certificate-preview.css (global, prefixed so they never clash). */
+const s = (name: string) => `swc-${name}`;
 
 /** A4 landscape in CSS pixels (96 dpi). */
 const PAGE_WIDTH = (297 / 25.4) * 96;
@@ -118,7 +121,7 @@ export function CertificatePreview({ model, className }: { model: CertificatePre
     >
       <div
         aria-hidden
-        className={cn(s.page, density && s[density])}
+        className={cn(s("page"), density && s(density))}
         style={{
           position: "absolute",
           left: 0,
@@ -128,77 +131,77 @@ export function CertificatePreview({ model, className }: { model: CertificatePre
           visibility: scale ? "visible" : "hidden",
         }}
       >
-        <div className={s["frame-outer"]} />
-        <div className={s["frame-inner"]} />
-        <div className={cn(s.corner, s["c-tl"])} />
-        <div className={cn(s.corner, s["c-tr"])} />
-        <div className={cn(s.corner, s["c-bl"])} />
-        <div className={cn(s.corner, s["c-br"])} />
-        <div className={s.content}>
-          <div className={s["content-cell"]}>
-            <div className={s.brand}>
-              <Mark className={s.logo} />
-              <span className={s["brand-name"]}>SPRACHWEG</span>
+        <div className={s("frame-outer")} />
+        <div className={s("frame-inner")} />
+        <div className={cn(s("corner"), s("c-tl"))} />
+        <div className={cn(s("corner"), s("c-tr"))} />
+        <div className={cn(s("corner"), s("c-bl"))} />
+        <div className={cn(s("corner"), s("c-br"))} />
+        <div className={s("content")}>
+          <div className={s("content-cell")}>
+            <div className={s("brand")}>
+              <Mark className={s("logo")} />
+              <span className={s("brand-name")}>SPRACHWEG</span>
             </div>
-            <div className={s.title}>{title}</div>
-            <div className={s.divider}>
-              <span className={s.rule} />
-              <span className={s.diamond} />
-              <span className={s.rule} />
+            <div className={s("title")}>{title}</div>
+            <div className={s("divider")}>
+              <span className={s("rule")} />
+              <span className={s("diamond")} />
+              <span className={s("rule")} />
             </div>
-            <div className={s.lead}>{t.lead}</div>
-            <div className={s.name}>{model.learnerName}</div>
-            <div className={s["name-rule"]} />
-            <div className={s.body}>{t.afterName}</div>
-            <div className={s.course}>{model.courseTitle}</div>
-            {t.afterCourse && <div className={cn(s.body, s.after)}>{t.afterCourse}</div>}
-            <div className={s.meta}>
-              {t.level(model.level)} <span className={s.dot}>·</span> {t.cefr}
+            <div className={s("lead")}>{t.lead}</div>
+            <div className={s("name")}>{model.learnerName}</div>
+            <div className={s("name-rule")} />
+            <div className={s("body")}>{t.afterName}</div>
+            <div className={s("course")}>{model.courseTitle}</div>
+            {t.afterCourse && <div className={cn(s("body"), s("after"))}>{t.afterCourse}</div>}
+            <div className={s("meta")}>
+              {t.level(model.level)} <span className={s("dot")}>·</span> {t.cefr}
               {showScore && (
                 <>
                   {" "}
-                  <span className={s.dot}>·</span> {t.score(formatCertificateScore(model.finalScore as number, model.lang))}
+                  <span className={s("dot")}>·</span> {t.score(formatCertificateScore(model.finalScore as number, model.lang))}
                 </>
               )}
             </div>
-            {model.customText?.trim() && <div className={s.custom}>{model.customText.trim()}</div>}
+            {model.customText?.trim() && <div className={s("custom")}>{model.customText.trim()}</div>}
           </div>
         </div>
-        <div className={cn(s.col, s["col-left"])}>
-          <div className={s["col-value"]}>{formatCertificateDate(model.completedAt, model.lang)}</div>
-          <div className={s["col-rule"]} />
-          <div className={s["col-label"]}>{t.date}</div>
+        <div className={cn(s("col"), s("col-left"))}>
+          <div className={s("col-value")}>{formatCertificateDate(model.completedAt, model.lang)}</div>
+          <div className={s("col-rule")} />
+          <div className={s("col-label")}>{t.date}</div>
         </div>
-        <div className={s.seal}>
-          <div className={s["seal-inner"]}>
-            <div className={s["seal-level"]}>{model.level}</div>
-            <div className={s["seal-caption"]}>{t.sealCaption}</div>
+        <div className={s("seal")}>
+          <div className={s("seal-inner")}>
+            <div className={s("seal-level")}>{model.level}</div>
+            <div className={s("seal-caption")}>{t.sealCaption}</div>
           </div>
         </div>
-        <div className={cn(s.col, s["col-right"])}>
-          <div className={s.sig}>
+        <div className={cn(s("col"), s("col-right"))}>
+          <div className={s("sig")}>
             {model.signatureUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- signed media URL, rendered at print size
-              <img className={s["sig-img"]} src={model.signatureUrl} alt="" />
+              <img className={s("sig-img")} src={model.signatureUrl} alt="" />
             ) : (
-              <div className={s["sig-script"]}>{model.signerName}</div>
+              <div className={s("sig-script")}>{model.signerName}</div>
             )}
           </div>
-          <div className={s["col-rule"]} />
-          <div className={s["col-name"]}>{model.signerName}</div>
-          <div className={s["col-label"]}>
+          <div className={s("col-rule")} />
+          <div className={s("col-name")}>{model.signerName}</div>
+          <div className={s("col-label")}>
             {role} · {org}
           </div>
         </div>
-        <QrPlaceholder seed={model.code} className={s.qr} />
-        <div className={s.verify}>
-          <span className={s["verify-label"]}>{t.verifyLabel}</span>
-          <span className={s.dot}>·</span>
-          <span className={s["verify-code"]}>{model.code}</span>
-          <span className={s.dot}>·</span>
-          <span className={s["verify-url"]}>{model.verificationUrl}</span>
+        <QrPlaceholder seed={model.code} className={s("qr")} />
+        <div className={s("verify")}>
+          <span className={s("verify-label")}>{t.verifyLabel}</span>
+          <span className={s("dot")}>·</span>
+          <span className={s("verify-code")}>{model.code}</span>
+          <span className={s("dot")}>·</span>
+          <span className={s("verify-url")}>{model.verificationUrl}</span>
         </div>
-        {model.revoked && <div className={s.revoked}>{t.revoked}</div>}
+        {model.revoked && <div className={s("revoked")}>{t.revoked}</div>}
       </div>
     </div>
   );
