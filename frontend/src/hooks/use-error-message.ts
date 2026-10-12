@@ -23,6 +23,10 @@ export function useErrorMessage() {
       if (error.status === 0) return t("network");
       const code = error.code;
       const withRef = (message: string) => (error.traceId ? `${message} ${t("reference", { id: error.traceId })}` : message);
+      const retryAfter = error.problem?.retryAfterSeconds;
+      if (code === "RATE_LIMITED" && typeof retryAfter === "number" && retryAfter > 0) {
+        return t("rateLimitedRetry", { seconds: Math.ceil(retryAfter) });
+      }
       if (code && isCode(code)) return error.status >= 500 ? withRef(t(`codes.${code}`)) : t(`codes.${code}`);
       if (code && code.endsWith("_NOT_FOUND")) return t("codes.NOT_FOUND");
       if (error.status >= 500) return withRef(t("server"));

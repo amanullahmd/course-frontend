@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { mediaApi } from "@/lib/api/media";
+import { privacyKeys } from "@/lib/api/privacy";
 import type { MediaDto } from "@/lib/api/types";
 
 export interface UploadEntry {
@@ -18,6 +20,7 @@ const nextId = () => `upload-${Date.now().toString(36)}-${(counter += 1)}`;
 
 /** Queue of concurrent media uploads with per-file progress, cancel and retry. */
 export function useUploads(options: { onUploaded?: (media: MediaDto, file: File) => void } = {}) {
+  const queryClient = useQueryClient();
   const [uploads, setUploads] = React.useState<UploadEntry[]>([]);
   const controllers = React.useRef(new Map<string, AbortController>());
   const onUploadedRef = React.useRef(options.onUploaded);
@@ -59,9 +62,12 @@ export function useUploads(options: { onUploaded?: (media: MediaDto, file: File)
           }
           patch(id, { status: "error", error });
         })
-        .finally(() => controllers.current.delete(id));
+        .finally(() => {
+          controllers.current.delete(id);
+          void queryClient.invalidateQueries({ queryKey: privacyKeys.usage });
+        });
     },
-    [patch],
+    [patch, queryClient],
   );
 
   const upload = React.useCallback((files: File[]) => files.forEach((f) => start(f)), [start]);

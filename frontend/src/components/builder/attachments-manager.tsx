@@ -12,6 +12,7 @@ import { useUploads } from "@/hooks/use-uploads";
 import { fileStyle, FileTypeIcon, useFileLabel } from "@/components/course/file-type-icon";
 import { Button } from "@/components/ui/button";
 import { FileDropzone, UploadProgressList } from "@/components/ui/file-dropzone";
+import { StorageUsageMeter } from "@/components/privacy/storage-usage";
 import { Tooltip } from "@/components/ui/tooltip";
 
 function AttachmentRow({ media, onRemove }: { media: MediaDto; onRemove: () => void }) {
@@ -109,6 +110,7 @@ export function AttachmentsManager({
       )}
       <UploadProgressList uploads={uploads} onCancel={cancel} onRetry={retry} onDismiss={dismiss} />
       <FileDropzone onFiles={upload} accept={accept} hint={hint} compact={value.length > 0} />
+      <StorageUsageMeter compact />
     </div>
   );
 }
