@@ -169,6 +169,61 @@ AttemptResultDto   = AttemptSummaryDto + {itemId, itemTitle, deadline, answers:[
                       correct?, pointsAwarded?, feedback, options?:[{id,text,correct?}], acceptedAnswers?[]}]}
 ```
 
+#### Reports `/api/instructor` (owner or admin; foreign courses/items → 404, students → 403)
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/courses/{id}/reports/overview` | `OverviewDto` |
+| GET | `/courses/{id}/reports/gradebook` | `GradebookDto` (approved learners × live quizzes/exams, plus ones with attempts) |
+| GET | `/courses/{id}/reports/students/{studentId}` | `StudentReportDto` (any enrollment status; no enrollment → 404 `ENROLLMENT_NOT_FOUND`) |
+| GET | `/items/{id}/reports/assessment` | `AssessmentAnalyticsDto` (non-quiz item → 404 `ASSESSMENT_NOT_FOUND`) |
+| GET | `/courses/{id}/reports/gradebook.csv` | gradebook: per assessment best %, status, attempts → `gradebook-<slug>-<yyyy-MM-dd>.csv` |
+| GET | `/courses/{id}/reports/progress.csv` | learner progress table (activity, completion, lessons, quizzes/exams taken, averages, per-assessment result) → `progress-<slug>-<date>.csv` |
+| GET | `/courses/{id}/reports/students/{studentId}.csv` | learner report (profile row, item progress rows, attempt rows) → `learner-<slug>-<name>-<date>.csv` |
+| GET | `/items/{id}/reports/attempts.csv` | one row per attempt with points per question → `attempts-<slug>-<item>-<date>.csv` |
+
+CSV: `text/csv; charset=UTF-8` with a BOM, `,` delimiter, CRLF, RFC 4180 quoting, `.` decimals, timestamps
+`yyyy-MM-dd HH:mm` UTC, headers and labels localized by `Accept-Language`, text starting with `= + - @` prefixed with `'`.
+Percentages are 0–100 with one decimal; "best" = best **graded** attempt; `null` when there is nothing to average.
+
+```
+CourseRef         = {id, slug, title}
+OverviewDto       = {course, generatedAt, kpis:{approvedLearners, pendingApplications, averageProgress, medianProgress,
+                     completionRate, completedLearners, assessments, averageBestScore, passRate, pendingGrading,
+                     activeLearners7d, totalLiveItems},
+                     progressDistribution:[{label:"0-25"|"25-50"|"50-75"|"75-100"|"100", from, to, count}],
+                     modules:[{moduleId, title, itemCount, completionPercent}],
+                     funnel:{applied, pending, approved, rejected, withdrawn, revoked, approvalRate},
+                     enrollmentTimeline:[{weekStart (Monday, UTC), applications, approvals}]  (last 12 weeks or since creation),
+                     items:[{itemId, title, type, moduleId, moduleTitle, completed, completedPercent,
+                             taken?, takenPercent?, passed?, averagePercent?}]}   (every live item in outline order)
+GradebookDto      = {course, generatedAt, totalLiveItems,
+                     columns:[{itemId, title, type:"QUIZ"|"EXAM", maxScore, passingScore,
+                               stats:{graded, average, median, min, max, passRate, attempts, pendingGrading}}],
+                     rows:[{id, fullName, email, avatarUrl, enrolledAt, progressPercent, completedItems, totalLiveItems,
+                            lessonsCompleted, lessonsTotal, quizzesTaken, quizzesTotal, examsTaken, examsTotal,
+                            averageQuizPercent, averageExamPercent, lastActivityAt,
+                            activity:"NOT_STARTED"|"IN_PROGRESS"|"COMPLETED"|"INACTIVE", averagePercent, gradedAssessments,
+                            cells:[{itemId, bestPercent, bestScore, attempts, passed,
+                                    status:"NOT_STARTED"|"IN_PROGRESS"|"SUBMITTED_PENDING"|"GRADED",
+                                    latestAttemptId, lastSubmittedAt}]}]}
+StudentReportDto  = {course, generatedAt, student:{id,fullName,email,avatarUrl}, enrollment:{id,status,appliedAt,decidedAt},
+                     progressPercent, completedItems, totalLiveItems, lastActivityAt,
+                     modules:[{moduleId,title,completedItems,totalItems,progressPercent,items:[{itemId,title,type,completedAt}]}],
+                     attempts:[{id,itemId,itemTitle,itemType,status,startedAt,submittedAt,score,maxScore,percent,passed,late,
+                                autoSubmitted,pendingManualGrading}],
+                     totals:{attempts,assessmentsAttempted,assessmentsPassed,assessments,averageBestPercent,pendingGrading},
+                     feedbackCount}
+AssessmentAnalyticsDto = {itemId, title, type, course, generatedAt, maxScore, passingScore, attempts (submitted),
+                     uniqueLearners, gradedAttempts, pendingGrading, inProgress, averagePercent, medianPercent, averageScore,
+                     passRate, averageDurationSeconds, scoreDistribution:[10 × {label:"0-10"…"90-100", from, to, count}],
+                     questions:[{questionId, position, prompt (plain text), type, points, answered, unanswered,
+                                 percentCorrect, averagePoints, commonWrongAnswers:[{text,count}] (top 3)}]}
+```
+Activity: `COMPLETED` at 100 %, `INACTIVE` without progress/attempt activity for 14+ days, `NOT_STARTED` without any
+activity, else `IN_PROGRESS`. A quiz/exam counts as *taken* with at least one submitted attempt. Cell status:
+`SUBMITTED_PENDING` (an attempt awaits manual grading; `latestAttemptId` points to it) > `GRADED` > `IN_PROGRESS` >
+`NOT_STARTED`.
+
 ### Student / learner `/api/student` (any authenticated, verified user)
 | Method | Path | Notes |
 |---|---|---|

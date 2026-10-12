@@ -65,6 +65,7 @@ class EnrollmentManagementTest extends IntegrationTestSupport {
         String courseId = read(created, "$.id");
         String slug = read(created, "$.slug");
         String addUrl = "/api/instructor/courses/" + courseId + "/enrollments/add";
+        clearInvocations(mail); // verification e-mails of the sign-ups
 
         // ---- add one learner ----
         mvc.perform(auth(jsonBody(post(addUrl), Map.of("emails", List.of(s1))), teacher))

@@ -64,6 +64,10 @@ Unit tests (visibility rule, slug generation, grading helpers, media URL signing
 * `RobustnessTest`: ~120 bad requests (malformed JSON, wrong types, invalid UUIDs/enums, unknown/foreign ids, wrong
   methods and content types, missing multipart parts, …) as anonymous, student, instructor and admin. All of them
   must return the expected 4xx with a `code`, and none may return a 5xx. Paging parameters are clamped.
+* `ReportTest`: a course with a lesson, a quiz and an exam, two learners with attempts and a pending application;
+  asserts overview KPIs, distribution, enrollment timeline and content funnel, gradebook cells and column stats,
+  learner report, assessment analytics (% correct, wrong answers, score distribution), all CSV exports (BOM,
+  quoting, English and German headers, file names) and access rules (other instructor → 404, student → 403, bad ids → 4xx).
 * `HttpRobustnessTest` (real Tomcat, `RANDOM_PORT`): multipart size limits (413), `/error`, exceptions and
   `sendError` raised in servlet filters, and URLs rejected by the HTTP firewall. The same suite also passes against PostgreSQL:
 
@@ -207,6 +211,7 @@ me.amanullah.course
 ├── learning      learner access gate, player endpoints, progress
 ├── notification  in-app notifications, e-mail templates and async delivery
 ├── schedule      publish/unpublish calendar, instructor dashboard
+├── report        instructor reports: overview, gradebook, learner report, assessment analytics, CSV exports
 ├── admin         stats and user management
 └── seed          demo data (dev)
 ```
@@ -222,4 +227,7 @@ Key rules:
 * **Media URLs** (`/api/media/{id}/content?expires=…&sig=…[&download=true]`) need no auth header, are valid for
   `app.media.url-ttl`, support HTTP Range (206) and are served with RFC 5987 `Content-Disposition` file names.
   Active content types (HTML, SVG, XML, JS) are always served as attachments.
+* **Reports** (`/api/instructor/courses/{id}/reports/…`, `/api/instructor/items/{id}/reports/…`, see PLAN §6) are
+  read-only and built from a few flat JPQL projections per request (`report.ReportQueries`), never per learner.
+  CSV exports are UTF-8 with BOM, comma separated, RFC 4180 quoted, with headers in the request language.
 * **Assessments** store a snapshot of every question in each attempt, so editing a quiz never changes old results.

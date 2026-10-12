@@ -27,6 +27,9 @@ public class ProblemErrorController implements ErrorController {
         this.localeResolver = localeResolver;
     }
 
+    // The error endpoint must answer for every HTTP method (errors happen on GET, POST, PUT, DELETE …) and only
+    // renders a problem document, so restricting the method (Semgrep's CSRF concern) does not apply here.
+    // nosemgrep: unrestricted-request-mapping
     @RequestMapping(value = "${server.error.path:/error}", produces = {MediaType.APPLICATION_PROBLEM_JSON_VALUE,
             MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE})
     public ResponseEntity<ProblemDetail> error(HttpServletRequest request) {
