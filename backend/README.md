@@ -158,6 +158,15 @@ transaction commits, so SMTP latency never blocks requests; failures are logged.
 For local testing with Docker Compose the backend talks to **Mailpit** (`MAIL_HOST=mailpit`, `MAIL_PORT=1025`,
 no auth / TLS); open http://localhost:8025 to read the mails.
 
+## Language exercises
+
+`assessment/` supports CLOZE, WORD_BANK, MATCHING, ORDERING, DICTATION and SPEAKING questions (migration `V9`). `Grader` computes the
+right fraction per type and awards `points x fraction` rounded to half points when the question is `PARTIAL` (never full points unless
+fully right); `TextSimilarity` provides the German spelling folding, token edit distance and LCS. Responses of structured types are stored
+as JSON in `attempt_answers.response_json`; the display order of shuffled options is a seeded function of the answer row
+(`OptionOrder`), so it is stable across resume and the snapshot keeps the authored order. Recordings are normal media assets of the learner
+(student allow-list already accepts webm/mp4/ogg audio); `AttemptService` checks owner, kind AUDIO and 25 MB.
+
 ## Languages (English / German)
 
 * Supported locales: `en` (default) and `de`, chosen per request from `Accept-Language` (e.g. `de-DE` → `de`, anything

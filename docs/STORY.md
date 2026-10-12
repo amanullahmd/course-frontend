@@ -142,3 +142,13 @@ learner sees item  ⇔ live(course) && live(module) && live(item)
 | P4 | As an instructor I review hand-ins | Queue per assignment and per course, review drawer with feedback files, Return / Grade |
 | P5 | As a learner I join live lessons | Join button 15 minutes before the start, recordings afterwards, personal calendar feed (`.ics`) |
 | P6 | As an instructor I run live lessons | Single sessions and weekly series, attendance sheet with "all present", cancellation notifies learners |
+
+## Language exercises
+
+| ID | Story | Acceptance criteria |
+|---|---|---|
+| L1 | As an instructor I author language exercises | Cloze (numbered blanks with several accepted answers), word bank, matching, ordering, dictation (audio prompt) and speaking questions; live preview; field errors per question in English and German |
+| L2 | As an instructor I award partial credit | Per question "Partial credit" (rounded to half points, never full points unless fully right), option shuffle, tolerant spelling (ae/ä, oe/ö, ue/ü, ss/ß, case, punctuation) |
+| L3 | As a learner I answer with taps, drag and drop or the keyboard | Inline blanks, word-bank chips, select per row for matching, up/down buttons for ordering; autosave, resume and auto-submit work for every type |
+| L4 | As a learner I answer by speaking | Record in the browser with level meter and countdown, replay, re-record; clear messages when the microphone is blocked or missing; file upload as fallback |
+| L5 | As an instructor I grade spoken answers | Audio player, points in half steps and feedback; the attempt stays "awaiting grading" until then |

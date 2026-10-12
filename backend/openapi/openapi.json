@@ -260,14 +260,37 @@
             },
             "type": "array"
           },
+          "blankResults": {
+            "items": {
+              "$ref": "#/components/schemas/BlankResult"
+            },
+            "type": "array"
+          },
+          "blanks": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
           "correct": {
             "type": "boolean"
+          },
+          "correctOrder": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
           },
           "explanation": {
             "type": "string"
           },
           "feedback": {
             "type": "string"
+          },
+          "maxRecordingSeconds": {
+            "format": "int32",
+            "type": "integer"
           },
           "media": {
             "$ref": "#/components/schemas/MediaDto"
@@ -277,6 +300,24 @@
               "$ref": "#/components/schemas/ResultOption"
             },
             "type": "array"
+          },
+          "order": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "pairResults": {
+            "items": {
+              "$ref": "#/components/schemas/PairResult"
+            },
+            "type": "array"
+          },
+          "pairs": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
           },
           "points": {
             "format": "int32",
@@ -291,6 +332,16 @@
           },
           "questionId": {
             "format": "uuid",
+            "type": "string"
+          },
+          "responseMedia": {
+            "$ref": "#/components/schemas/MediaDto"
+          },
+          "scoring": {
+            "enum": [
+              "ALL_OR_NOTHING",
+              "PARTIAL"
+            ],
             "type": "string"
           },
           "selectedOptionIds": {
@@ -310,7 +361,13 @@
               "TRUE_FALSE",
               "SHORT_ANSWER",
               "FILL_BLANK",
-              "ESSAY"
+              "ESSAY",
+              "CLOZE",
+              "WORD_BANK",
+              "MATCHING",
+              "ORDERING",
+              "DICTATION",
+              "SPEAKING"
             ],
             "type": "string"
           }
@@ -408,7 +465,9 @@
               "IMAGE",
               "EMBED",
               "QUIZ",
-              "EXAM"
+              "EXAM",
+              "FLASHCARDS",
+              "ASSIGNMENT"
             ],
             "type": "string"
           },
@@ -530,6 +589,70 @@
         },
         "type": "object"
       },
+      "AssignmentDto": {
+        "properties": {
+          "allowLate": {
+            "type": "boolean"
+          },
+          "allowText": {
+            "type": "boolean"
+          },
+          "dueAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxFiles": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "maxPoints": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "maxSubmissions": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "AssignmentUpsert": {
+        "properties": {
+          "allowLate": {
+            "type": "boolean"
+          },
+          "allowText": {
+            "type": "boolean"
+          },
+          "dueAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "maxFiles": {
+            "format": "int32",
+            "maximum": 20,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxPoints": {
+            "format": "int32",
+            "maximum": 1000,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxSubmissions": {
+            "format": "int32",
+            "maximum": 20,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "AttemptResultDto": {
         "properties": {
           "answers": {
@@ -621,7 +744,7 @@
           },
           "savedAnswers": {
             "items": {
-              "$ref": "#/components/schemas/SubmittedAnswer"
+              "$ref": "#/components/schemas/SavedAnswer"
             },
             "type": "array"
           },
@@ -700,6 +823,76 @@
         },
         "type": "object"
       },
+      "AttendanceEntry": {
+        "properties": {
+          "status": {
+            "enum": [
+              "PRESENT",
+              "LATE",
+              "ABSENT",
+              "EXCUSED"
+            ],
+            "type": "string"
+          },
+          "studentId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "studentId"
+        ],
+        "type": "object"
+      },
+      "AttendanceRequest": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/AttendanceEntry"
+            },
+            "maxItems": 1000,
+            "minItems": 0,
+            "type": "array"
+          }
+        },
+        "required": [
+          "entries"
+        ],
+        "type": "object"
+      },
+      "AttendanceRow": {
+        "properties": {
+          "status": {
+            "enum": [
+              "PRESENT",
+              "LATE",
+              "ABSENT",
+              "EXCUSED"
+            ],
+            "type": "string"
+          },
+          "student": {
+            "$ref": "#/components/schemas/UserSummaryDto"
+          }
+        },
+        "type": "object"
+      },
+      "AttendanceSheetDto": {
+        "properties": {
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/AttendanceRow"
+            },
+            "type": "array"
+          },
+          "sessionId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "AuthResponse": {
         "properties": {
           "accessToken": {
@@ -728,6 +921,66 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "BlankDto": {
+        "properties": {
+          "acceptedAnswers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "index": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "BlankResult": {
+        "properties": {
+          "correct": {
+            "type": "boolean"
+          },
+          "expected": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "given": {
+            "type": "string"
+          },
+          "index": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "BlankUpsert": {
+        "properties": {
+          "acceptedAnswers": {
+            "items": {
+              "maxLength": 500,
+              "minLength": 0,
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 0,
+            "type": "array"
+          },
+          "index": {
+            "format": "int32",
+            "maximum": 20,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "index"
+        ],
         "type": "object"
       },
       "Bucket": {
@@ -783,6 +1036,17 @@
           "action",
           "ids"
         ],
+        "type": "object"
+      },
+      "CalendarTokenDto": {
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "CertificateDto": {
@@ -1089,6 +1353,28 @@
         ],
         "type": "object"
       },
+      "CloneRequest": {
+        "properties": {
+          "keepSchedule": {
+            "type": "boolean"
+          },
+          "shiftDays": {
+            "format": "int32",
+            "maximum": 3650,
+            "minimum": -3650,
+            "type": "integer"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "type": "object"
+      },
       "ColumnStats": {
         "properties": {
           "attempts": {
@@ -1167,6 +1453,12 @@
             "format": "int32",
             "type": "integer"
           },
+          "prerequisites": {
+            "items": {
+              "$ref": "#/components/schemas/PrerequisiteDto"
+            },
+            "type": "array"
+          },
           "publishAt": {
             "format": "date-time",
             "type": "string"
@@ -1177,6 +1469,13 @@
               "PUBLISHED"
             ],
             "type": "string"
+          },
+          "releaseOffsetDays": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "required": {
+            "type": "boolean"
           },
           "summary": {
             "type": "string"
@@ -1193,7 +1492,9 @@
               "IMAGE",
               "EMBED",
               "QUIZ",
-              "EXAM"
+              "EXAM",
+              "FLASHCARDS",
+              "ASSIGNMENT"
             ],
             "type": "string"
           },
@@ -1320,6 +1621,10 @@
             "format": "int32",
             "type": "integer"
           },
+          "clonedFromId": {
+            "format": "uuid",
+            "type": "string"
+          },
           "coverImage": {
             "$ref": "#/components/schemas/MediaDto"
           },
@@ -1361,6 +1666,14 @@
           "pendingCount": {
             "format": "int64",
             "type": "integer"
+          },
+          "progression": {
+            "enum": [
+              "FREE",
+              "SEQUENTIAL_MODULES",
+              "SEQUENTIAL_ITEMS"
+            ],
+            "type": "string"
           },
           "publishAt": {
             "format": "date-time",
@@ -1408,6 +1721,26 @@
               "EXPIRED"
             ],
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CourseDueDto": {
+        "properties": {
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "courseTitle": {
+            "type": "string"
+          },
+          "due": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "newCards": {
+            "format": "int32",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -1628,6 +1961,14 @@
             ],
             "type": "string"
           },
+          "progression": {
+            "enum": [
+              "FREE",
+              "SEQUENTIAL_MODULES",
+              "SEQUENTIAL_ITEMS"
+            ],
+            "type": "string"
+          },
           "subtitle": {
             "maxLength": 300,
             "minLength": 0,
@@ -1684,6 +2025,41 @@
         },
         "type": "object"
       },
+      "CsvCardDto": {
+        "properties": {
+          "article": {
+            "type": "string"
+          },
+          "back": {
+            "type": "string"
+          },
+          "example": {
+            "type": "string"
+          },
+          "front": {
+            "type": "string"
+          },
+          "plural": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CsvErrorDto": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "line": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "DashboardDto": {
         "properties": {
           "courseCount": {
@@ -1717,6 +2093,37 @@
         },
         "type": "object"
       },
+      "DeckDto": {
+        "properties": {
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/FlashcardDto"
+            },
+            "type": "array"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "DeckUpsert": {
+        "properties": {
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/FlashcardUpsert"
+            },
+            "maxItems": 2000,
+            "minItems": 0,
+            "type": "array"
+          }
+        },
+        "required": [
+          "cards"
+        ],
+        "type": "object"
+      },
       "DeleteAccountRequest": {
         "properties": {
           "confirm": {
@@ -1734,6 +2141,15 @@
           "confirm",
           "password"
         ],
+        "type": "object"
+      },
+      "DuplicateItemRequest": {
+        "properties": {
+          "targetModuleId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "EmailRequest": {
@@ -1799,6 +2215,86 @@
             "type": "integer"
           }
         },
+        "type": "object"
+      },
+      "FlashcardDto": {
+        "properties": {
+          "article": {
+            "type": "string"
+          },
+          "audio": {
+            "$ref": "#/components/schemas/MediaDto"
+          },
+          "back": {
+            "type": "string"
+          },
+          "example": {
+            "type": "string"
+          },
+          "front": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "image": {
+            "$ref": "#/components/schemas/MediaDto"
+          },
+          "plural": {
+            "type": "string"
+          },
+          "position": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "FlashcardUpsert": {
+        "properties": {
+          "article": {
+            "maxLength": 10,
+            "minLength": 0,
+            "type": "string"
+          },
+          "audioMediaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "back": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          },
+          "example": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "front": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "imageMediaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "plural": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "back",
+          "front"
+        ],
         "type": "object"
       },
       "Funnel": {
@@ -1943,7 +2439,9 @@
               "IMAGE",
               "EMBED",
               "QUIZ",
-              "EXAM"
+              "EXAM",
+              "FLASHCARDS",
+              "ASSIGNMENT"
             ],
             "type": "string"
           }
@@ -2084,6 +2582,38 @@
         "required": [
           "ids"
         ],
+        "type": "object"
+      },
+      "ImportResultDto": {
+        "properties": {
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/CsvCardDto"
+            },
+            "type": "array"
+          },
+          "committed": {
+            "type": "boolean"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/CsvErrorDto"
+            },
+            "type": "array"
+          },
+          "imported": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "rows": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalCards": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
         "type": "object"
       },
       "InstructorCertificateDto": {
@@ -2337,7 +2867,9 @@
               "IMAGE",
               "EMBED",
               "QUIZ",
-              "EXAM"
+              "EXAM",
+              "FLASHCARDS",
+              "ASSIGNMENT"
             ],
             "type": "string"
           }
@@ -2366,7 +2898,9 @@
               "IMAGE",
               "EMBED",
               "QUIZ",
-              "EXAM"
+              "EXAM",
+              "FLASHCARDS",
+              "ASSIGNMENT"
             ],
             "type": "string"
           }
@@ -2419,7 +2953,9 @@
               "IMAGE",
               "EMBED",
               "QUIZ",
-              "EXAM"
+              "EXAM",
+              "FLASHCARDS",
+              "ASSIGNMENT"
             ],
             "type": "string"
           }
@@ -2552,6 +3088,10 @@
       },
       "LearnCourseDto": {
         "properties": {
+          "completedRequiredCount": {
+            "format": "int32",
+            "type": "integer"
+          },
           "course": {
             "$ref": "#/components/schemas/CourseDetailDto"
           },
@@ -2562,6 +3102,18 @@
             "type": "array"
           },
           "progressPercent": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "progression": {
+            "enum": [
+              "FREE",
+              "SEQUENTIAL_MODULES",
+              "SEQUENTIAL_ITEMS"
+            ],
+            "type": "string"
+          },
+          "requiredCount": {
             "format": "int32",
             "type": "integer"
           }
@@ -2612,6 +3164,9 @@
             "format": "uuid",
             "type": "string"
           },
+          "required": {
+            "type": "boolean"
+          },
           "summary": {
             "type": "string"
           },
@@ -2627,7 +3182,9 @@
               "IMAGE",
               "EMBED",
               "QUIZ",
-              "EXAM"
+              "EXAM",
+              "FLASHCARDS",
+              "ASSIGNMENT"
             ],
             "type": "string"
           }
@@ -2668,6 +3225,12 @@
             "format": "uuid",
             "type": "string"
           },
+          "lock": {
+            "$ref": "#/components/schemas/LockDto"
+          },
+          "required": {
+            "type": "boolean"
+          },
           "title": {
             "type": "string"
           },
@@ -2680,7 +3243,9 @@
               "IMAGE",
               "EMBED",
               "QUIZ",
-              "EXAM"
+              "EXAM",
+              "FLASHCARDS",
+              "ASSIGNMENT"
             ],
             "type": "string"
           }
@@ -2726,6 +3291,265 @@
         },
         "type": "object"
       },
+      "LearnerAssignmentDto": {
+        "properties": {
+          "allowLate": {
+            "type": "boolean"
+          },
+          "allowText": {
+            "type": "boolean"
+          },
+          "canSubmit": {
+            "type": "boolean"
+          },
+          "dueAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxFiles": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "maxPoints": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "maxSubmissions": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "overdue": {
+            "type": "boolean"
+          },
+          "submissionsUsed": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "submitBlocked": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "LearnerCardDto": {
+        "properties": {
+          "article": {
+            "type": "string"
+          },
+          "audio": {
+            "$ref": "#/components/schemas/MediaDto"
+          },
+          "back": {
+            "type": "string"
+          },
+          "dueAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "example": {
+            "type": "string"
+          },
+          "front": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "image": {
+            "$ref": "#/components/schemas/MediaDto"
+          },
+          "plural": {
+            "type": "string"
+          },
+          "reviewed": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "LearnerDeckDto": {
+        "properties": {
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/LearnerCardDto"
+            },
+            "type": "array"
+          },
+          "dueCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "newCount": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "LearnerLiveSessionDto": {
+        "properties": {
+          "cancelled": {
+            "type": "boolean"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "courseTitle": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "durationMinutes": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "endsAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "joinOpensAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "joinUrl": {
+            "type": "string"
+          },
+          "myAttendance": {
+            "enum": [
+              "PRESENT",
+              "LATE",
+              "ABSENT",
+              "EXCUSED"
+            ],
+            "type": "string"
+          },
+          "recordingUrl": {
+            "type": "string"
+          },
+          "startsAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "LiveSessionDto": {
+        "properties": {
+          "attendanceRecorded": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "cancelled": {
+            "type": "boolean"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "durationMinutes": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "endsAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "joinUrl": {
+            "type": "string"
+          },
+          "presentCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "recordingUrl": {
+            "type": "string"
+          },
+          "seriesId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "startsAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "LiveSessionUpsert": {
+        "properties": {
+          "cancelled": {
+            "type": "boolean"
+          },
+          "description": {
+            "maxLength": 5000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "durationMinutes": {
+            "format": "int32",
+            "maximum": 720,
+            "minimum": 5,
+            "type": "integer"
+          },
+          "joinUrl": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "recordingUrl": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "startsAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "durationMinutes",
+          "startsAt",
+          "title"
+        ],
+        "type": "object"
+      },
       "LocaleRequest": {
         "properties": {
           "locale": {
@@ -2737,6 +3561,40 @@
         "required": [
           "locale"
         ],
+        "type": "object"
+      },
+      "LockDto": {
+        "properties": {
+          "prerequisites": {
+            "items": {
+              "$ref": "#/components/schemas/LockPrerequisite"
+            },
+            "type": "array"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "unlockAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "LockPrerequisite": {
+        "properties": {
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "minPercent": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "LoginRequest": {
@@ -2898,6 +3756,12 @@
             "format": "int32",
             "type": "integer"
           },
+          "prerequisites": {
+            "items": {
+              "$ref": "#/components/schemas/PrerequisiteDto"
+            },
+            "type": "array"
+          },
           "publishAt": {
             "format": "date-time",
             "type": "string"
@@ -2908,6 +3772,10 @@
               "PUBLISHED"
             ],
             "type": "string"
+          },
+          "releaseOffsetDays": {
+            "format": "int32",
+            "type": "integer"
           },
           "title": {
             "type": "string"
@@ -3010,7 +3878,11 @@
               "CERTIFICATE_ISSUED",
               "CERTIFICATE_REVOKED",
               "ANNOUNCEMENT",
-              "MESSAGE"
+              "MESSAGE",
+              "ASSIGNMENT_SUBMITTED",
+              "ASSIGNMENT_REVIEWED",
+              "LIVE_SESSION_REMINDER",
+              "LIVE_SESSION_CANCELLED"
             ],
             "type": "string"
           }
@@ -3019,11 +3891,18 @@
       },
       "OptionDto": {
         "properties": {
+          "blankIndex": {
+            "format": "int32",
+            "type": "integer"
+          },
           "correct": {
             "type": "boolean"
           },
           "id": {
             "format": "uuid",
+            "type": "string"
+          },
+          "matchText": {
             "type": "string"
           },
           "position": {
@@ -3038,11 +3917,22 @@
       },
       "OptionUpsert": {
         "properties": {
+          "blankIndex": {
+            "format": "int32",
+            "maximum": 20,
+            "minimum": 1,
+            "type": "integer"
+          },
           "correct": {
             "type": "boolean"
           },
           "id": {
             "format": "uuid",
+            "type": "string"
+          },
+          "matchText": {
+            "maxLength": 2000,
+            "minLength": 0,
             "type": "string"
           },
           "position": {
@@ -3082,7 +3972,9 @@
               "IMAGE",
               "EMBED",
               "QUIZ",
-              "EXAM"
+              "EXAM",
+              "FLASHCARDS",
+              "ASSIGNMENT"
             ],
             "type": "string"
           }
@@ -3260,6 +4152,31 @@
         },
         "type": "object"
       },
+      "PairResult": {
+        "properties": {
+          "correct": {
+            "type": "boolean"
+          },
+          "expectedRight": {
+            "type": "string"
+          },
+          "left": {
+            "type": "string"
+          },
+          "leftId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "right": {
+            "type": "string"
+          },
+          "rightId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "ParticipantDto": {
         "properties": {
           "avatarUrl": {
@@ -3281,6 +4198,55 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "PrerequisiteDto": {
+        "properties": {
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "minPercent": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "TEXT",
+              "DOCUMENT",
+              "VIDEO",
+              "AUDIO",
+              "IMAGE",
+              "EMBED",
+              "QUIZ",
+              "EXAM",
+              "FLASHCARDS",
+              "ASSIGNMENT"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PrerequisiteRef": {
+        "properties": {
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "minPercent": {
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "itemId"
+        ],
         "type": "object"
       },
       "ProblemDetail": {
@@ -3341,6 +4307,12 @@
             },
             "type": "array"
           },
+          "blanks": {
+            "items": {
+              "$ref": "#/components/schemas/BlankDto"
+            },
+            "type": "array"
+          },
           "caseSensitive": {
             "type": "boolean"
           },
@@ -3350,6 +4322,13 @@
           "id": {
             "format": "uuid",
             "type": "string"
+          },
+          "lenientSpelling": {
+            "type": "boolean"
+          },
+          "maxRecordingSeconds": {
+            "format": "int32",
+            "type": "integer"
           },
           "media": {
             "$ref": "#/components/schemas/MediaDto"
@@ -3375,6 +4354,16 @@
           "prompt": {
             "type": "string"
           },
+          "scoring": {
+            "enum": [
+              "ALL_OR_NOTHING",
+              "PARTIAL"
+            ],
+            "type": "string"
+          },
+          "shuffleOptions": {
+            "type": "boolean"
+          },
           "type": {
             "enum": [
               "SINGLE_CHOICE",
@@ -3382,7 +4371,13 @@
               "TRUE_FALSE",
               "SHORT_ANSWER",
               "FILL_BLANK",
-              "ESSAY"
+              "ESSAY",
+              "CLOZE",
+              "WORD_BANK",
+              "MATCHING",
+              "ORDERING",
+              "DICTATION",
+              "SPEAKING"
             ],
             "type": "string"
           }
@@ -3431,7 +4426,13 @@
               "TRUE_FALSE",
               "SHORT_ANSWER",
               "FILL_BLANK",
-              "ESSAY"
+              "ESSAY",
+              "CLOZE",
+              "WORD_BANK",
+              "MATCHING",
+              "ORDERING",
+              "DICTATION",
+              "SPEAKING"
             ],
             "type": "string"
           },
@@ -3454,6 +4455,14 @@
             "minItems": 0,
             "type": "array"
           },
+          "blanks": {
+            "items": {
+              "$ref": "#/components/schemas/BlankUpsert"
+            },
+            "maxItems": 20,
+            "minItems": 0,
+            "type": "array"
+          },
           "caseSensitive": {
             "type": "boolean"
           },
@@ -3465,6 +4474,15 @@
           "id": {
             "format": "uuid",
             "type": "string"
+          },
+          "lenientSpelling": {
+            "type": "boolean"
+          },
+          "maxRecordingSeconds": {
+            "format": "int32",
+            "maximum": 3600,
+            "minimum": 1,
+            "type": "integer"
           },
           "mediaId": {
             "format": "uuid",
@@ -3493,6 +4511,16 @@
             "minLength": 0,
             "type": "string"
           },
+          "scoring": {
+            "enum": [
+              "ALL_OR_NOTHING",
+              "PARTIAL"
+            ],
+            "type": "string"
+          },
+          "shuffleOptions": {
+            "type": "boolean"
+          },
           "type": {
             "enum": [
               "SINGLE_CHOICE",
@@ -3500,7 +4528,13 @@
               "TRUE_FALSE",
               "SHORT_ANSWER",
               "FILL_BLANK",
-              "ESSAY"
+              "ESSAY",
+              "CLOZE",
+              "WORD_BANK",
+              "MATCHING",
+              "ORDERING",
+              "DICTATION",
+              "SPEAKING"
             ],
             "type": "string"
           }
@@ -3563,6 +4597,28 @@
         ],
         "type": "object"
       },
+      "ReleaseRulesRequest": {
+        "properties": {
+          "prerequisites": {
+            "items": {
+              "$ref": "#/components/schemas/PrerequisiteRef"
+            },
+            "maxItems": 50,
+            "minItems": 0,
+            "type": "array"
+          },
+          "releaseOffsetDays": {
+            "format": "int32",
+            "maximum": 3650,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "required": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
       "ResetPasswordRequest": {
         "properties": {
           "password": {
@@ -3583,6 +4639,10 @@
       },
       "ResultOption": {
         "properties": {
+          "blankIndex": {
+            "format": "int32",
+            "type": "integer"
+          },
           "correct": {
             "type": "boolean"
           },
@@ -3590,8 +4650,143 @@
             "format": "uuid",
             "type": "string"
           },
+          "matchText": {
+            "type": "string"
+          },
           "text": {
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ReviewCardDto": {
+        "properties": {
+          "article": {
+            "type": "string"
+          },
+          "audio": {
+            "$ref": "#/components/schemas/MediaDto"
+          },
+          "back": {
+            "type": "string"
+          },
+          "deckItemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "deckTitle": {
+            "type": "string"
+          },
+          "example": {
+            "type": "string"
+          },
+          "front": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "image": {
+            "$ref": "#/components/schemas/MediaDto"
+          },
+          "intervalDays": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "newCard": {
+            "type": "boolean"
+          },
+          "plural": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ReviewRequest": {
+        "properties": {
+          "grade": {
+            "enum": [
+              "AGAIN",
+              "HARD",
+              "GOOD",
+              "EASY"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "grade"
+        ],
+        "type": "object"
+      },
+      "ReviewResultDto": {
+        "properties": {
+          "cardId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "dueAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "ease": {
+            "format": "double",
+            "type": "number"
+          },
+          "intervalDays": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "lapses": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "repetitions": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ReviewSessionDto": {
+        "properties": {
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewCardDto"
+            },
+            "type": "array"
+          },
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "dueCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "newCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "newPerDay": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ReviewSummaryDto": {
+        "properties": {
+          "byCourse": {
+            "items": {
+              "$ref": "#/components/schemas/CourseDueDto"
+            },
+            "type": "array"
+          },
+          "dueToday": {
+            "format": "int32",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -3625,6 +4820,50 @@
         ],
         "type": "object"
       },
+      "SavedAnswer": {
+        "properties": {
+          "blanks": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "order": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "pairs": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "questionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "responseMedia": {
+            "$ref": "#/components/schemas/MediaDto"
+          },
+          "responseMediaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "selectedOptionIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "textAnswer": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "ScheduleEventDto": {
         "properties": {
           "action": {
@@ -3632,7 +4871,9 @@
               "PUBLISH",
               "UNPUBLISH",
               "OPENS",
-              "CLOSES"
+              "CLOSES",
+              "DUE",
+              "SESSION"
             ],
             "type": "string"
           },
@@ -3655,7 +4896,8 @@
             "enum": [
               "COURSE",
               "MODULE",
-              "ITEM"
+              "ITEM",
+              "SESSION"
             ],
             "type": "string"
           },
@@ -3671,7 +4913,9 @@
               "IMAGE",
               "EMBED",
               "QUIZ",
-              "EXAM"
+              "EXAM",
+              "FLASHCARDS",
+              "ASSIGNMENT"
             ],
             "type": "string"
           },
@@ -3694,6 +4938,48 @@
         ],
         "type": "object"
       },
+      "SeriesRequest": {
+        "properties": {
+          "description": {
+            "maxLength": 5000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "durationMinutes": {
+            "format": "int32",
+            "maximum": 720,
+            "minimum": 5,
+            "type": "integer"
+          },
+          "firstStartsAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "joinUrl": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          },
+          "weeks": {
+            "format": "int32",
+            "maximum": 52,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "durationMinutes",
+          "firstStartsAt",
+          "title",
+          "weeks"
+        ],
+        "type": "object"
+      },
       "SessionOption": {
         "properties": {
           "id": {
@@ -3708,9 +4994,23 @@
       },
       "SessionQuestion": {
         "properties": {
+          "blankCount": {
+            "format": "int32",
+            "type": "integer"
+          },
           "id": {
             "format": "uuid",
             "type": "string"
+          },
+          "matchTargets": {
+            "items": {
+              "$ref": "#/components/schemas/SessionOption"
+            },
+            "type": "array"
+          },
+          "maxRecordingSeconds": {
+            "format": "int32",
+            "type": "integer"
           },
           "media": {
             "$ref": "#/components/schemas/MediaDto"
@@ -3735,7 +5035,13 @@
               "TRUE_FALSE",
               "SHORT_ANSWER",
               "FILL_BLANK",
-              "ESSAY"
+              "ESSAY",
+              "CLOZE",
+              "WORD_BANK",
+              "MATCHING",
+              "ORDERING",
+              "DICTATION",
+              "SPEAKING"
             ],
             "type": "string"
           }
@@ -3846,7 +5152,9 @@
               "IMAGE",
               "EMBED",
               "QUIZ",
-              "EXAM"
+              "EXAM",
+              "FLASHCARDS",
+              "ASSIGNMENT"
             ],
             "type": "string"
           },
@@ -4043,25 +5351,201 @@
         },
         "type": "object"
       },
-      "SubmitRequest": {
+      "SubmissionDetailDto": {
         "properties": {
-          "answers": {
+          "assignment": {
+            "$ref": "#/components/schemas/AssignmentDto"
+          },
+          "current": {
+            "$ref": "#/components/schemas/SubmissionDto"
+          },
+          "history": {
             "items": {
-              "$ref": "#/components/schemas/SubmittedAnswer"
+              "$ref": "#/components/schemas/SubmissionDto"
             },
-            "maxItems": 500,
-            "minItems": 0,
             "type": "array"
+          },
+          "latest": {
+            "type": "boolean"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/SubmissionSummaryDto"
           }
         },
-        "required": [
-          "answers"
-        ],
+        "type": "object"
+      },
+      "SubmissionDto": {
+        "properties": {
+          "feedback": {
+            "type": "string"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/SubmissionFileDto"
+            },
+            "type": "array"
+          },
+          "gradedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "late": {
+            "type": "boolean"
+          },
+          "maxPoints": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "points": {
+            "format": "double",
+            "type": "number"
+          },
+          "status": {
+            "enum": [
+              "SUBMITTED",
+              "RETURNED",
+              "GRADED"
+            ],
+            "type": "string"
+          },
+          "submittedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "textAnswer": {
+            "type": "string"
+          },
+          "versionNo": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "SubmissionFileDto": {
+        "properties": {
+          "feedbackFile": {
+            "type": "boolean"
+          },
+          "media": {
+            "$ref": "#/components/schemas/MediaDto"
+          }
+        },
+        "type": "object"
+      },
+      "SubmissionSummaryDto": {
+        "properties": {
+          "courseId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "fileCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "hasText": {
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "itemId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "itemTitle": {
+            "type": "string"
+          },
+          "late": {
+            "type": "boolean"
+          },
+          "maxPoints": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "points": {
+            "format": "double",
+            "type": "number"
+          },
+          "status": {
+            "enum": [
+              "SUBMITTED",
+              "RETURNED",
+              "GRADED"
+            ],
+            "type": "string"
+          },
+          "student": {
+            "$ref": "#/components/schemas/UserSummaryDto"
+          },
+          "submittedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "versionNo": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "SubmitRequest": {
+        "properties": {
+          "mediaIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 0,
+            "type": "array"
+          },
+          "textAnswer": {
+            "maxLength": 20000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "SubmittedAnswer": {
         "properties": {
+          "blanks": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "order": {
+            "items": {
+              "maxLength": 40,
+              "minLength": 0,
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 0,
+            "type": "array"
+          },
+          "pairs": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
           "questionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "responseMediaId": {
             "format": "uuid",
             "type": "string"
           },
@@ -4420,7 +5904,7 @@
     },
     "/api/admin/users/{id}": {
       "put": {
-        "operationId": "update_3",
+        "operationId": "update_4",
         "parameters": [
           {
             "in": "path",
@@ -4743,9 +6227,39 @@
         ]
       }
     },
+    "/api/calendar/{token}.ics": {
+      "get": {
+        "operationId": "feed",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/calendar;charset=UTF-8": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Calendar"
+        ]
+      }
+    },
     "/api/instructor/announcements/{id}": {
       "delete": {
-        "operationId": "delete_1",
+        "operationId": "delete_2",
         "parameters": [
           {
             "in": "path",
@@ -4767,7 +6281,7 @@
         ]
       },
       "get": {
-        "operationId": "get_2",
+        "operationId": "get_4",
         "parameters": [
           {
             "in": "path",
@@ -4796,7 +6310,7 @@
         ]
       },
       "put": {
-        "operationId": "update_2",
+        "operationId": "update_3",
         "parameters": [
           {
             "in": "path",
@@ -5073,7 +6587,7 @@
     },
     "/api/instructor/courses/{courseId}/announcements": {
       "get": {
-        "operationId": "list",
+        "operationId": "list_1",
         "parameters": [
           {
             "in": "path",
@@ -5105,7 +6619,7 @@
         ]
       },
       "post": {
-        "operationId": "create_1",
+        "operationId": "create_2",
         "parameters": [
           {
             "in": "path",
@@ -5216,7 +6730,7 @@
     },
     "/api/instructor/courses/{courseId}/certificates": {
       "get": {
-        "operationId": "list_4",
+        "operationId": "list_5",
         "parameters": [
           {
             "in": "path",
@@ -5337,6 +6851,123 @@
         },
         "tags": [
           "Instructor: enrollments"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/live-sessions": {
+      "get": {
+        "operationId": "list",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LiveSessionDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: live sessions"
+        ]
+      },
+      "post": {
+        "operationId": "create_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveSessionUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveSessionDto"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Instructor: live sessions"
+        ]
+      }
+    },
+    "/api/instructor/courses/{courseId}/live-sessions/series": {
+      "post": {
+        "operationId": "series",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeriesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LiveSessionDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Instructor: live sessions"
         ]
       }
     },
@@ -5550,9 +7181,56 @@
         ]
       }
     },
+    "/api/instructor/courses/{courseId}/submissions": {
+      "get": {
+        "operationId": "forCourse_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "SUBMITTED",
+                "RETURNED",
+                "GRADED"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SubmissionSummaryDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: assignments"
+        ]
+      }
+    },
     "/api/instructor/courses/{id}": {
       "delete": {
-        "operationId": "delete",
+        "operationId": "delete_1",
         "parameters": [
           {
             "in": "path",
@@ -5574,7 +7252,7 @@
         ]
       },
       "get": {
-        "operationId": "get_1",
+        "operationId": "get_3",
         "parameters": [
           {
             "in": "path",
@@ -5603,7 +7281,7 @@
         ]
       },
       "put": {
-        "operationId": "update_1",
+        "operationId": "update_2",
         "parameters": [
           {
             "in": "path",
@@ -5642,9 +7320,50 @@
         ]
       }
     },
+    "/api/instructor/courses/{id}/clone": {
+      "post": {
+        "operationId": "cloneCourse",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloneRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseDto"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
     "/api/instructor/courses/{id}/enrollments": {
       "get": {
-        "operationId": "list_3",
+        "operationId": "list_4",
         "parameters": [
           {
             "in": "path",
@@ -6065,7 +7784,7 @@
     },
     "/api/instructor/items/{id}/assessment": {
       "get": {
-        "operationId": "get",
+        "operationId": "get_2",
         "parameters": [
           {
             "in": "path",
@@ -6094,7 +7813,7 @@
         ]
       },
       "put": {
-        "operationId": "replace",
+        "operationId": "replace_2",
         "parameters": [
           {
             "in": "path",
@@ -6133,6 +7852,76 @@
         ]
       }
     },
+    "/api/instructor/items/{id}/assignment": {
+      "get": {
+        "operationId": "get_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: assignments"
+        ]
+      },
+      "put": {
+        "operationId": "replace_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: assignments"
+        ]
+      }
+    },
     "/api/instructor/items/{id}/attempts": {
       "get": {
         "operationId": "attempts",
@@ -6164,6 +7953,206 @@
         },
         "tags": [
           "Instructor: assessments"
+        ]
+      }
+    },
+    "/api/instructor/items/{id}/duplicate": {
+      "post": {
+        "operationId": "duplicateItem",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentItemDto"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/items/{id}/flashcards": {
+      "get": {
+        "operationId": "get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeckDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: flashcards"
+        ]
+      },
+      "put": {
+        "operationId": "replace",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeckUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeckDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: flashcards"
+        ]
+      }
+    },
+    "/api/instructor/items/{id}/flashcards/export": {
+      "get": {
+        "operationId": "export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "format": "byte",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: flashcards"
+        ]
+      }
+    },
+    "/api/instructor/items/{id}/flashcards/import": {
+      "post": {
+        "operationId": "importCsv",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "commit",
+            "required": false,
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResultDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: flashcards"
         ]
       }
     },
@@ -6205,6 +8194,94 @@
         },
         "tags": [
           "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/items/{id}/release": {
+      "put": {
+        "operationId": "itemRelease",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseRulesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentItemDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/items/{id}/submissions": {
+      "get": {
+        "operationId": "forItem",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "SUBMITTED",
+                "RETURNED",
+                "GRADED"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SubmissionSummaryDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: assignments"
         ]
       }
     },
@@ -6272,6 +8349,139 @@
         ]
       }
     },
+    "/api/instructor/live-sessions/{id}": {
+      "delete": {
+        "operationId": "delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: live sessions"
+        ]
+      },
+      "put": {
+        "operationId": "update_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveSessionUpsert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveSessionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: live sessions"
+        ]
+      }
+    },
+    "/api/instructor/live-sessions/{id}/attendance": {
+      "get": {
+        "operationId": "attendance",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceSheetDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: live sessions"
+        ]
+      },
+      "put": {
+        "operationId": "saveAttendance",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttendanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceSheetDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: live sessions"
+        ]
+      }
+    },
     "/api/instructor/modules/{id}": {
       "delete": {
         "operationId": "deleteModule",
@@ -6328,6 +8538,37 @@
               }
             },
             "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
+    "/api/instructor/modules/{id}/duplicate": {
+      "post": {
+        "operationId": "duplicateModule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModuleDto"
+                }
+              }
+            },
+            "description": "Created"
           }
         },
         "tags": [
@@ -6451,6 +8692,47 @@
         ]
       }
     },
+    "/api/instructor/modules/{id}/release": {
+      "put": {
+        "operationId": "moduleRelease",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseRulesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModuleDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: course builder"
+        ]
+      }
+    },
     "/api/instructor/schedule": {
       "get": {
         "operationId": "schedule",
@@ -6500,6 +8782,78 @@
         },
         "tags": [
           "Instructor: schedule & dashboard"
+        ]
+      }
+    },
+    "/api/instructor/submissions/{id}": {
+      "get": {
+        "operationId": "detail",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionDetailDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: assignments"
+        ]
+      }
+    },
+    "/api/instructor/submissions/{id}/review": {
+      "post": {
+        "operationId": "review_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionDetailDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Instructor: assignments"
         ]
       }
     },
@@ -6563,7 +8917,7 @@
     },
     "/api/media/{id}": {
       "delete": {
-        "operationId": "delete_2",
+        "operationId": "delete_3",
         "parameters": [
           {
             "in": "path",
@@ -6585,7 +8939,7 @@
         ]
       },
       "get": {
-        "operationId": "get_3",
+        "operationId": "get_5",
         "parameters": [
           {
             "in": "path",
@@ -6953,7 +9307,7 @@
     },
     "/api/notifications": {
       "get": {
-        "operationId": "list_2",
+        "operationId": "list_3",
         "parameters": [
           {
             "in": "query",
@@ -7287,7 +9641,7 @@
     },
     "/api/student/attempts/{id}/submit": {
       "post": {
-        "operationId": "submit",
+        "operationId": "submit_1",
         "parameters": [
           {
             "in": "path",
@@ -7328,7 +9682,7 @@
     },
     "/api/student/certificates": {
       "get": {
-        "operationId": "mine_1",
+        "operationId": "mine_2",
         "responses": {
           "200": {
             "content": {
@@ -7393,7 +9747,7 @@
     },
     "/api/student/courses/{courseId}/announcements": {
       "get": {
-        "operationId": "list_1",
+        "operationId": "list_2",
         "parameters": [
           {
             "in": "path",
@@ -7459,7 +9813,7 @@
     },
     "/api/student/courses/{courseId}/enrollment": {
       "get": {
-        "operationId": "mine",
+        "operationId": "mine_1",
         "parameters": [
           {
             "in": "path",
@@ -7559,6 +9913,80 @@
         ]
       }
     },
+    "/api/student/courses/{courseId}/live-sessions": {
+      "get": {
+        "operationId": "forCourse",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LearnerLiveSessionDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: live sessions"
+        ]
+      }
+    },
+    "/api/student/courses/{courseId}/review": {
+      "get": {
+        "operationId": "session",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "courseId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSessionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: flashcards"
+        ]
+      }
+    },
     "/api/student/enrollments": {
       "get": {
         "operationId": "myEnrollments",
@@ -7613,6 +10041,47 @@
         ]
       }
     },
+    "/api/student/flashcards/{cardId}/review": {
+      "post": {
+        "operationId": "review",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cardId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResultDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: flashcards"
+        ]
+      }
+    },
     "/api/student/items/{itemId}": {
       "get": {
         "operationId": "item",
@@ -7641,6 +10110,37 @@
         },
         "tags": [
           "Learner: player"
+        ]
+      }
+    },
+    "/api/student/items/{itemId}/assignment": {
+      "get": {
+        "operationId": "assignment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "itemId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearnerAssignmentDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: assignments"
         ]
       }
     },
@@ -7753,6 +10253,153 @@
         ]
       }
     },
+    "/api/student/items/{itemId}/flashcards": {
+      "get": {
+        "operationId": "deck",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "itemId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearnerDeckDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: flashcards"
+        ]
+      }
+    },
+    "/api/student/items/{itemId}/submissions": {
+      "get": {
+        "operationId": "mine",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "itemId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SubmissionDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: assignments"
+        ]
+      },
+      "post": {
+        "operationId": "submit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "itemId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionDto"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "Learner: assignments"
+        ]
+      }
+    },
+    "/api/student/live-sessions/upcoming": {
+      "get": {
+        "operationId": "upcoming",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LearnerLiveSessionDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: live sessions"
+        ]
+      }
+    },
+    "/api/student/review/summary": {
+      "get": {
+        "operationId": "summary",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSummaryDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: flashcards"
+        ]
+      }
+    },
     "/api/users/me": {
       "delete": {
         "operationId": "deleteAccount",
@@ -7819,6 +10466,44 @@
         },
         "tags": [
           "Me"
+        ]
+      }
+    },
+    "/api/users/me/calendar-token": {
+      "get": {
+        "operationId": "token",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarTokenDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: live sessions"
+        ]
+      },
+      "post": {
+        "operationId": "rotate",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarTokenDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Learner: live sessions"
         ]
       }
     },

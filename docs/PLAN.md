@@ -169,6 +169,15 @@ InstructorCourseDto= {id, slug, title, subtitle, level, coverImageUrl, publishSt
                       studentCount, pendingCount, moduleCount, itemCount, updatedAt}
 ModuleDto          = {id, courseId, title, description, position, publishStatus, publishAt, unpublishAt, visibility,
                       releaseOffsetDays?, prerequisites:[{itemId,title,type,minPercent?}], items: ContentItemDto[]}
+Language question types (V9): QuestionType += CLOZE|WORD_BANK|MATCHING|ORDERING|DICTATION|SPEAKING. QuestionDto/QuestionUpsert +=
+                      {scoring:ALL_OR_NOTHING|PARTIAL, shuffleOptions, lenientSpelling, maxRecordingSeconds?, blanks:[{index,acceptedAnswers[]}]},
+                      options[] += {matchText?, blankIndex?}. CLOZE/WORD_BANK prompts contain {{1}}, {{2}}… markers. Invalid definitions → 400 with
+                      errors "questions[i].prompt|options|blanks|mediaId|acceptedAnswers|maxRecordingSeconds" (messages question.invalid.*).
+                      Session: SessionQuestion += {blankCount?, matchTargets?:[{id,text}], maxRecordingSeconds?} (never the solution; savedAnswers
+                      += {blanks?, pairs?, order?, responseMediaId?, responseMedia?}). SubmittedAnswer += {blanks?:{"1":text|optionId}, pairs?:{leftId:rightId},
+                      order?:[optionId], responseMediaId?} (SPEAKING: the learner's own AUDIO upload ≤ 25 MB, else 400 on responseMediaId).
+                      AnswerResult += {scoring, blanks, pairs, order, blankResults:[{index,given,correct,expected?}], pairResults:[{leftId,left,rightId,right,correct,expectedRight?}],
+                      correctOrder?, responseMedia?}. SPEAKING stays SUBMITTED until graded via POST /attempts/{id}/grade.
 ItemUpsert         = {type, title, summary, body, externalUrl, durationMinutes, attachmentIds[]}
 ContentItemDto     = {id, moduleId, courseId, type, title, summary, body, externalUrl, durationMinutes, position,
                       publishStatus, publishAt, unpublishAt, visibility, attachments: MediaDto[],
