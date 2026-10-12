@@ -47,3 +47,10 @@ app:
 logging:
   level:
     me.amanullah.course: INFO
+
+# Swagger UI and the OpenAPI document are not public in production (SWAGGER_ENABLED=true to turn them on).
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}

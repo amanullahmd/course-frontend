@@ -12,6 +12,12 @@ spring:
 app:
   storage:
     location: ./target/test-uploads
+  # Security & privacy: off for the general suites; SecurityPrivacyTest turns them on explicitly.
+  rate-limit:
+    enabled: false
+  registration:
+    instructor-approval-required: false
+    terms-required: false
   mail:
     enabled: false
   seed:

@@ -34,6 +34,14 @@ import org.springframework.security.oauth2.server.resource.web.BearerTokenResolv
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.firewall.RequestRejectedHandler;
+import org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
+import org.springframework.security.web.header.writers.frameoptions.XFrameOptionsHeaderWriter;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -46,6 +54,13 @@ import tools.jackson.databind.ObjectMapper;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    private static final RequestMatcher MEDIA_CONTENT =
+            PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.GET, "/api/media/*/content");
+    private static final RequestMatcher API_DOCS = PathPatternRequestMatcher.withDefaults().matcher("/v3/api-docs/**");
+    private static final RequestMatcher SWAGGER_UI = new OrRequestMatcher(
+            PathPatternRequestMatcher.withDefaults().matcher("/swagger-ui/**"),
+            PathPatternRequestMatcher.withDefaults().matcher("/swagger-ui.html"));
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper, Problems problems,
@@ -63,8 +78,20 @@ public class SecurityConfig {
                 .httpBasic(b -> b.disable())
                 .formLogin(f -> f.disable())
                 .logout(l -> l.disable())
-                // Media is embedded by the frontend (PDF iframes); framing is restricted per response via CSP.
-                .headers(h -> h.frameOptions(f -> f.disable()))
+                // nosniff and no-cache come from Spring Security's defaults. HSTS is only sent on HTTPS requests
+                // (behind the TLS-terminating proxy, via X-Forwarded-Proto). Media content is embedded by the frontend
+                // (PDF iframes), so it gets no X-Frame-Options; its framing is restricted by its own CSP instead.
+                .headers(h -> h
+                        .frameOptions(f -> f.disable())
+                        .addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(
+                                new NegatedRequestMatcher(MEDIA_CONTENT), new XFrameOptionsHeaderWriter(
+                                        XFrameOptionsHeaderWriter.XFrameOptionsMode.DENY)))
+                        .addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(
+                                new NegatedRequestMatcher(new OrRequestMatcher(MEDIA_CONTENT, API_DOCS, SWAGGER_UI)),
+                                new StaticHeadersWriter("Content-Security-Policy",
+                                        "default-src 'none'; frame-ancestors 'none'; base-uri 'none'")))
+                        .referrerPolicy(r -> r.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                        .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31_536_000)))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**", "/api/public/**").permitAll()
@@ -160,7 +187,8 @@ public class SecurityConfig {
         config.setAllowedOrigins(props.cors().allowedOrigins());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setExposedHeaders(List.of("Content-Disposition", "Content-Length", "Content-Range", "Accept-Ranges"));
+        config.setExposedHeaders(List.of("Content-Disposition", "Content-Length", "Content-Range", "Accept-Ranges",
+                "Retry-After"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

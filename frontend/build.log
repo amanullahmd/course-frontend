@@ -6,3 +6,47 @@
 ✓ Running next.config.ts took 297ms
 
   Creating an optimized production build ...
+✓ Compiled successfully in 31.2s
+  Running TypeScript ...
+  Finished TypeScript in 30.5s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/19) ...
+  Generating static pages using 3 workers (4/19) 
+  Generating static pages using 3 workers (9/19) 
+  Generating static pages using 3 workers (14/19) 
+✓ Generating static pages using 3 workers (19/19) in 1052ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /admin
+├ ƒ /check-email
+├ ƒ /courses
+├ ƒ /courses/[slug]
+├ ƒ /dashboard
+├ ƒ /forgot-password
+├ ○ /icon.svg
+├ ƒ /instructor
+├ ƒ /instructor/attempts/[attemptId]
+├ ƒ /instructor/courses
+├ ƒ /instructor/courses/[courseId]
+├ ƒ /instructor/courses/[courseId]/enrollments
+├ ƒ /instructor/courses/[courseId]/items/[itemId]
+├ ƒ /instructor/courses/[courseId]/reports
+├ ƒ /instructor/courses/[courseId]/reports/students/[studentId]
+├ ƒ /instructor/courses/new
+├ ƒ /instructor/schedule
+├ ƒ /learn/[courseId]
+├ ƒ /learn/[courseId]/[itemId]
+├ ƒ /login
+├ ƒ /notifications
+├ ƒ /register
+├ ƒ /reset-password
+├ ƒ /settings
+└ ƒ /verify-email
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

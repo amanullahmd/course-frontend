@@ -14,6 +14,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseCookie;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -128,6 +129,7 @@ public class RefreshTokenService {
 
     /** Housekeeping: drop refresh tokens that expired more than a day ago. */
     @Scheduled(cron = "0 17 3 * * *")
+    @SchedulerLock(name = "RefreshTokenService.purgeExpired", lockAtMostFor = "PT15M", lockAtLeastFor = "PT1M")
     @Transactional
     public void purgeExpired() {
         int n = repository.deleteExpired(Instant.now(clock).minus(Duration.ofDays(1)));

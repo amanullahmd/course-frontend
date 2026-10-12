@@ -117,6 +117,26 @@ app:
     url-ttl: 6h
   storage:
     location: ./data/uploads
+    # Per-user storage quota (sum of a user's uploads); admins are unlimited.
+    quota:
+      instructor: ${STORAGE_QUOTA_INSTRUCTOR:5GB}
+      student: ${STORAGE_QUOTA_STUDENT:200MB}
+  # In-memory rate limits per instance ("<requests>/<period>"); exceeding one → 429 RATE_LIMITED + Retry-After.
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    login-per-ip: 10/1m
+    login-per-email: 5/1m
+    register-per-ip: 5/1h
+    mail-per-email: 3/1h
+    mail-per-ip: 10/1h
+    token-per-ip: 20/1h
+    upload-per-user: 60/1h
+    export-per-user: 3/24h
+    delete-account-per-user: 5/1h
+  registration:
+    # New instructors stay PENDING (no course creation) until an admin approves them.
+    instructor-approval-required: ${INSTRUCTOR_APPROVAL_REQUIRED:true}
+    terms-required: true
   mail:
     enabled: ${MAIL_ENABLED:false}
     from: "${MAIL_FROM:Sprachweg <no-reply@course.amanullah.me>}"

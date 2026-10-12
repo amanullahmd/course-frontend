@@ -68,6 +68,10 @@ Unit tests (visibility rule, slug generation, grading helpers, media URL signing
   asserts overview KPIs, distribution, enrollment timeline and content funnel, gradebook cells and column stats,
   learner report, assessment analytics (% correct, wrong answers, score distribution), all CSV exports (BOM,
   quoting, English and German headers, file names) and access rules (other instructor → 404, student → 403, bad ids → 4xx).
+* `EnrollmentManagementTest`: add learners by e-mail with every outcome (added, already enrolled, unknown + invite,
+  re-invite throttling, unverified/disabled/owner skipped, capacity partially reached), bulk removal with notifications
+  and e-mails, restoring removed and withdrawn learners, all-or-nothing capacity checks, ids of another course,
+  per-index validation errors, foreign instructor → 404, student → 403, malformed bodies → 400 (never 5xx).
 * `HttpRobustnessTest` (real Tomcat, `RANDOM_PORT`): multipart size limits (413), `/error`, exceptions and
   `sendError` raised in servlet filters, and URLs rejected by the HTTP firewall. The same suite also passes against PostgreSQL:
 
@@ -207,7 +211,7 @@ me.amanullah.course
 ├── media         uploads (local disk), HMAC-signed URLs, Range streaming
 ├── course        courses, modules, items, publication, ordering, public catalog
 ├── assessment    quizzes/exams, attempts, auto-grading, manual grading
-├── enrollment    applications, waiting list, approve/reject/revoke/bulk
+├── enrollment    applications, waiting list, approve/reject/remove (revoke)/restore, bulk, add learners by e-mail + invitations
 ├── learning      learner access gate, player endpoints, progress
 ├── notification  in-app notifications, e-mail templates and async delivery
 ├── schedule      publish/unpublish calendar, instructor dashboard
@@ -230,4 +234,13 @@ Key rules:
 * **Reports** (`/api/instructor/courses/{id}/reports/…`, `/api/instructor/items/{id}/reports/…`, see PLAN §6) are
   read-only and built from a few flat JPQL projections per request (`report.ReportQueries`), never per learner.
   CSV exports are UTF-8 with BOM, comma separated, RFC 4180 quoted, with headers in the request language.
+* **Enrollment management**: `approve` also restores REVOKED/WITHDRAWN learners (with a "restored" notification);
+  `POST /enrollments/bulk` (`APPROVE`, `REJECT`, `REVOKE`) is all or nothing (one bad id, wrong status or a capacity
+  overflow rolls everything back and nothing is sent). `POST /courses/{id}/enrollments/add` adds up to 200 addresses
+  per request: verified, enabled accounts become APPROVED (decision reason `Added by instructor`, in-app + e-mail in
+  their language) in input order until the capacity is reached (the rest → `skipped` `CAPACITY_REACHED`); the owner,
+  unverified and disabled accounts are skipped with a code; unknown addresses are reported in `notFound` and, with
+  `invite=true`, e-mailed an invitation in the instructor's language linking to
+  `/register?email=…&next=/courses/{slug}`. Invitations are recorded in `course_invitations`
+  (`V5__course_invitations.sql`) and repeated at most once per course and address within 24 h (`ALREADY_INVITED`).
 * **Assessments** store a snapshot of every question in each attempt, so editing a quiz never changes old results.

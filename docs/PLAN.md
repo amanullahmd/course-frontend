@@ -136,8 +136,9 @@ Client mistakes are always 4xx with a stable `code`; a 500 has `code=INTERNAL_ER
 | GET | `/attempts/{id}` | AttemptResultDto (instructor view) |
 | POST | `/attempts/{id}/grade` | `{grades:[{questionId,pointsAwarded,feedback}]}` → AttemptResultDto |
 | GET | `/courses/{id}/enrollments?status=` | `EnrollmentDto[]` (PENDING ordered by appliedAt → waitlist) |
-| POST | `/enrollments/{id}/approve` · `/reject {reason}` · `/revoke {reason}` | EnrollmentDto |
-| POST | `/enrollments/bulk` | `{ids:[],action:"APPROVE"\|"REJECT",reason?}` → EnrollmentDto[] |
+| POST | `/enrollments/{id}/approve` · `/reject {reason}` · `/revoke {reason}` | EnrollmentDto (approve: PENDING/REJECTED, or restores REVOKED/WITHDRAWN; 409 `CAPACITY_REACHED` when full; revoke = "remove from course") |
+| POST | `/enrollments/bulk` | `{ids:[],action:"APPROVE"\|"REJECT"\|"REVOKE",reason?,courseId?}` → EnrollmentDto[]; all or nothing (409 `INVALID_STATUS`/`CAPACITY_REACHED` changes nothing); with `courseId` every id must belong to it (400 `errors["ids[i]"]`) |
+| POST | `/courses/{id}/enrollments/add` | `{emails:[1–200],message?,invite?}` → `{added:EnrollmentDto[],alreadyEnrolled:[email],invited:[email],notFound:[email],skipped:[{email,code}]}` (owner/admin; addresses trimmed, de-duplicated, lower-cased; invalid → 400 `errors["emails[i]"]`) |
 | GET | `/schedule?from=&to=&courseId=` | `ScheduleEventDto[]` |
 
 ```
