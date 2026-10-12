@@ -141,7 +141,8 @@
       "CONCURRENT_MODIFICATION": "Jemand anderes hat das gleichzeitig geändert. Bitte lade neu und versuch es erneut.",
       "NOT_ACCEPTABLE": "Der Server kann dieses Format nicht liefern.",
       "SERVICE_UNAVAILABLE": "Der Dienst ist vorübergehend nicht verfügbar. Bitte versuch es gleich noch einmal.",
-      "NETWORK_ERROR": "Server nicht erreichbar. Bitte prüfe deine Verbindung und versuch es erneut."
+      "NETWORK_ERROR": "Server nicht erreichbar. Bitte prüfe deine Verbindung und versuch es erneut.",
+      "ATTEMPT_EXPIRED": "Die Zeit für diesen Versuch ist abgelaufen. Deine gespeicherten Antworten wurden automatisch abgegeben."
     },
     "reference": "Referenz: {id}",
     "notFoundEntity": "Dieses Element ({entity}) existiert nicht (mehr)."
@@ -816,11 +817,6 @@
     "attempts": "Versuche",
     "passMark": "Bestehensgrenze",
     "bestScore": "Bestes Ergebnis",
-    "available": "Verfügbar",
-    "from": "ab {date}",
-    "until": "bis {date}",
-    "opens": "Öffnet am {date}",
-    "closedOn": "Geschlossen seit {date}",
     "noAttemptsLeft": "Du hast alle Versuche aufgebraucht.",
     "attemptsRemaining": "{count, plural, one {Noch # Versuch.} other {Noch # Versuche.}}",
     "unlimitedAttempts": "Unbegrenzte Versuche.",
@@ -839,7 +835,6 @@
     "notPassed": "Nicht bestanden",
     "review": "Ansehen",
     "backToOverview": "Zurück zur Übersicht",
-    "answeredAutosaved": "{answered} von {total} beantwortet · automatisch gespeichert",
     "questionOf": "Frage {current} von {total}",
     "flag": "Markieren",
     "flagged": "Markiert",
@@ -854,7 +849,6 @@
     "confirmAll": "Alle Fragen sind beantwortet. Nach der Abgabe kannst du nichts mehr ändern.",
     "submitNow": "Jetzt abgeben",
     "timeUp": "Die Zeit ist um! Deine Antworten wurden automatisch abgegeben.",
-    "submittedToast": "Abgegeben. Gut gemacht!",
     "timer": "Verbleibende Zeit",
     "selectAll": "Wähle alle zutreffenden Antworten.",
     "fillPlaceholder": "Fehlendes Wort eintragen …",
@@ -885,7 +879,37 @@
     "pendingText": "Einige Antworten (z. B. Freitexte) werden von deiner Lehrkraft bewertet. Dein Endergebnis erscheint hier und du wirst benachrichtigt, sobald die Bewertung abgeschlossen ist.",
     "reviewHeading": "Auswertung",
     "provisional": "vorläufig",
-    "scoreLabel": "Ergebnis"
+    "scoreLabel": "Ergebnis",
+    "answeredOf": "{answered} von {total} beantwortet",
+    "saving": "Wird gespeichert…",
+    "savedAt": "Gespeichert · {time}",
+    "savedOffline": "Offline, auf diesem Gerät gespeichert",
+    "deadlineAt": "Deine Abgabefrist: {time}",
+    "deadlineCapped": "Du hast {minutes} Min., aber das Zeitfenster schließt um {time}, deshalb ist deine Abgabefrist {time}.",
+    "submittedPassed": "Abgegeben. Gut gemacht!",
+    "submittedNeutral": "Abgegeben. Sieh dir dein Ergebnis unten an.",
+    "submittedPending": "Abgegeben. Deine Lehrkraft bewertet sie.",
+    "autoSubmittedToast": "Die Zeit ist um, deine gespeicherten Antworten wurden automatisch abgegeben.",
+    "autoSubmitted": "Automatisch abgegeben",
+    "autoSubmittedNotice": "Die Zeit ist um, deine gespeicherten Antworten wurden automatisch abgegeben.",
+    "opensAt": "Öffnet {date}",
+    "openedAt": "Geöffnet seit {date}",
+    "closesAt": "Schließt {date}",
+    "closedAt": "Geschlossen seit {date}",
+    "opensIn": "Öffnet in {time}",
+    "closesIn": "Schließt in {time}",
+    "cappedHint": "Du hast {minutes} Min., aber {kind, select, exam {die Prüfung} other {das Quiz}} schließt um {time}, deshalb ist deine Abgabefrist {time}.",
+    "untimedClosesHint": "Es gibt kein Zeitlimit, aber {kind, select, exam {die Prüfung} other {das Quiz}} schließt um {time}. Bis dahin gespeicherte Antworten werden automatisch abgegeben.",
+    "notOpenYetReason": "{kind, select, exam {Die Prüfung} other {Das Quiz}} öffnet {date}. Der Start-Button wird dann automatisch freigeschaltet.",
+    "closedReason": "{kind, select, exam {Die Prüfung} other {Das Quiz}} ist seit {date} geschlossen.",
+    "duration": {
+      "lessThanMinute": "weniger als 1 Min.",
+      "minutes": "{m} Min.",
+      "hours": "{h} Std.",
+      "hoursMinutes": "{h} Std. {m} Min.",
+      "days": "{d, plural, one {# Tag} other {# Tagen}}",
+      "daysHours": "{d} T. {h} Std."
+    }
   },
   "publication": {
     "draft": "Entwurf",
@@ -1206,11 +1230,15 @@
     "questionType": "Fragetyp",
     "emptyTitle": "Noch keine Fragen",
     "emptyText": "Kombiniere Auswahl-, Kurzantwort-, Lückentext- und Freitextfragen. Hänge Audio für Hörverstehen an.",
-    "windowError": "Das Ende der Verfügbarkeit muss nach dem Beginn liegen.",
+    "windowError": "Das Zeitfenster muss nach dem Öffnen schließen.",
     "fixQuestions": "{count, plural, one {Korrigiere # Frage vor dem Speichern.} other {Korrigiere # Fragen vor dem Speichern.}}",
     "saved": "Prüfung gespeichert",
     "save": "Prüfung speichern",
-    "unsaved": "Ungespeicherte Änderungen ·"
+    "unsaved": "Ungespeicherte Änderungen ·",
+    "window": "Zeitfenster",
+    "helpVisibility": "Veröffentlichen/Zurückziehen steuert die Sichtbarkeit: Lernende sehen diesen Inhalt nur, solange er live ist.",
+    "helpWindow": "Das Zeitfenster steuert, wann Versuche gestartet werden können. Versuche, die beim Schließen noch laufen, werden mit den bis dahin gespeicherten Antworten automatisch abgegeben.",
+    "helpTimeLimit": "Das Zeitlimit steuert die Dauer jedes Versuchs und endet spätestens mit dem Zeitfenster: Wer 20 Minuten vor Schluss startet, hat 20 Minuten."
   },
   "question": {
     "newQuestion": "Neue Frage",
@@ -1268,7 +1296,7 @@
     "score": "Ergebnis",
     "grade": "Bewerten",
     "view": "Ansehen",
-    "late": "verspätet",
+    "late": "Verspätet",
     "reviewTitle": "Versuch prüfen",
     "reviewText": "Bewerte Freitexte und gib der Person Feedback.",
     "submittedOn": "Abgegeben am {date}",
@@ -1279,7 +1307,8 @@
     "feedback": "Feedback",
     "feedbackPlaceholder": "Sehr gut strukturiert! Achte auf die Verbposition im Nebensatz.",
     "saveGrades": "Bewertung speichern",
-    "gradesSaved": "Bewertung gespeichert. Die Person wurde benachrichtigt."
+    "gradesSaved": "Bewertung gespeichert. Die Person wurde benachrichtigt.",
+    "autoSubmitted": "Automatisch abgegeben"
   },
   "instructor": {
     "overview": "Übersicht",
@@ -1323,7 +1352,7 @@
     "publish": "Veröffentlichung",
     "unpublish": "Rückzug",
     "scheduleTitle": "Zeitplan",
-    "scheduleText": "Alle anstehenden Veröffentlichungen und Rückzüge in deinen Kursen.",
+    "scheduleText": "Alle anstehenden Veröffentlichungen und Rückzüge in deinen Kursen, dazu wann Quizze und Prüfungen öffnen und schließen.",
     "prevMonth": "Vorheriger Monat",
     "nextMonth": "Nächster Monat",
     "today": "Heute",
@@ -1338,7 +1367,12 @@
     "updatedCol": "Aktualisiert",
     "attemptNotFound": "Versuch nicht gefunden",
     "attemptNotFoundText": "Er wurde eventuell gelöscht oder gehört zum Kurs einer anderen Lehrkraft.",
-    "backToOverview": "Zurück zur Übersicht"
+    "backToOverview": "Zurück zur Übersicht",
+    "windowOpens": "Quiz/Prüfung öffnet",
+    "windowCloses": "Quiz/Prüfung schließt",
+    "attemptsOpen": "Öffnet für Versuche",
+    "attemptsClose": "Schließt für Versuche",
+    "legend": "Legende"
   },
   "settings": {
     "title": "Einstellungen",
@@ -1401,5 +1435,16 @@
     "confirmRoleTitle": "Rolle von {name} zu „{role}“ ändern?",
     "confirmRoleText": "Die neuen Berechtigungen gelten sofort, auch in bereits geöffneten Sitzungen.",
     "confirmRole": "Rolle ändern"
+  },
+  "courseActive": {
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "scheduled": "Geplant",
+    "ariaLabel": "Kurs aktiv: {title}",
+    "activatedToast": "„{title}“ ist aktiv, Lernende haben jetzt Zugriff.",
+    "deactivatedToast": "„{title}“ ist jetzt inaktiv.",
+    "deactivateTitle": "Kurs deaktivieren?",
+    "deactivateText": "Der Kurs verschwindet aus dem Katalog und {count, plural, =0 {niemand kann ihn öffnen} one {# eingeschriebene:r Lernende:r verliert den Zugriff} other {# eingeschriebene Lernende verlieren den Zugriff}}, bis du ihn wieder aktivierst. Einschreibungen, Fortschritt und Ergebnisse bleiben erhalten.",
+    "deactivateConfirm": "Kurs deaktivieren"
   }
 }

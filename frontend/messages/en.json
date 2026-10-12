@@ -141,7 +141,8 @@
       "CONCURRENT_MODIFICATION": "Someone else changed this at the same time. Please reload and try again.",
       "NOT_ACCEPTABLE": "The server can't provide this format.",
       "SERVICE_UNAVAILABLE": "The service is temporarily unavailable. Please try again in a moment.",
-      "NETWORK_ERROR": "Server unreachable. Please check your connection and try again."
+      "NETWORK_ERROR": "Server unreachable. Please check your connection and try again.",
+      "ATTEMPT_EXPIRED": "Time is up for this attempt. Your saved answers were submitted automatically."
     },
     "reference": "Reference: {id}",
     "notFoundEntity": "This {entity} doesn't exist (anymore)."
@@ -816,11 +817,6 @@
     "attempts": "Attempts",
     "passMark": "Pass mark",
     "bestScore": "Best score",
-    "available": "Available",
-    "from": "from {date}",
-    "until": "until {date}",
-    "opens": "Opens {date}",
-    "closedOn": "Closed on {date}",
     "noAttemptsLeft": "You've used all your attempts.",
     "attemptsRemaining": "{count, plural, one {# attempt remaining.} other {# attempts remaining.}}",
     "unlimitedAttempts": "Unlimited attempts.",
@@ -839,7 +835,6 @@
     "notPassed": "Not passed",
     "review": "Review",
     "backToOverview": "Back to overview",
-    "answeredAutosaved": "{answered} of {total} answered · autosaved",
     "questionOf": "Question {current} of {total}",
     "flag": "Flag for review",
     "flagged": "Flagged",
@@ -854,7 +849,6 @@
     "confirmAll": "All questions are answered. You can't change your answers after submitting.",
     "submitNow": "Submit now",
     "timeUp": "Time's up! Your answers were submitted automatically.",
-    "submittedToast": "Submitted. Gut gemacht!",
     "timer": "Time remaining",
     "selectAll": "Select all that apply.",
     "fillPlaceholder": "Fill in the missing word…",
@@ -885,7 +879,37 @@
     "pendingText": "Some answers (like essays) are graded by your instructor. Your final score will appear here, and you'll get a notification once grading is complete.",
     "reviewHeading": "Review",
     "provisional": "provisional",
-    "scoreLabel": "score"
+    "scoreLabel": "score",
+    "answeredOf": "{answered} of {total} answered",
+    "saving": "Saving…",
+    "savedAt": "Saved · {time}",
+    "savedOffline": "Offline, saved on this device",
+    "deadlineAt": "Your deadline: {time}",
+    "deadlineCapped": "You have {minutes} min, but the window closes at {time}, so your deadline is {time}.",
+    "submittedPassed": "Submitted. Well done!",
+    "submittedNeutral": "Submitted, check your results below.",
+    "submittedPending": "Submitted. Your instructor will grade it.",
+    "autoSubmittedToast": "Time is up, your saved answers were submitted automatically.",
+    "autoSubmitted": "Auto-submitted",
+    "autoSubmittedNotice": "Time is up, your saved answers were submitted automatically.",
+    "opensAt": "Opens {date}",
+    "openedAt": "Opened {date}",
+    "closesAt": "Closes {date}",
+    "closedAt": "Closed {date}",
+    "opensIn": "Opens in {time}",
+    "closesIn": "Closes in {time}",
+    "cappedHint": "You have {minutes} min, but {kind, select, exam {the exam} other {the quiz}} closes at {time}, so your deadline is {time}.",
+    "untimedClosesHint": "There's no time limit, but {kind, select, exam {the exam} other {the quiz}} closes at {time}. Answers saved by then are submitted automatically.",
+    "notOpenYetReason": "{kind, select, exam {The exam} other {The quiz}} opens {date}. The start button unlocks automatically.",
+    "closedReason": "{kind, select, exam {The exam} other {The quiz}} closed {date}.",
+    "duration": {
+      "lessThanMinute": "less than 1 min",
+      "minutes": "{m} min",
+      "hours": "{h} h",
+      "hoursMinutes": "{h} h {m} min",
+      "days": "{d, plural, one {# day} other {# days}}",
+      "daysHours": "{d} d {h} h"
+    }
   },
   "publication": {
     "draft": "Draft",
@@ -1206,11 +1230,15 @@
     "questionType": "Question type",
     "emptyTitle": "No questions yet",
     "emptyText": "Mix choice, short-answer, gap-fill and essay questions. Attach audio for listening comprehension.",
-    "windowError": "The availability end must be after its start.",
+    "windowError": "The window must close after it opens.",
     "fixQuestions": "{count, plural, one {Fix # question before saving.} other {Fix # questions before saving.}}",
     "saved": "Assessment saved",
     "save": "Save assessment",
-    "unsaved": "Unsaved changes ·"
+    "unsaved": "Unsaved changes ·",
+    "window": "Availability window",
+    "helpVisibility": "Publish/unpublish controls visibility: learners only see this item while it is live.",
+    "helpWindow": "The window controls when attempts can be started. Attempts still running when it closes are submitted automatically with the answers saved so far.",
+    "helpTimeLimit": "The time limit controls how long each attempt lasts and is capped at the window end: someone starting 20 minutes before the close gets 20 minutes."
   },
   "question": {
     "newQuestion": "New question",
@@ -1268,7 +1296,7 @@
     "score": "Score",
     "grade": "Grade",
     "view": "View",
-    "late": "late",
+    "late": "Late",
     "reviewTitle": "Review attempt",
     "reviewText": "Score essay answers and leave feedback for the learner.",
     "submittedOn": "Submitted {date}",
@@ -1279,7 +1307,8 @@
     "feedback": "Feedback",
     "feedbackPlaceholder": "Very well structured! Watch the verb position in subordinate clauses.",
     "saveGrades": "Save grades",
-    "gradesSaved": "Grades saved. The learner has been notified."
+    "gradesSaved": "Grades saved. The learner has been notified.",
+    "autoSubmitted": "Auto-submitted"
   },
   "instructor": {
     "overview": "Overview",
@@ -1323,7 +1352,7 @@
     "publish": "Publish",
     "unpublish": "Unpublish",
     "scheduleTitle": "Schedule",
-    "scheduleText": "Every upcoming publish and unpublish event across your courses.",
+    "scheduleText": "Every upcoming publish and unpublish event across your courses, plus when quizzes and exams open and close.",
     "prevMonth": "Previous month",
     "nextMonth": "Next month",
     "today": "Today",
@@ -1338,7 +1367,12 @@
     "updatedCol": "Updated",
     "attemptNotFound": "Attempt not found",
     "attemptNotFoundText": "It may have been deleted, or it belongs to another instructor's course.",
-    "backToOverview": "Back to overview"
+    "backToOverview": "Back to overview",
+    "windowOpens": "Quiz/exam opens",
+    "windowCloses": "Quiz/exam closes",
+    "attemptsOpen": "Opens for attempts",
+    "attemptsClose": "Closes for attempts",
+    "legend": "Legend"
   },
   "settings": {
     "title": "Settings",
@@ -1401,5 +1435,16 @@
     "confirmRoleTitle": "Change the role of {name} to {role}?",
     "confirmRoleText": "The new permissions apply immediately, including in sessions that are already open.",
     "confirmRole": "Change role"
+  },
+  "courseActive": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "scheduled": "Scheduled",
+    "ariaLabel": "Course active: {title}",
+    "activatedToast": "“{title}” is active, learners can access it now.",
+    "deactivatedToast": "“{title}” is inactive now.",
+    "deactivateTitle": "Deactivate this course?",
+    "deactivateText": "The course disappears from the catalog and {count, plural, =0 {nobody can open it} one {# enrolled learner loses access} other {# enrolled learners lose access}} until you activate it again. Enrollments, progress and results are kept.",
+    "deactivateConfirm": "Deactivate course"
   }
 }
